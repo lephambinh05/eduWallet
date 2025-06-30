@@ -13,6 +13,7 @@ body {
   background: linear-gradient(270deg, #0c0c0c, #1a1a2e, #16213e, #0f3460, #533483);
   color: #ffffff;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 @keyframes galaxy-bg {
@@ -166,16 +167,47 @@ code {
   padding: 0 20px;
 }
 
+/* Sidebar responsive adjustments */
 @media (max-width: 768px) {
   .container {
-    padding: 0 8px;
+    padding: 0 16px;
   }
   .card, .Card, .BadgeCard, .MarketplaceCard, .CertificateCard {
-    padding: 1.2rem 0.7rem !important;
+    padding: 1.2rem 1rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .container {
+    padding-left: 100px;
+    padding-right: 20px;
   }
 }
 
 /* Icon glow */
 svg {
   filter: drop-shadow(0 0 6px rgba(83,52,131,0.6)) drop-shadow(0 0 2px rgba(15,52,96,0.6));
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 300ms, transform 300ms;
 } 

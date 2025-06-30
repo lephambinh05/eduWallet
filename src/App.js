@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import styled from 'styled-components';
 import { Toaster } from 'react-hot-toast';
 
 // Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import Home from './pages/Home';
@@ -30,17 +29,6 @@ import { getUserFromLocalStorage } from './utils/userUtils';
 
 const queryClient = new QueryClient();
 
-const AppContainer = styled.div`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
-`;
-
-const MainContent = styled.main`
-  flex: 1;
-`;
-
 function App() {
   const [noti, setNoti] = useState('');
   const user = getUserFromLocalStorage();
@@ -58,10 +46,10 @@ function App() {
   }, [user]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WalletProvider>
-        <Router>
-          <AppContainer>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <WalletProvider>
+          <Router>
             {noti && (
               <div
                 style={{
@@ -78,8 +66,7 @@ function App() {
                 {noti}
               </div>
             )}
-            <Navbar />
-            <MainContent>
+            <Layout>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
@@ -113,8 +100,7 @@ function App() {
                   </ProtectedRoute>
                 } />
               </Routes>
-            </MainContent>
-            <Footer />
+            </Layout>
             <Toaster
               position="top-right"
               toastOptions={{
@@ -125,10 +111,10 @@ function App() {
                 },
               }}
             />
-          </AppContainer>
-        </Router>
-      </WalletProvider>
-    </QueryClientProvider>
+          </Router>
+        </WalletProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
