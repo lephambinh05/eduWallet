@@ -23,6 +23,19 @@
       "learnPassId": "lp001",
       "balance": 0,
       "createdAt": "2024-01-15"
+    },
+    {
+      "id": "u003",
+      "username": "trongkhang205",
+      "email": "khanggialata@gmail.com",
+      "password": "Khangdz205@",
+      "name": "Trần Trọng Khang",
+      "avatar": "/avatar1.png",
+      "wallet": "",
+      "learnPassId": "lp002",
+      "balance": 0,
+      "createdAt": "2024-12-29"
     }
+    
   ]
 } 

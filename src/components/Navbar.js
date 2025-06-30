@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { useWallet } from '../context/WalletContext';
 import { FaGraduationCap, FaWallet, FaBars, FaTimes, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaCopy, FaCheck, FaIdCard } from 'react-icons/fa';
 import { getCurrentUser, logoutUser } from '../utils/userUtils';
 import toast from 'react-hot-toast';
+
+// Các styled-component phía dưới (giữ nguyên như file bạn gửi, không đổi tên)
 
 const Nav = styled.nav`
   background: rgba(20, 20, 40, 0.85);
@@ -288,6 +290,7 @@ const MobileNavLink = styled(Link)`
   }
 `;
 
+
 function getInitials(name) {
   if (!name) return '';
   const parts = name.trim().split(' ');
@@ -347,6 +350,7 @@ const Navbar = () => {
     { path: '/learnpass', label: 'LearnPass' },
     { path: '/marketplace', label: 'Marketplace' },
     { path: '/badges', label: 'Badges' },
+    { path: '/transfer', label: 'Chuyển tiền' },   // Đã thêm chuyển tiền ở đây!
     { path: '/verify', label: 'Xác minh' },
     { path: '/about', label: 'Giới thiệu' },
   ];
@@ -514,4 +518,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

@@ -22,6 +22,9 @@ export const getCurrentUser = () => {
   }
 };
 
+// **Thêm lại hàm này để fix các import cũ**
+export const getUserFromLocalStorage = getCurrentUser;
+
 export const logoutUser = () => {
   localStorage.removeItem('currentUser');
 };
@@ -84,4 +87,4 @@ export const isEmailTaken = (email) => {
   if (localExists) return true;
   
   return usersData.users.some(u => u.email === email);
-}; 
+};

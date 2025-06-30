@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { Toaster } from 'react-hot-toast';
 import styled from 'styled-components';
+import { Toaster } from 'react-hot-toast';
 
 // Components
 import Navbar from './components/Navbar';
@@ -19,9 +19,14 @@ import Verify from './pages/Verify';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Transfer from './pages/Transfer';
 
 // Context
 import { WalletProvider } from './context/WalletContext';
+
+// Utils
+import socket from './utils/socket';
+import { getUserFromLocalStorage } from './utils/userUtils';
 
 const queryClient = new QueryClient();
 
@@ -37,11 +42,42 @@ const MainContent = styled.main`
 `;
 
 function App() {
+  const [noti, setNoti] = useState('');
+  const user = getUserFromLocalStorage();
+
+  useEffect(() => {
+    if (user && (user.userId || user.id)) {
+      socket.emit('user-online', user.userId || user.id);
+    }
+    socket.on('receive-money', data => setNoti(data.message));
+    socket.on('transfer-success', data => setNoti(data.message));
+    return () => {
+      socket.off('receive-money');
+      socket.off('transfer-success');
+    };
+  }, [user]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <WalletProvider>
         <Router>
           <AppContainer>
+            {noti && (
+              <div
+                style={{
+                  background: 'yellow',
+                  color: '#333',
+                  padding: 12,
+                  borderRadius: 6,
+                  position: 'fixed',
+                  right: 20,
+                  top: 20,
+                  zIndex: 9999
+                }}
+              >
+                {noti}
+              </div>
+            )}
             <Navbar />
             <MainContent>
               <Routes>
@@ -70,10 +106,16 @@ function App() {
                 } />
                 <Route path="/verify" element={<Verify />} />
                 <Route path="/about" element={<About />} />
+                {/* Route chuyển tiền bảo vệ đăng nhập */}
+                <Route path="/transfer" element={
+                  <ProtectedRoute>
+                    <Transfer />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </MainContent>
             <Footer />
-            <Toaster 
+            <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
@@ -90,4 +132,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
