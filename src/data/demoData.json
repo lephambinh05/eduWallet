@@ -1,0 +1,103 @@
+{
+  "user": {
+    "id": "u001",
+    "name": "Nguyễn Văn A",
+    "avatar": "/avatar1.png",
+    "email": "vana@example.com",
+    "wallet": "0x1234...abcd",
+    "learnPassId": "lp001"
+  },
+  "learnPass": {
+    "id": "lp001",
+    "owner": "u002",
+    "nftImage": "/nft_learnpass.png",
+    "metadata": {
+      "courses": [
+        {
+          "name": "Blockchain Cơ bản",
+          "score": 9.5,
+          "skills": ["Blockchain", "Smart Contract"],
+          "date": "2024-05-01",
+          "issuer": "Trường Đại học ABC"
+        },
+        {
+          "name": "ReactJS Nâng cao",
+          "score": 8.7,
+          "skills": ["ReactJS", "Frontend"],
+          "date": "2024-06-10",
+          "issuer": "Coursera"
+        }
+      ],
+      "extracurricular": [
+        {
+          "name": "Tham gia CLB Blockchain",
+          "date": "2024-04-15"
+        }
+      ],
+      "creditHistory": [
+        {
+          "type": "course",
+          "name": "Blockchain Cơ bản",
+          "credit": 3
+        },
+        {
+          "type": "course",
+          "name": "ReactJS Nâng cao",
+          "credit": 2
+        }
+      ]
+    }
+  },
+  "certificates": [
+    {
+      "id": "c001",
+      "title": "Trí Tuệ Nhân Tạo ",
+      "issuer": "Trường Đại học Ngoại Ngữ - Tin Học",
+      "date": "2024-05-01",
+      "score": 9.5,
+      "skills": ["Blockchain", "Smart Contract"],
+      "image": "/cert_blockchain.png"
+    },
+    {
+      "id": "c002",
+      "title": "ReactJS Nâng cao",
+      "issuer": "Coursera",
+      "date": "2024-06-10",
+      "score": 8.7,
+      "skills": ["ReactJS", "Frontend"],
+      "image": "/cert_react.png"
+    }
+  ],
+  "badges": [
+    {
+      "id": "b001",
+      "title": "Hoàn thành 5 khóa học",
+      "image": "/badge_5courses.png",
+      "reward": "10 EDU Token"
+    },
+    {
+      "id": "b002",
+      "title": "Điểm số xuất sắc",
+      "image": "/badge_highscore.png",
+      "reward": "Voucher học phí"
+    }
+  ],
+  "marketplace": [
+    {
+      "id": "m001",
+      "title": "Voucher tàu điện",
+      "description": "Đổi 20 EDU Token lấy 1 vé tàu điện",
+      "price": 20,
+      "currency": "EDU",
+      "image": "/voucher_train.png"
+    },
+    {
+      "id": "m002",
+      "title": "Voucher sách giáo trình",
+      "description": "Đổi 10 EDU Token lấy 1 voucher giảm giá sách",
+      "price": 10,
+      "currency": "EDU",
+      "image": "/voucher_book.png"
+    }
+  ]
+} 

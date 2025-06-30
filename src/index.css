@@ -1,0 +1,181 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(270deg, #0c0c0c, #1a1a2e, #16213e, #0f3460, #533483);
+  color: #ffffff;
+  line-height: 1.6;
+}
+
+@keyframes galaxy-bg {
+  0% {background-position:0% 50%}
+  25% {background-position:50% 100%}
+  50% {background-position:100% 50%}
+  75% {background-position:50% 0%}
+  100% {background-position:0% 50%}
+}
+
+@keyframes galaxy-layout {
+  0% {background-position:0% 50%}
+  50% {background-position:100% 50%}
+  100% {background-position:0% 50%}
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/* Button styles */
+.btn, .btn-primary, .btn-secondary {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  background: linear-gradient(90deg, #533483, #0f3460, #16213e, #1a1a2e);
+  color: white;
+  box-shadow: 0 2px 12px 0 rgba(83,52,131,0.3);
+}
+
+.btn:hover, .btn-primary:hover, .btn-secondary:hover {
+  filter: brightness(1.15) drop-shadow(0 0 8px #533483);
+  transform: scale(1.06) translateY(-2px);
+  box-shadow: 0 8px 32px 0 rgba(83,52,131,0.4), 0 2px 16px 0 rgba(15,52,96,0.4);
+}
+
+/* Card styles */
+.card, .Card, .BadgeCard, .MarketplaceCard, .CertificateCard {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(83,52,131,0.05) 100%);
+  box-shadow: 0 4px 32px 0 rgba(83,52,131,0.15), 0 1.5px 8px 0 rgba(15,52,96,0.15);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 18px !important;
+  padding: 2rem 1.5rem !important;
+}
+
+.card:hover, .Card:hover, .BadgeCard:hover, .MarketplaceCard:hover, .CertificateCard:hover {
+  box-shadow: 0 8px 40px 0 rgba(83,52,131,0.25), 0 2px 16px 0 rgba(15,52,96,0.25);
+  transform: translateY(-6px) scale(1.03);
+  border-color: #533483;
+}
+
+/* Input styles */
+.input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: white;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.8s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Responsive utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 8px;
+  }
+  .card, .Card, .BadgeCard, .MarketplaceCard, .CertificateCard {
+    padding: 1.2rem 0.7rem !important;
+  }
+}
+
+/* Icon glow */
+svg {
+  filter: drop-shadow(0 0 6px rgba(83,52,131,0.6)) drop-shadow(0 0 2px rgba(15,52,96,0.6));
+} 

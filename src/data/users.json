@@ -1,0 +1,28 @@
+{
+  "users": [
+    {
+      "id": "u001",
+      "username": "vana",
+      "email": "vana@example.com",
+      "password": "123456",
+      "name": "Nguyễn Văn A",
+      "avatar": "/avatar1.png",
+      "wallet": "",
+      "learnPassId": "lp001",
+      "balance": 50,
+      "createdAt": "2024-01-01"
+    },
+    {
+      "id": "u002",
+      "username": "lephambinhdz",
+      "email": "admin@Cybernix.Vn",
+      "password": "BinhdzITK29",
+      "name": "Lê Phạm Bình",
+      "avatar": "/avatar2.png",
+      "wallet": "",
+      "learnPassId": "lp001",
+      "balance": 0,
+      "createdAt": "2024-01-15"
+    }
+  ]
+} 
