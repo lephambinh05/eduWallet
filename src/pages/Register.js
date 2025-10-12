@@ -1,41 +1,100 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaLock, FaEye, FaEyeSlash, FaEnvelope, FaIdCard } from 'react-icons/fa';
-import { registerNewUser, isUsernameTaken, isEmailTaken } from '../utils/userUtils';
+import { useAuth } from '../context/AuthContext';
+import styled from 'styled-components';
+import { motion } from 'framer-motion';
+import { FaEye, FaEyeSlash, FaUser, FaLock, FaEnvelope, FaPhone, FaCalendarAlt, FaGraduationCap } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
-const Container = styled.div`
+const RegisterContainer = styled.div`
   min-height: 100vh;
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+  }
 `;
 
-const RegisterCard = styled.div`
-  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(83,52,131,0.05) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(255,255,255,0.12);
+const RegisterCard = styled(motion.div)`
+  background: rgba(20, 20, 40, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(120, 80, 220, 0.2);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 3rem;
   width: 100%;
-  max-width: 450px;
-  box-shadow: 0 8px 32px 0 rgba(83,52,131,0.15);
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 1;
+  max-height: 90vh;
+  overflow-y: auto;
 `;
 
-const Title = styled.h2`
+const Logo = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  
+  .logo-icon {
+    font-size: 3rem;
+    color: #a259ff;
+    margin-right: 1rem;
+  }
+  
+  .logo-text {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #a259ff, #3772ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+`;
+
+const Title = styled.h1`
   text-align: center;
   color: white;
-  margin-bottom: 2rem;
   font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+`;
+
+const Subtitle = styled.p`
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2rem;
+  font-size: 1rem;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+`;
+
+const Row = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const InputGroup = styled.div`
@@ -45,31 +104,33 @@ const InputGroup = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 10px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   color: white;
   font-size: 1rem;
   transition: all 0.3s ease;
-
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
   &:focus {
     outline: none;
-    border-color: #533483;
-    box-shadow: 0 0 0 3px rgba(83,52,131,0.1);
-  }
-
-  &::placeholder {
-    color: rgba(255,255,255,0.6);
+    border-color: #a259ff;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(162, 89, 255, 0.1);
   }
 `;
 
-const Icon = styled.div`
+const InputIcon = styled.div`
   position: absolute;
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255,255,255,0.6);
-  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  z-index: 2;
 `;
 
 const PasswordToggle = styled.button`
@@ -79,54 +140,93 @@ const PasswordToggle = styled.button`
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  z-index: 2;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    color: #a259ff;
+  }
 `;
 
-const Button = styled.button`
-  background: linear-gradient(90deg, #533483, #0f3460, #16213e, #1a1a2e);
-  color: white;
-  border: none;
+const SubmitButton = styled(motion.button)`
+  width: 100%;
   padding: 1rem;
-  border-radius: 10px;
-  font-size: 1rem;
+  background: linear-gradient(135deg, #a259ff 0%, #3772ff 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(83,52,131,0.4);
-  }
-
+  position: relative;
+  overflow: hidden;
+  
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-    transform: none;
+  }
+  
+  &:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(162, 89, 255, 0.3);
+  }
+  
+  &:not(:disabled):active {
+    transform: translateY(0);
   }
 `;
 
-const LinkText = styled.div`
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  span {
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0 1rem;
+    font-size: 0.9rem;
+  }
+`;
+
+const LoginLink = styled(Link)`
+  display: block;
   text-align: center;
-  color: rgba(255,255,255,0.8);
-  margin-top: 1rem;
-
-  a {
-    color: #533483;
-    text-decoration: none;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    color: #a259ff;
+  }
+  
+  strong {
+    color: #a259ff;
     font-weight: 600;
-
-    &:hover {
-      text-decoration: underline;
-    }
   }
 `;
 
-const ErrorText = styled.div`
-  color: #ff6b6b;
-  font-size: 0.9rem;
+const PasswordStrength = styled.div`
   margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: ${props => {
+    if (props.strength === 'weak') return '#ff6b6b';
+    if (props.strength === 'medium') return '#ffa726';
+    if (props.strength === 'strong') return '#66bb6a';
+    return 'rgba(255, 255, 255, 0.5)';
+  }};
 `;
 
 const Register = () => {
@@ -135,141 +235,168 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    fullName: ''
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    phone: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { register } = useAuth();
   const navigate = useNavigate();
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.username.trim()) {
-      newErrors.username = 'Tên đăng nhập không được để trống';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Tên đăng nhập phải có ít nhất 3 ký tự';
-    } else if (isUsernameTaken(formData.username)) {
-      newErrors.username = 'Tên đăng nhập đã tồn tại';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email không được để trống';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
-    } else if (isEmailTaken(formData.email)) {
-      newErrors.email = 'Email đã được sử dụng';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Mật khẩu không được để trống';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
-    }
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Họ tên không được để trống';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: ''
-      });
-    }
+  };
+
+  const getPasswordStrength = (password) => {
+    if (password.length < 6) return 'weak';
+    if (password.length < 8) return 'medium';
+    if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password)) return 'strong';
+    return 'medium';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    setIsLoading(true);
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // Validate password length
+    if (formData.password.length < 6) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      // Register new user using utility function
-      const newUser = registerNewUser(formData);
-      
-      toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
-      navigate('/login');
+      const { confirmPassword, ...registerData } = formData;
+      // Đảm bảo lastName không rỗng
+      if (!registerData.lastName) {
+        registerData.lastName = registerData.firstName;
+      }
+      await register(registerData);
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi đăng ký!');
+      console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Container>
-      <RegisterCard>
-        <Title>Đăng ký</Title>
+    <RegisterContainer>
+      <RegisterCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <Logo>
+          <FaGraduationCap className="logo-icon" />
+          <span className="logo-text">EduWallet</span>
+        </Logo>
+        
+        <Title>Tạo tài khoản mới</Title>
+        <Subtitle>Bắt đầu hành trình học tập với EduWallet</Subtitle>
+        
         <Form onSubmit={handleSubmit}>
+          <Row>
+            <InputGroup>
+              <InputIcon>
+                <FaUser />
+              </InputIcon>
+              <Input
+                type="text"
+                name="firstName"
+                placeholder="Tên"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+            
+            <InputGroup>
+              <InputIcon>
+                <FaUser />
+              </InputIcon>
+              <Input
+                type="text"
+                name="lastName"
+                placeholder="Họ"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+          </Row>
+          
           <InputGroup>
-            <Icon>
+            <InputIcon>
               <FaUser />
-            </Icon>
+            </InputIcon>
             <Input
               type="text"
               name="username"
-              placeholder="Tên đăng nhập"
+              placeholder="Tên người dùng"
               value={formData.username}
               onChange={handleChange}
               required
             />
-            {errors.username && <ErrorText>{errors.username}</ErrorText>}
           </InputGroup>
-
+          
           <InputGroup>
-            <Icon>
+            <InputIcon>
               <FaEnvelope />
-            </Icon>
+            </InputIcon>
             <Input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder="Địa chỉ email"
               value={formData.email}
               onChange={handleChange}
               required
             />
-            {errors.email && <ErrorText>{errors.email}</ErrorText>}
           </InputGroup>
-
+          
           <InputGroup>
-            <Icon>
-              <FaIdCard />
-            </Icon>
+            <InputIcon>
+              <FaCalendarAlt />
+            </InputIcon>
             <Input
-              type="text"
-              name="fullName"
-              placeholder="Họ và tên"
-              value={formData.fullName}
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
               onChange={handleChange}
               required
             />
-            {errors.fullName && <ErrorText>{errors.fullName}</ErrorText>}
           </InputGroup>
-
+          
           <InputGroup>
-            <Icon>
+            <InputIcon>
+              <FaPhone />
+            </InputIcon>
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="Số điện thoại (tùy chọn)"
+              value={formData.phone}
+              onChange={handleChange}
+            />
+          </InputGroup>
+          
+          <InputGroup>
+            <InputIcon>
               <FaLock />
-            </Icon>
+            </InputIcon>
             <Input
               type={showPassword ? 'text' : 'password'}
               name="password"
@@ -284,13 +411,18 @@ const Register = () => {
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </PasswordToggle>
-            {errors.password && <ErrorText>{errors.password}</ErrorText>}
+            {formData.password && (
+              <PasswordStrength strength={getPasswordStrength(formData.password)}>
+                Độ mạnh mật khẩu: {getPasswordStrength(formData.password) === 'weak' ? 'Yếu' : 
+                                 getPasswordStrength(formData.password) === 'medium' ? 'Trung bình' : 'Mạnh'}
+              </PasswordStrength>
+            )}
           </InputGroup>
-
+          
           <InputGroup>
-            <Icon>
+            <InputIcon>
               <FaLock />
-            </Icon>
+            </InputIcon>
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
               name="confirmPassword"
@@ -305,20 +437,33 @@ const Register = () => {
             >
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </PasswordToggle>
-            {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <PasswordStrength strength="weak">
+                Mật khẩu xác nhận không khớp
+              </PasswordStrength>
+            )}
           </InputGroup>
-
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
-          </Button>
+          
+          <SubmitButton
+            type="submit"
+            disabled={isLoading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {isLoading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+          </SubmitButton>
+          
+          <Divider>
+            <span>hoặc</span>
+          </Divider>
+          
+          <LoginLink to="/login">
+            Đã có tài khoản? <strong>Đăng nhập ngay</strong>
+          </LoginLink>
         </Form>
-
-        <LinkText>
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-        </LinkText>
       </RegisterCard>
-    </Container>
+    </RegisterContainer>
   );
 };
 
-export default Register; 
+export default Register;

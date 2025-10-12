@@ -10,7 +10,9 @@ const LayoutContainer = styled.div`
   background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
 `;
 
-const MainContent = styled(motion.main)`
+const MainContent = styled(motion.main).attrs(props => ({
+  'data-sidebar-open': props.sidebarOpen
+}))`
   flex: 1;
   margin-left: ${props => props.sidebarOpen ? '280px' : '80px'};
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);

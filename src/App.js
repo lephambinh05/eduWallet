@@ -18,10 +18,18 @@ import Verify from './pages/Verify';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotFound from './pages/NotFound';
 import Transfer from './pages/Transfer';
+import CreateNFT from './pages/CreateNFT';
+import Portfolio from './pages/Portfolio';
+import PortfolioNFT from './pages/PortfolioNFT';
 
 // Context
 import { WalletProvider } from './context/WalletContext';
+import { AuthProvider } from './context/AuthContext';
+
+// Utils
+import { setTestUser } from './utils/setTestUser';
 
 // Utils
 import socket from './utils/socket';
@@ -32,6 +40,14 @@ const queryClient = new QueryClient();
 function App() {
   const [noti, setNoti] = useState('');
   const user = getUserFromLocalStorage();
+
+  // Set test user for development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && !user) {
+      setTestUser();
+      window.location.reload(); // Reload to apply the new user
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user && (user.userId || user.id)) {
@@ -48,8 +64,9 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <WalletProvider>
-          <Router>
+        <AuthProvider>
+          <WalletProvider>
+            <Router>
             {noti && (
               <div
                 style={{
@@ -99,6 +116,23 @@ function App() {
                     <Transfer />
                   </ProtectedRoute>
                 } />
+                {/* Route tạo NFT bảo vệ đăng nhập */}
+        <Route path="/create-nft" element={
+          <ProtectedRoute>
+            <CreateNFT />
+          </ProtectedRoute>
+        } />
+        <Route path="/portfolio" element={
+          <ProtectedRoute>
+            <Portfolio />
+          </ProtectedRoute>
+        } />
+        <Route path="/portfolio-nft" element={
+          <ProtectedRoute>
+            <PortfolioNFT />
+          </ProtectedRoute>
+        } />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>
             <Toaster
@@ -111,8 +145,9 @@ function App() {
                 },
               }}
             />
-          </Router>
-        </WalletProvider>
+            </Router>
+          </WalletProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

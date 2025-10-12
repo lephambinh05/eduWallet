@@ -20,12 +20,16 @@ import {
   FaShieldAlt,
   FaChartLine,
   FaAngleLeft,
-  FaAngleRight
+  FaAngleRight,
+  FaGem
 } from 'react-icons/fa';
-import { getCurrentUser, logoutUser } from '../utils/userUtils';
+import { getCurrentUser } from '../utils/userUtils';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const SidebarContainer = styled(motion.div)`
+const SidebarContainer = styled(motion.div).attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   position: fixed;
   left: 0;
   top: 0;
@@ -48,7 +52,9 @@ const SidebarContainer = styled(motion.div)`
   }
 `;
 
-const SidebarHeader = styled.div`
+const SidebarHeader = styled.div.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   padding: 2rem 1.5rem 1.5rem;
   border-bottom: 1px solid rgba(120, 80, 220, 0.1);
   display: flex;
@@ -57,7 +63,9 @@ const SidebarHeader = styled.div`
   gap: 8px;
 `;
 
-const Logo = styled(Link)`
+const Logo = styled(Link).attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -83,7 +91,9 @@ const Logo = styled(Link)`
   }
 `;
 
-const ToggleButton = styled.button`
+const ToggleButton = styled.button.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   position: absolute;
   top: 18px;
   right: 12px;
@@ -132,7 +142,9 @@ const NavSection = styled.div`
   margin-bottom: 2rem;
 `;
 
-const SectionTitle = styled.h3`
+const SectionTitle = styled.h3.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.8rem;
   font-weight: 600;
@@ -148,7 +160,9 @@ const NavItem = styled(motion.div)`
   margin: 0.3rem 1rem;
 `;
 
-const NavLink = styled(Link)`
+const NavLink = styled(Link).attrs(props => ({
+  'data-active': props.active
+}))`
   display: flex;
   align-items: center;
   padding: 0.8rem 1rem;
@@ -189,7 +203,9 @@ const UserSection = styled.div`
   flex-shrink: 0;
 `;
 
-const UserInfo = styled.div`
+const UserInfo = styled.div.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
@@ -233,7 +249,9 @@ const UserEmail = styled.div`
   text-overflow: ellipsis;
 `;
 
-const WalletInfo = styled.div`
+const WalletInfo = styled.div.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   background: rgba(162, 89, 255, 0.1);
   border-radius: 10px;
   padding: 0.8rem;
@@ -262,7 +280,9 @@ const WalletAddress = styled.div`
   }
 `;
 
-const ActionButtons = styled.div`
+const ActionButtons = styled.div.attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -270,7 +290,9 @@ const ActionButtons = styled.div`
   transition: opacity 0.3s;
 `;
 
-const ActionButton = styled.button`
+const ActionButton = styled.button.attrs(props => ({
+  'data-variant': props.variant
+}))`
   background: ${props => props.variant === 'primary' ? 'linear-gradient(90deg, #a259ff, #3772ff)' : 'rgba(255, 255, 255, 0.1)'};
   border: none;
   padding: 0.6rem 1rem;
@@ -290,7 +312,9 @@ const ActionButton = styled.button`
   }
 `;
 
-const MobileOverlay = styled(motion.div)`
+const MobileOverlay = styled(motion.div).attrs(props => ({
+  'data-is-open': props.isOpen
+}))`
   position: fixed;
   top: 0;
   left: 0;
@@ -346,11 +370,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const [copied, setCopied] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { wallet, connectWallet, disconnectWallet } = useWallet();
+  const { account, isConnected, connectWallet, disconnectWallet } = useWallet();
+  const { logout } = useAuth();
   const user = getCurrentUser();
 
   const handleWalletAction = () => {
-    if (wallet) {
+    if (isConnected && account) {
       disconnectWallet();
     } else {
       connectWallet();
@@ -358,8 +383,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   const handleLogout = () => {
-    logoutUser();
-    navigate('/login');
+    logout();
     toast.success('Đăng xuất thành công!');
   };
 
@@ -368,8 +392,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   const handleCopy = () => {
-    if (wallet) {
-      navigator.clipboard.writeText(wallet);
+    if (account) {
+      navigator.clipboard.writeText(account);
       setCopied(true);
       toast.success('Đã sao chép địa chỉ ví!');
       setTimeout(() => setCopied(false), 2000);
@@ -379,6 +403,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const navItems = [
     { path: '/', icon: FaHome, text: 'Trang chủ', section: 'main' },
     { path: '/dashboard', icon: FaChartLine, text: 'Dashboard', section: 'main', protected: true },
+    { path: '/portfolio', icon: FaGraduationCap, text: 'Portfolio', section: 'main', protected: true },
+    { path: '/portfolio-nft', icon: FaGem, text: 'Portfolio NFT', section: 'main', protected: true },
     { path: '/learnpass', icon: FaGraduationCap, text: 'LearnPass', section: 'main', protected: true },
     { path: '/marketplace', icon: FaStore, text: 'Marketplace', section: 'main', protected: true },
     { path: '/badges', icon: FaTrophy, text: 'Badges', section: 'main', protected: true },
@@ -459,11 +485,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </UserDetails>
               </UserInfo>
 
-              {wallet && (
+              {isConnected && account && (
                 <WalletInfo isOpen={isOpen}>
                   <WalletLabel>Ví của bạn</WalletLabel>
                   <WalletAddress onClick={handleCopy}>
-                    {formatAddress(wallet)}
+                    {formatAddress(account)}
                     {copied ? <FaCheck size={12} /> : <FaCopy size={12} />}
                   </WalletAddress>
                 </WalletInfo>
@@ -475,7 +501,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   onClick={handleWalletAction}
                 >
                   <FaWallet />
-                  {wallet ? 'Ngắt kết nối ví' : 'Kết nối ví'}
+                  {isConnected && account ? 'Ngắt kết nối ví' : 'Kết nối ví'}
                 </ActionButton>
                 <ActionButton onClick={handleLogout}>
                   <FaSignOutAlt />

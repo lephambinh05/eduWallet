@@ -1,0 +1,348 @@
+{
+  "user": {
+    "id": "68ec22d351a062eb0b81156e",
+    "email": "lephambinh05@gmail.com",
+    "firstName": "Lê Phạm",
+    "lastName": "Bình",
+    "studentId": "SV2024001",
+    "academicInfo": {
+      "academicYear": "2024-2025",
+      "completedCredits": 96,
+      "courses": [
+        {
+          "courseCode": "CS101",
+          "courseName": "Lập trình cơ bản",
+          "credits": 3,
+          "grade": "A",
+          "gpa": 4,
+          "semester": "Fall 2023",
+          "instructor": "TS. Nguyễn Văn A",
+          "_id": "68ec2dae7b0d7418b58ddeff",
+          "id": "68ec2dae7b0d7418b58ddeff"
+        },
+        {
+          "courseCode": "CS102",
+          "courseName": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 4,
+          "grade": "A-",
+          "gpa": 3.7,
+          "semester": "Fall 2023",
+          "instructor": "TS. Trần Thị B",
+          "_id": "68ec2dae7b0d7418b58ddf00",
+          "id": "68ec2dae7b0d7418b58ddf00"
+        },
+        {
+          "courseCode": "CS201",
+          "courseName": "Cơ sở dữ liệu",
+          "credits": 3,
+          "grade": "A+",
+          "gpa": 4,
+          "semester": "Spring 2024",
+          "instructor": "TS. Lê Văn C",
+          "_id": "68ec2dae7b0d7418b58ddf01",
+          "id": "68ec2dae7b0d7418b58ddf01"
+        },
+        {
+          "courseCode": "CS202",
+          "courseName": "Mạng máy tính",
+          "credits": 3,
+          "grade": "B+",
+          "gpa": 3.3,
+          "semester": "Spring 2024",
+          "instructor": "TS. Phạm Thị D",
+          "_id": "68ec2dae7b0d7418b58ddf02",
+          "id": "68ec2dae7b0d7418b58ddf02"
+        },
+        {
+          "courseCode": "CS301",
+          "courseName": "Phát triển ứng dụng web",
+          "credits": 4,
+          "grade": "A",
+          "gpa": 4,
+          "semester": "Fall 2024",
+          "instructor": "TS. Hoàng Văn E",
+          "_id": "68ec2dae7b0d7418b58ddf03",
+          "id": "68ec2dae7b0d7418b58ddf03"
+        },
+        {
+          "courseCode": "CS302",
+          "courseName": "Trí tuệ nhân tạo",
+          "credits": 3,
+          "grade": "A-",
+          "gpa": 3.7,
+          "semester": "Fall 2024",
+          "instructor": "TS. Vũ Thị F",
+          "_id": "68ec2dae7b0d7418b58ddf04",
+          "id": "68ec2dae7b0d7418b58ddf04"
+        }
+      ],
+      "gpa": 3.8,
+      "institution": "Trường Đại học Ngoại Ngữ - Tin Học",
+      "major": "Công nghệ thông tin",
+      "semester": "Spring 2024",
+      "totalCredits": 120
+    }
+  },
+  "courses": [
+    {
+      "id": "68ec2d9f77edda62ad214738",
+      "name": "Blockchain Development",
+      "description": "Khóa học phát triển ứng dụng blockchain và smart contracts",
+      "issuer": "Udemy - Dapp University",
+      "issueDate": "2024-05-12T00:00:00.000Z",
+      "category": "Blockchain",
+      "level": "Advanced",
+      "score": 89,
+      "status": "Completed",
+      "progress": 100,
+      "skills": [
+        "Blockchain",
+        "Solidity",
+        "Web3",
+        "Ethereum",
+        "Smart Contracts",
+        "DeFi"
+      ],
+      "verificationUrl": "https://www.udemy.com/certificate/UC-blockchain123/",
+      "imageUrl": "https://via.placeholder.com/300x200/627eea/ffffff?text=Blockchain+Dev"
+    },
+    {
+      "id": "68ec2d9f77edda62ad214731",
+      "name": "Complete Web Development Bootcamp",
+      "description": "Khóa học phát triển web full-stack từ cơ bản đến nâng cao",
+      "issuer": "Udemy - The App Brewery",
+      "issueDate": "2024-03-10T00:00:00.000Z",
+      "category": "Web Development",
+      "level": "Intermediate",
+      "score": 98,
+      "status": "Completed",
+      "progress": 100,
+      "skills": [
+        "HTML",
+        "CSS",
+        "JavaScript",
+        "React",
+        "Node.js",
+        "MongoDB",
+        "Express"
+      ],
+      "verificationUrl": "https://www.udemy.com/certificate/UC-abc123def456/",
+      "imageUrl": "https://via.placeholder.com/300x200/a435f0/ffffff?text=Udemy+Web+Dev"
+    },
+    {
+      "id": "68ec2d9f77edda62ad214724",
+      "name": "Google Cloud Professional Data Engineer",
+      "description": "Chứng chỉ chuyên gia về Data Engineering trên Google Cloud Platform",
+      "issuer": "Google Cloud",
+      "issueDate": "2024-01-15T00:00:00.000Z",
+      "category": "Cloud Computing",
+      "level": "Professional",
+      "score": 95,
+      "status": "Completed",
+      "progress": 100,
+      "skills": [
+        "Google Cloud",
+        "Data Engineering",
+        "BigQuery",
+        "Cloud Storage",
+        "Dataflow"
+      ],
+      "verificationUrl": "https://www.credential.net/abc123",
+      "imageUrl": "https://via.placeholder.com/300x200/4285f4/ffffff?text=Google+Cloud"
+    },
+    {
+      "id": "68ec2d9f77edda62ad214735",
+      "name": "IELTS Academic",
+      "description": "Chứng chỉ tiếng Anh quốc tế IELTS Academic",
+      "issuer": "British Council",
+      "issueDate": "2024-04-05T00:00:00.000Z",
+      "category": "Language",
+      "level": "Advanced",
+      "score": 8.5,
+      "status": "Completed",
+      "progress": 100,
+      "skills": [
+        "English",
+        "IELTS",
+        "Academic Writing",
+        "Speaking",
+        "Listening",
+        "Reading"
+      ],
+      "verificationUrl": "https://ielts.britishcouncil.org/check-results",
+      "imageUrl": "https://via.placeholder.com/300x200/1e3a8a/ffffff?text=IELTS+8.5"
+    },
+    {
+      "id": "68ec2d9f77edda62ad214729",
+      "name": "Machine Learning Specialization",
+      "description": "Chuyên ngành Machine Learning từ Stanford University",
+      "issuer": "Coursera - Stanford University",
+      "issueDate": "2024-02-20T00:00:00.000Z",
+      "category": "Machine Learning",
+      "level": "Advanced",
+      "score": 92,
+      "status": "Completed",
+      "progress": 100,
+      "skills": [
+        "Machine Learning",
+        "Python",
+        "TensorFlow",
+        "Neural Networks",
+        "Deep Learning"
+      ],
+      "verificationUrl": "https://www.coursera.org/account/accomplishments/specialization/xyz789",
+      "imageUrl": "https://via.placeholder.com/300x200/0056d3/ffffff?text=Coursera+ML"
+    }
+  ],
+  "certificates": [
+    {
+      "id": "68ec3364ae87332575763d6d",
+      "name": "Blockchain Development Certificate",
+      "description": "Chứng chỉ phát triển ứng dụng blockchain và smart contracts",
+      "issuer": "Udemy",
+      "issueDate": "2024-04-05T00:00:00.000Z",
+      "category": "Blockchain",
+      "level": "Intermediate",
+      "score": 89,
+      "grade": null,
+      "verificationUrl": "https://www.udemy.com/certificate/jkl345blockchain",
+      "imageUrl": "https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
+    },
+    {
+      "id": "68ec3364ae87332575763d57",
+      "name": "Google Cloud Professional Data Engineer",
+      "description": "Chứng chỉ chuyên nghiệp về kỹ sư dữ liệu trên Google Cloud Platform",
+      "issuer": "Google Cloud",
+      "issueDate": "2024-01-15T00:00:00.000Z",
+      "category": "Cloud Computing",
+      "level": "Professional",
+      "score": 95,
+      "grade": null,
+      "verificationUrl": "https://www.credential.net/abc123google",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Google_Cloud_logo.svg/1200px-Google_Cloud_logo.svg.png"
+    },
+    {
+      "id": "68ec3364ae87332575763d6a",
+      "name": "IELTS Academic Certificate",
+      "description": "Chứng chỉ IELTS Academic với điểm số 8.5",
+      "issuer": "British Council",
+      "issueDate": "2023-11-01T00:00:00.000Z",
+      "category": "Language",
+      "level": "Advanced",
+      "score": 8.5,
+      "grade": null,
+      "verificationUrl": "https://ielts.org/verify/ghi012ielts",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/IELTS_logo.svg/1200px-IELTS_logo.svg.png"
+    },
+    {
+      "id": "68ec3364ae87332575763d60",
+      "name": "Machine Learning Specialization Certificate",
+      "description": "Chứng chỉ hoàn thành chuyên ngành Machine Learning từ Stanford",
+      "issuer": "Coursera - Stanford University",
+      "issueDate": "2024-02-20T00:00:00.000Z",
+      "category": "Machine Learning",
+      "level": "Advanced",
+      "score": 92,
+      "grade": null,
+      "verificationUrl": "https://www.coursera.org/verify/xyz456stanford",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Coursera-Logo_600x600.svg/1200px-Coursera-Logo_600x600.svg.png"
+    },
+    {
+      "id": "68ec3364ae87332575763d67",
+      "name": "Web Development Bootcamp Certificate",
+      "description": "Chứng chỉ hoàn thành khóa học phát triển web toàn diện",
+      "issuer": "Udemy",
+      "issueDate": "2024-03-10T00:00:00.000Z",
+      "category": "Web Development",
+      "level": "Intermediate",
+      "score": 98,
+      "grade": null,
+      "verificationUrl": "https://www.udemy.com/certificate/def789udemy",
+      "imageUrl": "https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
+    }
+  ],
+  "badges": [
+    {
+      "id": "68ec336fe263f1583e84ad04",
+      "name": "Blockchain Pioneer",
+      "description": "Hoàn thành khóa học blockchain development",
+      "issuer": "EduWallet",
+      "issueDate": "2024-04-05T00:00:00.000Z",
+      "category": "Skill",
+      "level": "Intermediate",
+      "points": 80,
+      "rarity": "Uncommon",
+      "iconUrl": "https://via.placeholder.com/50x50/9C27B0/ffffff?text=BP"
+    },
+    {
+      "id": "68ec3364ae87332575763d79",
+      "name": "Cloud Master",
+      "description": "Hoàn thành chứng chỉ Google Cloud Professional",
+      "issuer": "EduWallet",
+      "issueDate": "2024-01-15T00:00:00.000Z",
+      "category": "Professional",
+      "level": "Advanced",
+      "points": 100,
+      "rarity": "Rare",
+      "iconUrl": "https://via.placeholder.com/50x50/4CAF50/ffffff?text=CM"
+    },
+    {
+      "id": "68ec3364ae87332575763d70",
+      "name": "Early Bird Learner",
+      "description": "Hoàn thành khóa học trước thời hạn",
+      "issuer": "EduWallet",
+      "issueDate": "2024-01-01T00:00:00.000Z",
+      "category": "Achievement",
+      "level": "Beginner",
+      "points": 50,
+      "rarity": "Common",
+      "iconUrl": "https://via.placeholder.com/50x50/FFD700/ffffff?text=EB"
+    },
+    {
+      "id": "68ec336fe263f1583e84ad01",
+      "name": "Language Expert",
+      "description": "Đạt điểm IELTS 8.5",
+      "issuer": "EduWallet",
+      "issueDate": "2023-11-01T00:00:00.000Z",
+      "category": "Language",
+      "level": "Expert",
+      "points": 150,
+      "rarity": "Epic",
+      "iconUrl": "https://via.placeholder.com/50x50/2196F3/ffffff?text=LE"
+    },
+    {
+      "id": "68ec336fe263f1583e84ad08",
+      "name": "Perfect Score",
+      "description": "Đạt điểm tuyệt đối trong khóa học Web Development",
+      "issuer": "EduWallet",
+      "issueDate": "2024-03-10T00:00:00.000Z",
+      "category": "Achievement",
+      "level": "Advanced",
+      "points": 200,
+      "rarity": "Legendary",
+      "iconUrl": "https://via.placeholder.com/50x50/FF5722/ffffff?text=PS"
+    },
+    {
+      "id": "68ec3364ae87332575763d76",
+      "name": "Top Coder",
+      "description": "Đạt điểm cao trong các bài kiểm tra lập trình",
+      "issuer": "EduWallet",
+      "issueDate": "2024-03-15T00:00:00.000Z",
+      "category": "Skill",
+      "level": "Intermediate",
+      "points": 75,
+      "rarity": "Uncommon",
+      "iconUrl": "https://via.placeholder.com/50x50/C0C0C0/ffffff?text=TC"
+    }
+  ],
+  "statistics": {
+    "totalCourses": 5,
+    "totalCertificates": 5,
+    "totalBadges": 6,
+    "gpa": 3.8,
+    "totalCredits": 120,
+    "completedCredits": 96,
+    "averageScore": 77,
+    "completionRate": 100
+  }
+}

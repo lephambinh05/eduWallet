@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Wallet State</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .test-section {
+            background: #16213e;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid #0f3460;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        .warning { background: #ffc107; color: #000; }
+        button {
+            background: linear-gradient(90deg, #a259ff, #3772ff);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { opacity: 0.8; }
+        pre {
+            background: #0c0c0c;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Wallet State Integration</h1>
+    
+    <div class="test-section">
+        <h2>1. Backend Health Check</h2>
+        <button onclick="testBackendHealth()">Test Backend</button>
+        <div id="backend-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Wallet API</h2>
+        <button onclick="testWalletAPI()">Test Wallet API</button>
+        <div id="wallet-api-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Frontend Wallet State</h2>
+        <p>Mở Developer Tools (F12) và kiểm tra:</p>
+        <ul>
+            <li>localStorage có chứa thông tin ví không</li>
+            <li>Console có lỗi gì không</li>
+            <li>Network tab xem API calls có thành công không</li>
+        </ul>
+        <button onclick="checkLocalStorage()">Check LocalStorage</button>
+        <div id="localstorage-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Debugging Steps</h2>
+        <ol>
+            <li>Mở trang web <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Đăng nhập với tài khoản test</li>
+            <li>Click "Kết nối ví" và kết nối MetaMask</li>
+            <li>Kiểm tra xem nút có đổi thành "Ngắt kết nối ví" không</li>
+            <li>Kiểm tra xem có hiển thị địa chỉ ví không</li>
+            <li>F5 trang và xem ví có tự động kết nối lại không</li>
+        </ol>
+    </div>
+
+    <script>
+        async function testBackendHealth() {
+            const statusDiv = document.getElementById('backend-status');
+            try {
+                const response = await fetch('http://localhost:3003/health');
+                const data = await response.json();
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Backend is running!<br>
+                        Status: ${data.status}<br>
+                        Message: ${data.message}
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Backend connection failed<br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testWalletAPI() {
+            const statusDiv = document.getElementById('wallet-api-status');
+            try {
+                // Test wallet connection API
+                const walletData = {
+                    walletAddress: "0x1234567890123456789012345678901234567890",
+                    chainId: 5080,
+                    networkName: "pioneZero",
+                    isConnected: true,
+                    connectedAt: new Date().toISOString()
+                };
+
+                const response = await fetch('http://localhost:3003/api/users/wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(walletData)
+                });
+
+                const data = await response.json();
+                statusDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Wallet API is working!<br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Wallet API failed<br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function checkLocalStorage() {
+            const statusDiv = document.getElementById('localstorage-status');
+            const walletData = {
+                walletAccount: localStorage.getItem('walletAccount'),
+                walletConnected: localStorage.getItem('walletConnected'),
+                walletChainId: localStorage.getItem('walletChainId'),
+                currentNetwork: localStorage.getItem('currentNetwork'),
+                user: localStorage.getItem('user')
+            };
+
+            statusDiv.innerHTML = `
+                <div class="status ${walletData.walletAccount ? 'success' : 'warning'}">
+                    📦 LocalStorage Data:<br>
+                    <pre>${JSON.stringify(walletData, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-run backend health check
+        testBackendHealth();
+    </script>
+</body>
+</html>

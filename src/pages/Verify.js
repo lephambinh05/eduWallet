@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import demoData from '../data/demoData.json';
+import { getCurrentUser } from '../utils/userUtils';
+import { useWallet } from '../context/WalletContext';
 
 const Container = styled.div`
   max-width: 500px;
@@ -31,11 +33,17 @@ const Verify = () => {
   const [input, setInput] = useState('');
   const [found, setFound] = useState(null);
   const { learnPass, user } = demoData;
+  const currentUser = getCurrentUser();
+  const { account, isConnected } = useWallet();
 
   const handleVerify = (e) => {
     e.preventDefault();
     if (input.trim() === learnPass.id) {
-      setFound({ ...learnPass, ownerName: user.name, ownerWallet: user.wallet });
+      setFound({ 
+        ...learnPass, 
+        ownerName: currentUser?.name || user.name, 
+        ownerWallet: isConnected && account ? `${account.slice(0, 6)}...${account.slice(-4)}` : (currentUser?.walletAddress || user.wallet || 'Chưa liên kết ví')
+      });
     } else {
       setFound(false);
     }

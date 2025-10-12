@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
 import { getCurrentUser, saveUserToLocalStorage } from '../utils/userUtils';
+import { BLOCKCHAIN_NETWORKS, getNetworkConfig, NetworkUtils } from '../config/blockchain';
+import { userAPI } from '../config/api';
 
 const WalletContext = createContext();
 
@@ -14,25 +16,23 @@ export const useWallet = () => {
 };
 
 export const WalletProvider = ({ children }) => {
-  const [account, setAccount] = useState(null);
+  const [account, setAccount] = useState(() => {
+    return localStorage.getItem('walletAccount') || null;
+  });
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(() => {
+    return localStorage.getItem('walletConnected') === 'true';
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [chainId, setChainId] = useState(null);
+  const [chainId, setChainId] = useState(() => {
+    return localStorage.getItem('walletChainId') ? parseInt(localStorage.getItem('walletChainId')) : null;
+  });
 
-  // Polygon Mumbai Testnet configuration
-  const POLYGON_MUMBAI = {
-    chainId: '0x13881',
-    chainName: 'Polygon Mumbai Testnet',
-    nativeCurrency: {
-      name: 'MATIC',
-      symbol: 'MATIC',
-      decimals: 18,
-    },
-    rpcUrls: ['https://rpc-mumbai.maticvigil.com/'],
-    blockExplorerUrls: ['https://mumbai.polygonscan.com/'],
-  };
+  // Current network configuration
+  const [currentNetwork, setCurrentNetwork] = useState(() => {
+    return localStorage.getItem('currentNetwork') || 'pioneZero';
+  });
 
   const connectWallet = async () => {
     setIsLoading(true);
@@ -53,26 +53,46 @@ export const WalletProvider = ({ children }) => {
       setChainId(network.chainId);
       setIsConnected(true);
 
-      // Check if we're on the correct network
-      if (network.chainId !== 80001) { // Mumbai testnet
-        await switchToMumbai();
+      // Check if we're on a supported network
+      if (!NetworkUtils.isSupportedNetwork(network.chainId)) {
+        await switchToSupportedNetwork();
+      } else {
+        // Update current network based on chain ID
+        const networkName = NetworkUtils.getNetworkName(network.chainId);
+        setCurrentNetwork(networkName.toLowerCase().replace(' ', ''));
       }
 
       toast.success('Kết nối ví thành công!');
 
-      // Sau khi lấy được account:
-      // 1. Cập nhật user hiện tại trong localStorage
-      const user = getCurrentUser();
-      if (user) {
-        user.wallet = accounts[0];
-        saveUserToLocalStorage(user);
-        // Cập nhật mảng users trong localStorage nếu có
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const idx = users.findIndex(u => u.username === user.username);
-        if (idx !== -1) {
-          users[idx].wallet = accounts[0];
-          localStorage.setItem('users', JSON.stringify(users));
+      // Save wallet information to backend database
+      try {
+        const walletData = {
+          walletAddress: accounts[0],
+          chainId: network.chainId,
+          networkName: currentNetwork,
+          isConnected: true,
+          connectedAt: new Date().toISOString()
+        };
+        
+        await userAPI.connectWallet(walletData);
+        
+        // Update local user data with wallet info
+        const user = getCurrentUser();
+        if (user) {
+          const updatedUser = {
+            ...user,
+            walletAddress: accounts[0],
+            chainId: network.chainId,
+            networkName: currentNetwork,
+            walletConnected: true
+          };
+          saveUserToLocalStorage(updatedUser);
         }
+        
+        toast.success('Ví đã được kết nối và lưu vào database thành công!');
+      } catch (error) {
+        console.error('Failed to save wallet to database:', error);
+        toast.error('Kết nối ví thành công nhưng không thể lưu vào database');
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
@@ -82,34 +102,63 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  const switchToMumbai = async () => {
+  const switchToSupportedNetwork = async (networkName = 'pioneZero') => {
     try {
+      const networkConfig = getNetworkConfig(networkName);
+      
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: POLYGON_MUMBAI.chainId }],
+        params: [{ chainId: networkConfig.chainId }],
       });
+      
+      setCurrentNetwork(networkName);
     } catch (switchError) {
       // This error code indicates that the chain has not been added to MetaMask
       if (switchError.code === 4902) {
         try {
+          const networkConfig = getNetworkConfig(networkName);
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [POLYGON_MUMBAI],
+            params: [networkConfig],
           });
+          setCurrentNetwork(networkName);
         } catch (addError) {
-          toast.error('Không thể thêm mạng Polygon Mumbai');
+          toast.error(`Không thể thêm mạng ${BLOCKCHAIN_NETWORKS[networkName]?.name}`);
         }
       }
     }
   };
 
-  const disconnectWallet = () => {
-    setAccount(null);
-    setProvider(null);
-    setSigner(null);
-    setIsConnected(false);
-    setChainId(null);
-    toast.success('Đã ngắt kết nối ví');
+  const disconnectWallet = async () => {
+    try {
+      // Update wallet status in backend database
+      await userAPI.disconnectWallet(account);
+      
+      // Update local user data
+      const user = getCurrentUser();
+      if (user) {
+        const updatedUser = {
+          ...user,
+          walletAddress: null,
+          chainId: null,
+          networkName: null,
+          walletConnected: false
+        };
+        saveUserToLocalStorage(updatedUser);
+      }
+      
+      toast.success('Đã ngắt kết nối ví và cập nhật database');
+    } catch (error) {
+      console.error('Failed to disconnect wallet from backend:', error);
+      toast.error('Ngắt kết nối ví thành công nhưng không thể cập nhật database');
+    } finally {
+      setAccount(null);
+      setProvider(null);
+      setSigner(null);
+      setIsConnected(false);
+      setChainId(null);
+      setCurrentNetwork('pioneZero');
+    }
   };
 
   const getAccountBalance = async () => {
@@ -135,9 +184,14 @@ export const WalletProvider = ({ children }) => {
       });
 
       window.ethereum.on('chainChanged', (chainId) => {
-        setChainId(parseInt(chainId, 16));
-        if (parseInt(chainId, 16) !== 80001) {
-          toast.error('Vui lòng chuyển sang mạng Polygon Mumbai');
+        const newChainId = parseInt(chainId, 16);
+        setChainId(newChainId);
+        
+        if (!NetworkUtils.isSupportedNetwork(newChainId)) {
+          toast.error('Vui lòng chuyển sang mạng được hỗ trợ (Pione Zero hoặc Pione Chain)');
+        } else {
+          const networkName = NetworkUtils.getNetworkName(newChainId);
+          setCurrentNetwork(networkName.toLowerCase().replace(' ', ''));
         }
       });
     }
@@ -149,6 +203,68 @@ export const WalletProvider = ({ children }) => {
     };
   }, []);
 
+  // Khôi phục kết nối ví từ database khi component mount
+  useEffect(() => {
+    const restoreConnection = async () => {
+      try {
+        // Lấy thông tin user từ localStorage
+        const user = getCurrentUser();
+        if (user && user.walletAddress && user.walletConnected && window.ethereum) {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const accounts = await provider.listAccounts();
+          
+          if (accounts.length > 0 && accounts[0].toLowerCase() === user.walletAddress.toLowerCase()) {
+            const signer = provider.getSigner();
+            const network = await provider.getNetwork();
+            
+            setProvider(provider);
+            setSigner(signer);
+            setAccount(user.walletAddress);
+            setChainId(user.chainId || network.chainId);
+            setIsConnected(true);
+            setCurrentNetwork(user.networkName || 'pioneZero');
+            
+            // Kiểm tra network hiện tại
+            if (!NetworkUtils.isSupportedNetwork(network.chainId)) {
+              await switchToSupportedNetwork(user.networkName || 'pioneZero');
+            }
+            
+            console.log('Wallet connection restored from database');
+          } else {
+            // Account không khớp, cập nhật database
+            console.log('Account mismatch, updating database');
+            await userAPI.disconnectWallet(user.walletAddress);
+            setAccount(null);
+            setProvider(null);
+            setSigner(null);
+            setIsConnected(false);
+            setChainId(null);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to restore wallet connection:', error);
+        // Nếu có lỗi, reset trạng thái
+        setAccount(null);
+        setProvider(null);
+        setSigner(null);
+        setIsConnected(false);
+        setChainId(null);
+      }
+    };
+
+    restoreConnection();
+  }, []);
+
+  // Lưu trạng thái vào localStorage khi có thay đổi
+  useEffect(() => {
+    localStorage.setItem('walletAccount', account || '');
+    localStorage.setItem('walletConnected', isConnected.toString());
+    localStorage.setItem('walletChainId', chainId?.toString() || '');
+    localStorage.setItem('currentNetwork', currentNetwork);
+  }, [account, isConnected, chainId, currentNetwork]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   const value = {
     account,
     provider,
@@ -156,10 +272,13 @@ export const WalletProvider = ({ children }) => {
     isConnected,
     isLoading,
     chainId,
+    currentNetwork,
     connectWallet,
     disconnectWallet,
     getAccountBalance,
-    switchToMumbai,
+    switchToSupportedNetwork,
+    BLOCKCHAIN_NETWORKS,
+    NetworkUtils,
   };
 
   return (

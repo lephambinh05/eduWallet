@@ -4,6 +4,11 @@ import demoData from '../data/demoData.json';
 import { Link } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
 import { getCurrentUser } from '../utils/userUtils';
+import { setTestUser } from '../utils/setTestUser';
+import toast from 'react-hot-toast';
+import NFTMintingModal from '../components/blockchain/NFTMintingModal';
+import LearnPassNFTModal from '../components/student/LearnPassNFTModal';
+import WalletConnection from '../components/blockchain/WalletConnection';
 import { 
   FaUser, 
   FaGraduationCap, 
@@ -13,7 +18,8 @@ import {
   FaTrophy,
   FaCoins,
   FaWallet,
-  FaCheckCircle
+  FaCheckCircle,
+  FaCopy
 } from 'react-icons/fa';
 
 const Container = styled.div`
@@ -146,9 +152,13 @@ const StatCard = styled.div`
 
 const Dashboard = () => {
   const { certificates, badges, marketplace } = demoData;
-  const { isConnected, account } = useWallet();
+  const { isConnected, account, getAccountBalance } = useWallet();
   const [userBalance] = useState(50);
   const [currentUser, setCurrentUser] = useState(null);
+  const [walletBalance, setWalletBalance] = useState('0');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showLearnPassModal, setShowLearnPassModal] = useState(false);
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -156,6 +166,48 @@ const Dashboard = () => {
       setCurrentUser(user);
     }
   }, []);
+
+  // Lấy số dư ví khi kết nối
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (isConnected && account && getAccountBalance) {
+        setIsLoadingBalance(true);
+        try {
+          const balance = await getAccountBalance();
+          setWalletBalance(balance);
+        } catch (error) {
+          console.error('Error fetching wallet balance:', error);
+          setWalletBalance('0');
+        } finally {
+          setIsLoadingBalance(false);
+        }
+      } else {
+        setWalletBalance('0');
+      }
+    };
+
+    fetchWalletBalance();
+  }, [isConnected, account, getAccountBalance]);
+
+  const handleCertificateSuccess = (nftData) => {
+    console.log('Certificate NFT created:', nftData);
+    toast.success(`Certificate NFT #${nftData.tokenId} đã được tạo thành công!`);
+    // Có thể cập nhật state hoặc refetch data ở đây
+  };
+
+  const handleLearnPassSuccess = (nftData) => {
+    console.log('LearnPass NFT created:', nftData);
+    toast.success(`LearnPass NFT #${nftData.tokenId} đã được tạo thành công!`);
+    // Có thể cập nhật state hoặc refetch data ở đây
+  };
+
+  const handleSetTestUser = () => {
+    setTestUser();
+    toast.success('Đã set test user lephambinh05@gmail.com! Vui lòng refresh trang.');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
 
   if (!currentUser) {
     return (
@@ -189,31 +241,210 @@ const Dashboard = () => {
                 <FaWallet /> Chưa kết nối ví
               </div>
             )}
+            {currentUser.email !== 'lephambinh05@gmail.com' && (
+              <button 
+                className="btn btn-secondary"
+                onClick={handleSetTestUser}
+                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', marginTop: '0.5rem', width: '100%' }}
+              >
+                🧪 Set Test User
+              </button>
+            )}
             <Link to="/learnpass" className="btn btn-primary" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
               <FaGraduationCap /> Xem LearnPass
             </Link>
           </Card>
           
           {isConnected && (
-            <Card style={{ maxWidth: 300 }}>
-              <TokenBalance>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: 8, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                  <FaCoins /> Số dư EDU Token
+            <>
+              <Card style={{ maxWidth: 300 }}>
+                <TokenBalance>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: 8, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                    <FaCoins /> Số dư EDU Token
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+                    {userBalance} EDU
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                    Có thể đổi lấy voucher, phần thưởng
+                  </div>
+                </TokenBalance>
+                <Link to="/marketplace" className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                  <FaStore /> Đi đến Marketplace
+                </Link>
+              </Card>
+
+              <Card style={{ maxWidth: 300 }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  color: 'white',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: 8, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                    <FaWallet /> Số dư ví
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+                    {isLoadingBalance ? (
+                      <div style={{ fontSize: '1rem' }}>Đang tải...</div>
+                    ) : (
+                      `${parseFloat(walletBalance).toFixed(4)} PIO`
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                    Số dư native token
+                  </div>
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-                  {userBalance} EDU
-                </div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                  Có thể đổi lấy voucher, phần thưởng
-                </div>
-              </TokenBalance>
-              <Link to="/marketplace" className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                <FaStore /> Đi đến Marketplace
-              </Link>
-            </Card>
+                <Link to="/transfer" className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                  <FaWallet /> Chuyển tiền
+                </Link>
+              </Card>
+            </>
           )}
         </CardRow>
       </Section>
+
+      <Section>
+        <SectionTitle>
+          <FaWallet /> Kết nối ví
+        </SectionTitle>
+        <WalletConnection showDetails={true} />
+      </Section>
+
+      {isConnected && (
+        <Section>
+          <SectionTitle>
+            <FaWallet /> Thông tin ví
+          </SectionTitle>
+          <CardRow>
+            <Card style={{ maxWidth: 400 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ 
+                  width: '50px', 
+                  height: '50px', 
+                  borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white'
+                }}>
+                  <FaWallet />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>Địa chỉ ví</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.8, fontFamily: 'monospace' }}>
+                    {account}
+                  </div>
+                </div>
+              </div>
+              <div style={{ 
+                background: 'rgba(255,255,255,0.05)', 
+                borderRadius: '8px', 
+                padding: '1rem',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span>Số dư hiện tại:</span>
+                  <span style={{ fontWeight: 'bold' }}>
+                    {isLoadingBalance ? 'Đang tải...' : `${parseFloat(walletBalance).toFixed(4)} PIO`}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span>Trạng thái:</span>
+                  <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Đã kết nối</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Network:</span>
+                  <span style={{ fontWeight: 'bold' }}>Pione Zero</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(account);
+                    toast.success('Đã sao chép địa chỉ ví!');
+                  }}
+                >
+                  <FaCopy /> Sao chép địa chỉ
+                </button>
+                <Link to="/transfer" className="btn btn-primary" style={{ flex: 1, fontSize: '0.9rem' }}>
+                  Chuyển tiền
+                </Link>
+              </div>
+            </Card>
+          </CardRow>
+        </Section>
+      )}
+
+      {isConnected && (
+        <Section>
+          <SectionTitle>
+            <FaGraduationCap /> Tạo NFT
+          </SectionTitle>
+          <CardRow>
+            <Card style={{ maxWidth: 300, textAlign: 'center' }}>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                borderRadius: '50%', 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '1.5rem',
+                margin: '0 auto 1rem'
+              }}>
+                <FaCertificate />
+              </div>
+              <h3 style={{ color: '#fff', marginBottom: '0.5rem' }}>Certificate NFT</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                Tạo NFT cho chứng chỉ học tập của bạn
+              </p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowCertificateModal(true)}
+                style={{ width: '100%' }}
+              >
+                <FaCertificate /> Tạo Certificate NFT
+              </button>
+            </Card>
+
+            <Card style={{ maxWidth: 300, textAlign: 'center' }}>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                borderRadius: '50%', 
+                background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '1.5rem',
+                margin: '0 auto 1rem'
+              }}>
+                <FaGraduationCap />
+              </div>
+              <h3 style={{ color: '#fff', marginBottom: '0.5rem' }}>LearnPass NFT</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                Tạo NFT cho LearnPass đã hoàn thành
+              </p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowLearnPassModal(true)}
+                style={{ width: '100%' }}
+              >
+                <FaGraduationCap /> Tạo LearnPass NFT
+              </button>
+            </Card>
+          </CardRow>
+        </Section>
+      )}
 
       <Section>
         <StatsGrid>
@@ -316,6 +547,19 @@ const Dashboard = () => {
           ))}
         </CardRow>
       </Section>
+
+      {/* NFT Modals */}
+      <NFTMintingModal
+        isOpen={showCertificateModal}
+        onClose={() => setShowCertificateModal(false)}
+        onSuccess={handleCertificateSuccess}
+      />
+
+      <LearnPassNFTModal
+        isOpen={showLearnPassModal}
+        onClose={() => setShowLearnPassModal(false)}
+        onSuccess={handleLearnPassSuccess}
+      />
     </Container>
   );
 };

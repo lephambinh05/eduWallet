@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import demoData from '../data/demoData.json';
 import { FaGraduationCap, FaCertificate } from 'react-icons/fa';
 import { getCurrentUser } from '../utils/userUtils';
+import { useWallet } from '../context/WalletContext';
 
 const Container = styled.div`
   max-width: 900px;
@@ -70,6 +71,8 @@ const CertIcon = styled.span`
 
 const LearnPass = () => {
   const currentUser = getCurrentUser();
+  const { account, isConnected } = useWallet();
+  
   // Tìm learnPass theo learnPassId của user
   let learnPass = null;
   if (currentUser && currentUser.learnPassId) {
@@ -91,7 +94,7 @@ const LearnPass = () => {
         <Meta>
           <h2>Bạn chưa có LearnPass NFT</h2>
           <div style={{color:'#c3bfff',marginBottom:8}}>Hãy hoàn thành khóa học để nhận LearnPass NFT đầu tiên!</div>
-          <div>Chủ sở hữu: <b>{currentUser.name}</b> ({currentUser.wallet || 'Chưa liên kết ví'})</div>
+          <div>Chủ sở hữu: <b>{currentUser.name}</b> ({isConnected && account ? `${account.slice(0, 6)}...${account.slice(-4)}` : 'Chưa liên kết ví'})</div>
         </Meta>
       </NFTCard>
     </Container>;
@@ -106,7 +109,7 @@ const LearnPass = () => {
         <Meta>
           <h2>LearnPass NFT của {currentUser.name}</h2>
           <div style={{ fontSize: '1.1rem', color: '#c3bfff', marginBottom: 8 }}>ID: {learnPass.id}</div>
-          <div>Chủ sở hữu: <b>{currentUser.name}</b> ({currentUser.wallet || 'Chưa liên kết ví'})</div>
+          <div>Chủ sở hữu: <b>{currentUser.name}</b> ({isConnected && account ? `${account.slice(0, 6)}...${account.slice(-4)}` : 'Chưa liên kết ví'})</div>
         </Meta>
       </NFTCard>
       <Section>
