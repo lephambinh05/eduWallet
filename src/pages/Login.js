@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaEye, FaEyeSlash, FaUser, FaLock, FaGraduationCap } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast'; // Removed unused import
 
 const LoginContainer = styled.div`
   min-height: 100vh;
@@ -241,7 +241,11 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        // Redirect to dashboard after successful login
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Login error:', error);
     } finally {

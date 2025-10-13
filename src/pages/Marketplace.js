@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import demoData from '../data/demoData.json';
+// import demoData from '../data/demoData.json'; // Removed mock data
 import { useWallet } from '../context/WalletContext';
 import toast from 'react-hot-toast';
 import { FaStore, FaCoins } from 'react-icons/fa';
@@ -60,7 +60,39 @@ const BalanceInfo = styled.div`
 `;
 
 const Marketplace = () => {
-  const { marketplace } = demoData;
+  // Sample marketplace data
+  const marketplace = { 
+    items: [
+      {
+        id: 1,
+        title: "Voucher Starbucks 100k",
+        description: "Voucher cà phê Starbucks trị giá 100.000 VNĐ",
+        price: 20,
+        currency: "EDU"
+      },
+      {
+        id: 2,
+        title: "Voucher Shopee 200k",
+        description: "Voucher mua sắm Shopee trị giá 200.000 VNĐ",
+        price: 40,
+        currency: "EDU"
+      },
+      {
+        id: 3,
+        title: "Voucher Grab 150k",
+        description: "Voucher giao hàng Grab trị giá 150.000 VNĐ",
+        price: 30,
+        currency: "EDU"
+      },
+      {
+        id: 4,
+        title: "Khóa học Udemy",
+        description: "Voucher mua khóa học bất kỳ trên Udemy",
+        price: 50,
+        currency: "EDU"
+      }
+    ]
+  };
   const { isConnected, account } = useWallet();
   const [userBalance, setUserBalance] = useState(50); // Demo balance: 50 EDU tokens
 
@@ -105,7 +137,7 @@ const Marketplace = () => {
       )}
 
       <Grid>
-        {marketplace.map(item => (
+        {marketplace.items.map(item => (
           <ItemCard key={item.id}>
             <ItemIcon>
               <FaStore />

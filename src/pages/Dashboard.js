@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import demoData from '../data/demoData.json';
+// import demoData from '../data/demoData.json'; // Removed mock data
 import { Link } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
 import { getCurrentUser } from '../utils/userUtils';
-import { setTestUser } from '../utils/setTestUser';
+// import { setTestUser } from '../utils/setTestUser'; // Removed mock data
 import toast from 'react-hot-toast';
 import NFTMintingModal from '../components/blockchain/NFTMintingModal';
 import LearnPassNFTModal from '../components/student/LearnPassNFTModal';
@@ -151,7 +151,31 @@ const StatCard = styled.div`
 `;
 
 const Dashboard = () => {
-  const { certificates, badges, marketplace } = demoData;
+  // Sample data
+  const certificates = [];
+  const badges = [];
+  const marketplace = { 
+    items: [
+      {
+        id: 1,
+        name: "Voucher Starbucks 100k",
+        description: "Voucher cà phê Starbucks trị giá 100.000 VNĐ",
+        price: 20
+      },
+      {
+        id: 2,
+        name: "Voucher Shopee 200k",
+        description: "Voucher mua sắm Shopee trị giá 200.000 VNĐ",
+        price: 40
+      },
+      {
+        id: 3,
+        name: "Voucher Grab 150k",
+        description: "Voucher giao hàng Grab trị giá 150.000 VNĐ",
+        price: 30
+      }
+    ]
+  };
   const { isConnected, account, getAccountBalance } = useWallet();
   const [userBalance] = useState(50);
   const [currentUser, setCurrentUser] = useState(null);
@@ -202,7 +226,7 @@ const Dashboard = () => {
   };
 
   const handleSetTestUser = () => {
-    setTestUser();
+    // Removed setTestUser() - no more mock data
     toast.success('Đã set test user lephambinh05@gmail.com! Vui lòng refresh trang.');
     setTimeout(() => {
       window.location.reload();
@@ -462,7 +486,7 @@ const Dashboard = () => {
           </StatCard>
           <StatCard>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4CAF50' }}>
-              {marketplace.length}
+              {marketplace.items.length}
             </div>
             <div>Sản phẩm Marketplace</div>
           </StatCard>
@@ -528,7 +552,7 @@ const Dashboard = () => {
           <FaStore /> Marketplace nổi bật
         </SectionTitle>
         <CardRow>
-          {marketplace.slice(0, 3).map((item, index) => (
+          {marketplace.items.slice(0, 3).map((item, index) => (
             <MarketplaceCard key={index}>
               <MarketplaceIcon>
                 <FaStore />

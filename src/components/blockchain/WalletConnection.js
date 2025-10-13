@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaWallet, FaCheck, FaExclamationTriangle, FaCopy, FaExternalLinkAlt } from 'react-icons/fa';
 import { useWallet } from '../../context/WalletContext';
+import { useAuth } from '../../context/AuthContext';
+import { BLOCKCHAIN_NETWORKS } from '../../config/blockchain';
 import toast from 'react-hot-toast';
 
 const WalletContainer = styled.div`
@@ -200,17 +202,46 @@ const WalletConnection = ({ showDetails = true, compact = false }) => {
     currentNetwork, 
     connectWallet, 
     disconnectWallet, 
-    isLoading,
-    BLOCKCHAIN_NETWORKS 
+    isLoading
   } = useWallet();
+  const { isAuthenticated } = useAuth();
 
   const [copied, setCopied] = useState(false);
 
   const handleConnect = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập trước khi kết nối ví!');
+      return;
+    }
+    
     try {
       await connectWallet();
     } catch (error) {
       console.error('Error connecting wallet:', error);
+    }
+  };
+
+  const handleSelectAccount = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập trước!');
+      return;
+    }
+    
+    try {
+      console.log('🔄 Starting account selection process...');
+      
+      // Gọi connectWallet trực tiếp - MetaMask sẽ hiện popup chọn account nếu cần
+      await connectWallet();
+      
+      console.log('✅ Account selection completed successfully');
+      toast.success('Đã chọn ví mới thành công!');
+    } catch (error) {
+      console.error('❌ Error selecting account:', error);
+      if (error.code === 4001) {
+        toast.error('Người dùng đã từ chối kết nối ví');
+      } else {
+        toast.error('Lỗi chọn ví: ' + error.message);
+      }
     }
   };
 
@@ -251,7 +282,11 @@ const WalletConnection = ({ showDetails = true, compact = false }) => {
   if (compact) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        {isConnected ? (
+        {!isAuthenticated ? (
+          <span style={{ color: '#ffc107', fontSize: '0.9rem' }}>
+            Vui lòng đăng nhập để kết nối ví
+          </span>
+        ) : isConnected ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <StatusIndicator connected={true} />
@@ -298,15 +333,39 @@ const WalletConnection = ({ showDetails = true, compact = false }) => {
             </span>
           </WalletStatus>
         </WalletInfo>
-        {isConnected ? (
-          <DisconnectButton
-            onClick={handleDisconnect}
-            disabled={isLoading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Ngắt kết nối
-          </DisconnectButton>
+        {!isAuthenticated ? (
+          <div style={{ 
+            background: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid rgba(255, 193, 7, 0.3)', 
+            borderRadius: '8px', 
+            padding: '0.8rem 1rem',
+            color: '#ffc107',
+            fontSize: '0.9rem',
+            textAlign: 'center'
+          }}>
+            Vui lòng đăng nhập để kết nối ví
+          </div>
+        ) : isConnected ? (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <ConnectButton
+              onClick={handleSelectAccount}
+              disabled={isLoading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ background: 'linear-gradient(90deg, #28a745, #20c997)' }}
+            >
+              <FaWallet />
+              Chọn ví khác
+            </ConnectButton>
+            <DisconnectButton
+              onClick={handleDisconnect}
+              disabled={isLoading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Ngắt kết nối
+            </DisconnectButton>
+          </div>
         ) : (
           <ConnectButton
             onClick={handleConnect}

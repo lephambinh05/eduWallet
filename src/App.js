@@ -23,17 +23,18 @@ import Transfer from './pages/Transfer';
 import CreateNFT from './pages/CreateNFT';
 import Portfolio from './pages/Portfolio';
 import PortfolioNFT from './pages/PortfolioNFT';
+import MetaMaskGuide from './pages/MetaMaskGuide';
 
 // Context
 import { WalletProvider } from './context/WalletContext';
 import { AuthProvider } from './context/AuthContext';
 
-// Utils
-import { setTestUser } from './utils/setTestUser';
+// Utils - removed setTestUser import
 
 // Utils
 import socket from './utils/socket';
 import { getUserFromLocalStorage } from './utils/userUtils';
+import { clearLocalStorage } from './utils/clearLocalStorage';
 
 const queryClient = new QueryClient();
 
@@ -41,13 +42,31 @@ function App() {
   const [noti, setNoti] = useState('');
   const user = getUserFromLocalStorage();
 
-  // Set test user for development
+  // Clear any existing test data on app start
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && !user) {
-      setTestUser();
-      window.location.reload(); // Reload to apply the new user
+    // Temporarily disabled to prevent clearing user data on refresh
+    // clearLocalStorage();
+    
+    // Remove any test/mock data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        // Check if it's test data (has test-token only)
+        if (userData.accessToken === 'test-token') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          console.log('Cleared test user data');
+        }
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      }
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (user && (user.userId || user.id)) {
@@ -110,6 +129,7 @@ function App() {
                 } />
                 <Route path="/verify" element={<Verify />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/metamask-guide" element={<MetaMaskGuide />} />
                 {/* Route chuyển tiền bảo vệ đăng nhập */}
                 <Route path="/transfer" element={
                   <ProtectedRoute>

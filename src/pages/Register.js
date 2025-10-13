@@ -285,7 +285,11 @@ const Register = () => {
       if (!registerData.lastName) {
         registerData.lastName = registerData.firstName;
       }
-      await register(registerData);
+      const result = await register(registerData);
+      if (result.success) {
+        // Redirect to dashboard after successful registration
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Registration error:', error);
     } finally {

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaGraduationCap, FaSpinner, FaCheck, FaExclamationTriangle, FaClock, FaCheckCircle, FaExternalLinkAlt } from 'react-icons/fa';
 import { useWallet } from '../../context/WalletContext';
 import { getCurrentUser } from '../../utils/userUtils';
-import learnPassData from '../../data/learnPassData.json';
+// import learnPassData from '../../data/learnPassData.json'; // Removed mock data
 import toast from 'react-hot-toast';
 
 const ModalOverlay = styled(motion.div)`
@@ -291,7 +291,8 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
     const currentUser = getCurrentUser();
     if (currentUser && currentUser.email === 'lephambinh05@gmail.com') {
       // Load real data for specific user
-      setLearnPasses(learnPassData.learnPasses);
+      // Removed mock data usage - load from API instead
+      setLearnPasses([]);
     } else {
       // Mock data for other users
       const mockLearnPasses = [

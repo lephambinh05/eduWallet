@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { FaGraduationCap, FaCertificate, FaMedal, FaCopy, FaFilter } from 'react-icons/fa';
 import { getCurrentUser } from '../utils/userUtils';
-import portfolioDataFromDB from '../data/portfolioData.json';
+// import portfolioDataFromDB from '../data/portfolioData.json'; // Removed to fix webpack warning
 import toast from 'react-hot-toast';
 
 const Container = styled(motion.div)`
@@ -285,66 +285,35 @@ const Portfolio = () => {
       if (user) {
         setCurrentUser(user);
         
-        // Use data from database export
-        if (user.email === 'lephambinh05@gmail.com') {
-          setPortfolioData(portfolioDataFromDB);
-          setFilteredData(portfolioDataFromDB.courses || []);
-          return;
+        // Try to load from API first
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/${user.email}`);
+          const apiData = await response.json();
+          
+          if (apiData.success) {
+            setPortfolioData(apiData.data);
+            setFilteredData(apiData.data.courses || []);
+            return;
+          }
+        } catch (error) {
+          console.warn('Failed to load from API:', error.message);
         }
         
-        // Fallback to mock data
-        const mockData = {
-          courses: [
-            {
-              id: 'lp001',
-              name: 'Blockchain Fundamentals',
-              description: 'Learn the basics of blockchain technology',
-              issuer: 'EduWallet University',
-              issueDate: '2024-01-15',
-              category: 'Blockchain',
-              level: 'Beginner',
-              score: 95,
-              skills: ['Blockchain', 'Cryptocurrency', 'Smart Contracts'],
-              type: 'course'
-            }
-          ],
-          certificates: [
-            {
-              id: 'cert001',
-              name: 'Web Development Certificate',
-              description: 'Certificate for completing web development course',
-              issuer: 'EduWallet University',
-              issueDate: '2024-02-01',
-              category: 'Web Development',
-              level: 'Intermediate',
-              score: 88,
-              skills: ['HTML', 'CSS', 'JavaScript'],
-              type: 'certificate'
-            }
-          ],
-          badges: [
-            {
-              id: 'badge001',
-              name: 'First Achievement',
-              description: 'Completed your first course',
-              issuer: 'EduWallet',
-              issueDate: '2024-01-01',
-              category: 'Achievement',
-              level: 'Beginner',
-              score: 100,
-              skills: ['Learning'],
-              type: 'badge'
-            }
-          ],
+        // Show empty portfolio for users without data
+        const emptyData = {
+          courses: [],
+          certificates: [],
+          badges: [],
           statistics: {
-            gpa: 3.5,
-            totalCourses: 1,
-            totalCertificates: 1,
-            totalBadges: 1
+            gpa: 0,
+            totalCourses: 0,
+            totalCertificates: 0,
+            totalBadges: 0,
+            completionRate: 0
           }
         };
-        setPortfolioData(mockData);
-        setFilteredData(mockData.courses);
+        setPortfolioData(emptyData);
+        setFilteredData([]);
       }
     };
 

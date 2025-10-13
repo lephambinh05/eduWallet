@@ -253,7 +253,7 @@ class PortfolioNFTService {
       // Try to load from MongoDB API first, fallback to local data
       let portfolioDataFromDB;
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/lephambinh05@gmail.com`);
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/lephambinh05@gmail.com`);
         const apiData = await response.json();
         
         if (apiData.success) {
@@ -262,20 +262,14 @@ class PortfolioNFTService {
           throw new Error('API returned unsuccessful response');
         }
       } catch (error) {
-        console.warn('Failed to load from API, using local data:', error.message);
-        // Fallback to local data
-        try {
-          portfolioDataFromDB = require('../../data/portfolioData.json');
-        } catch (requireError) {
-          console.error('Failed to load local data:', requireError.message);
-          // Use minimal fallback data
-          portfolioDataFromDB = {
-            courses: [],
-            certificates: [],
-            badges: [],
-            statistics: { gpa: 0 }
-          };
-        }
+        console.warn('Failed to load from API:', error.message);
+        // Use minimal fallback data
+        portfolioDataFromDB = {
+          courses: [],
+          certificates: [],
+          badges: [],
+          statistics: { gpa: 0 }
+        };
       }
       
       const realSummary = {

@@ -105,7 +105,7 @@ class IPFSService {
       // Try to load from MongoDB API first, fallback to local data
       let portfolioDataFromDB;
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/lephambinh05@gmail.com`);
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/lephambinh05@gmail.com`);
         const apiData = await response.json();
         
         if (apiData.success) {
@@ -114,21 +114,15 @@ class IPFSService {
           throw new Error('API returned unsuccessful response');
         }
       } catch (error) {
-        console.warn('Failed to load from API, using local data:', error.message);
-        // Fallback to local data
-        try {
-          portfolioDataFromDB = require('../../data/portfolioData.json');
-        } catch (requireError) {
-          console.error('Failed to load local data:', requireError.message);
-          // Use minimal fallback data
-          portfolioDataFromDB = {
-            user: { firstName: 'Lê Phạm', lastName: 'Bình', email: 'lephambinh05@gmail.com' },
-            courses: [],
-            certificates: [],
-            badges: [],
-            statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
-          };
-        }
+        console.warn('Failed to load from API:', error.message);
+        // Use minimal fallback data for unauthenticated users
+        portfolioDataFromDB = {
+          user: { firstName: 'Guest', lastName: 'User', email: 'guest@example.com' },
+          courses: [],
+          certificates: [],
+          badges: [],
+          statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
+        };
       }
       
       const realData = {

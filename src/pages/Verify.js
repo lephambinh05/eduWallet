@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import demoData from '../data/demoData.json';
+// import demoData from '../data/demoData.json'; // Removed mock data
 import { getCurrentUser } from '../utils/userUtils';
 import { useWallet } from '../context/WalletContext';
 
@@ -32,7 +32,9 @@ const Card = styled.div`
 const Verify = () => {
   const [input, setInput] = useState('');
   const [found, setFound] = useState(null);
-  const { learnPass, user } = demoData;
+  // Removed mock data usage
+  const learnPass = null;
+  const user = getCurrentUser();
   const currentUser = getCurrentUser();
   const { account, isConnected } = useWallet();
 

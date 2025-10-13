@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -9,8 +10,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Import routes
+// Import routes and models
 const portfolioRoutes = require('./src/routes/portfolio');
+const walletRoutes = require('./routes/wallet');
+const User = require('./src/models/User');
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eduwallet', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('✅ MongoDB connected successfully!');
+})
+.catch((error) => {
+  console.error('❌ MongoDB connection error:', error);
+  process.exit(1);
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -24,26 +40,14 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
-// Simple User Schema
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  dateOfBirth: { type: Date, required: true },
-  role: { type: String, default: 'student' },
-  walletAddress: { type: String, default: null },
-  isActive: { type: Boolean, default: true }
-}, { timestamps: true });
-
-const User = mongoose.model('User', userSchema);
+// User model is imported from src/models/User.js
 
 // API Routes
 app.post('/api/auth/register', async (req, res) => {
@@ -62,11 +66,11 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    // Create user
+    // Create user (password will be hashed by pre-save middleware)
     const user = new User({
       username,
       email,
-      password, // In production, hash this password
+      password, // Will be hashed by pre-save middleware
       firstName,
       lastName,
       dateOfBirth,
@@ -74,6 +78,19 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+      { expiresIn: '7d' }
+    );
 
     // Remove password from response
     const userResponse = user.toObject();
@@ -84,8 +101,8 @@ app.post('/api/auth/register', async (req, res) => {
       message: 'User registered successfully',
       data: {
         user: userResponse,
-        token: 'mock-jwt-token', // In production, generate real JWT
-        refreshToken: 'mock-refresh-token'
+        accessToken: token,
+        refreshToken
       }
     });
   } catch (error) {
@@ -102,9 +119,9 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user || user.password !== password) {
+    // Find user and include password
+    const user = await User.findOne({ email }).select('+password');
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -118,6 +135,19 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+      { expiresIn: '7d' }
+    );
+
     // Remove password from response
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -127,8 +157,8 @@ app.post('/api/auth/login', async (req, res) => {
       message: 'Login successful',
       data: {
         user: userResponse,
-        token: 'mock-jwt-token',
-        refreshToken: 'mock-refresh-token'
+        accessToken: token,
+        refreshToken
       }
     });
   } catch (error) {
@@ -143,24 +173,54 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/me', async (req, res) => {
   try {
-    // Mock user for testing
-    const mockUser = {
-      _id: 'mock-user-id',
-      username: 'testuser',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      role: 'student',
-      walletAddress: null,
-      isActive: true
-    };
+    // Check for valid authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    
+    // Find user in database
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated'
+      });
+    }
 
     res.json({
       success: true,
-      data: { user: mockUser }
+      data: { user }
     });
   } catch (error) {
     console.error('Get profile error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -173,11 +233,20 @@ app.post('/api/users/wallet', async (req, res) => {
   try {
     const { walletAddress, chainId, networkName, isConnected, connectedAt } = req.body;
     
-    // Find user by wallet address or get from token (if authenticated)
-    let user;
-    if (walletAddress) {
-      user = await User.findOne({ walletAddress: walletAddress.toLowerCase() });
+    // Check for valid authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required'
+      });
     }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify JWT token and get user
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const user = await User.findById(decoded.id);
     
     if (!user) {
       return res.status(404).json({
@@ -208,6 +277,22 @@ app.post('/api/users/wallet', async (req, res) => {
     });
   } catch (error) {
     console.error('Connect wallet error:', error);
+    
+    // Handle JWT specific errors
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or malformed token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -290,6 +375,65 @@ app.get('/api/users/wallet', async (req, res) => {
     });
   } catch (error) {
     console.error('Get wallet info error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+// Get current user's wallet information
+app.get('/api/users/me/wallet', async (req, res) => {
+  try {
+    // Check for valid authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify JWT token and get user
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const user = await User.findById(decoded.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Current user wallet information retrieved successfully',
+      data: {
+        walletAddress: user.walletAddress,
+        walletInfo: user.walletInfo
+      }
+    });
+  } catch (error) {
+    console.error('Get current user wallet info error:', error);
+    
+    // Handle JWT specific errors
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or malformed token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Internal server error',

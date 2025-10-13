@@ -314,21 +314,16 @@ const Navbar = () => {
   }, [location]);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    const wasWalletConnected = localStorage.getItem('isWalletConnected') === 'true';
-    if (user && wasWalletConnected && !isConnected && !isLoading) {
-      connectWallet();
-    }
+    // Temporarily disabled auto-connect to prevent MetaMask errors
+    // const user = getCurrentUser();
+    // const wasWalletConnected = localStorage.getItem('isWalletConnected') === 'true';
+    // if (user && wasWalletConnected && !isConnected && !isLoading && window.ethereum) {
+    //   // Only auto-connect if MetaMask is available
+    //   connectWallet();
+    // }
     // eslint-disable-next-line
   }, [currentUser, isConnected, isLoading]);
 
-  useEffect(() => {
-    if (isConnected) {
-      localStorage.setItem('isWalletConnected', 'true');
-    } else {
-      localStorage.setItem('isWalletConnected', 'false');
-    }
-  }, [isConnected]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -356,6 +351,11 @@ const Navbar = () => {
   ];
 
   const handleWalletAction = () => {
+    if (!currentUser) {
+      toast.error('Vui lòng đăng nhập trước khi kết nối ví!');
+      return;
+    }
+    
     if (isConnected) {
       disconnectWallet();
     } else {

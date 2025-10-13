@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import demoData from '../data/demoData.json';
+// import demoData from '../data/demoData.json'; // Removed mock data
 import { FaGraduationCap, FaCertificate } from 'react-icons/fa';
 import { getCurrentUser } from '../utils/userUtils';
 import { useWallet } from '../context/WalletContext';
@@ -73,15 +73,14 @@ const LearnPass = () => {
   const currentUser = getCurrentUser();
   const { account, isConnected } = useWallet();
   
-  // Tìm learnPass theo learnPassId của user
+  // Removed mock data usage - load from API instead
   let learnPass = null;
   if (currentUser && currentUser.learnPassId) {
-    if (demoData.learnPass && demoData.learnPass.id === currentUser.learnPassId) {
-      learnPass = demoData.learnPass;
-    }
+    // Load learnPass from API instead of mock data
+    // learnPass = await loadLearnPassFromAPI(currentUser.learnPassId);
   }
-  // Lấy certificates demo (có thể lọc theo user nếu có data thực)
-  const certificates = demoData.certificates;
+  // Load certificates from API instead of mock data
+  const certificates = [];
 
   if (!currentUser) {
     return <Container><div style={{color:'#fff',textAlign:'center',padding:'2rem'}}>Bạn chưa đăng nhập.</div></Container>;

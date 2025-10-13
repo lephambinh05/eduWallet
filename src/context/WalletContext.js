@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import toast from 'react-hot-toast';
+import { NetworkUtils } from '../config/blockchain';
+import { walletAPI } from '../config/api';
+import { useAuth } from './AuthContext';
 import { getCurrentUser, saveUserToLocalStorage } from '../utils/userUtils';
-import { BLOCKCHAIN_NETWORKS, getNetworkConfig, NetworkUtils } from '../config/blockchain';
-import { userAPI } from '../config/api';
 
 const WalletContext = createContext();
 
@@ -16,256 +17,395 @@ export const useWallet = () => {
 };
 
 export const WalletProvider = ({ children }) => {
-  const [account, setAccount] = useState(() => {
-    return localStorage.getItem('walletAccount') || null;
-  });
+  const { isAuthenticated } = useAuth();
+  const [account, setAccount] = useState(null);
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
-  const [isConnected, setIsConnected] = useState(() => {
-    return localStorage.getItem('walletConnected') === 'true';
-  });
+  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [chainId, setChainId] = useState(() => {
-    return localStorage.getItem('walletChainId') ? parseInt(localStorage.getItem('walletChainId')) : null;
-  });
+  const [chainId, setChainId] = useState(null);
+  const [currentNetwork, setCurrentNetwork] = useState('pioneZero');
+  const [userDisconnected, setUserDisconnected] = useState(false);
 
-  // Current network configuration
-  const [currentNetwork, setCurrentNetwork] = useState(() => {
-    return localStorage.getItem('currentNetwork') || 'pioneZero';
-  });
-
+  // ✅ Kết nối ví MetaMask với logic mới
   const connectWallet = async () => {
+    console.log('🔐 Authentication status:', isAuthenticated);
+    const token = localStorage.getItem('accessToken');
+    console.log('🔐 Access token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
+    console.log('🔐 User data:', getCurrentUser());
+    
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập trước khi kết nối ví!');
+      return;
+    }
+
+    if (!window.ethereum) {
+      toast.error('MetaMask không được cài đặt! Vui lòng cài đặt MetaMask extension từ https://metamask.io');
+      return;
+    }
+
     setIsLoading(true);
+    
     try {
-      if (!window.ethereum) {
-        toast.error('MetaMask không được cài đặt!');
-        return;
+      console.log('🔗 Starting wallet connection...');
+      
+      // Note: Cannot reset selectedAddress as it's read-only
+      // MetaMask will show popup if user hasn't connected before
+      
+      // Request accounts - this will open MetaMask popup
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      if (accounts.length === 0) {
+        throw new Error('Không có tài khoản nào được chọn');
       }
 
+      const address = ethers.utils.getAddress(accounts[0]);
+      console.log('✅ Selected account:', address);
+
+      // Get network info
+      const network = await window.ethereum.request({ method: 'eth_chainId' });
+      const chainId = parseInt(network, 16);
+      const networkConfig = NetworkUtils.getNetworkByChainId(chainId);
+      
+      // Create provider and signer
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const accounts = await provider.send('eth_requestAccounts', []);
       const signer = provider.getSigner();
-      const network = await provider.getNetwork();
 
-      setProvider(provider);
-      setSigner(signer);
-      setAccount(accounts[0]);
-      setChainId(network.chainId);
-      setIsConnected(true);
+      // Update state
+      setAccount(address);
+        setProvider(provider);
+        setSigner(signer);
+      setChainId(chainId);
+      setCurrentNetwork(networkConfig ? networkConfig.name : 'Unknown Network');
+        setIsConnected(true);
+      setUserDisconnected(false);
 
-      // Check if we're on a supported network
-      if (!NetworkUtils.isSupportedNetwork(network.chainId)) {
-        await switchToSupportedNetwork();
-      } else {
-        // Update current network based on chain ID
-        const networkName = NetworkUtils.getNetworkName(network.chainId);
-        setCurrentNetwork(networkName.toLowerCase().replace(' ', ''));
+      // Save to database using new API
+      console.log('💾 Saving wallet to database:', {
+        address,
+        chainId,
+        network: networkConfig ? networkConfig.name : 'Unknown Network'
+      });
+      
+      await walletAPI.saveWallet({
+        address,
+        chainId,
+        network: networkConfig ? networkConfig.name : 'Unknown Network'
+      });
+
+      // Update user in localStorage
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        currentUser.walletAddress = address;
+        currentUser.walletInfo = {
+          address,
+          chainId,
+          network: networkConfig ? networkConfig.name : 'Unknown Network',
+          isConnected: true
+        };
+        saveUserToLocalStorage(currentUser);
       }
+
+      console.log('✅ Wallet connected and saved to database:', {
+        address,
+        chainId,
+        network: networkConfig ? networkConfig.name : 'Unknown Network'
+      });
 
       toast.success('Kết nối ví thành công!');
-
-      // Save wallet information to backend database
-      try {
-        const walletData = {
-          walletAddress: accounts[0],
-          chainId: network.chainId,
-          networkName: currentNetwork,
-          isConnected: true,
-          connectedAt: new Date().toISOString()
-        };
-        
-        await userAPI.connectWallet(walletData);
-        
-        // Update local user data with wallet info
-        const user = getCurrentUser();
-        if (user) {
-          const updatedUser = {
-            ...user,
-            walletAddress: accounts[0],
-            chainId: network.chainId,
-            networkName: currentNetwork,
-            walletConnected: true
-          };
-          saveUserToLocalStorage(updatedUser);
-        }
-        
-        toast.success('Ví đã được kết nối và lưu vào database thành công!');
-      } catch (error) {
-        console.error('Failed to save wallet to database:', error);
-        toast.error('Kết nối ví thành công nhưng không thể lưu vào database');
-      }
+      
     } catch (error) {
-      console.error('Error connecting wallet:', error);
-      toast.error('Lỗi kết nối ví: ' + error.message);
+      console.error('❌ Wallet connection failed:', error);
+      
+      if (error.code === 4001) {
+        toast.error('Người dùng đã từ chối kết nối ví');
+      } else if (error.code === -32002) {
+        toast.error('Đang có yêu cầu kết nối ví khác đang chờ xử lý');
+      } else if (error.code === -32603) {
+        toast.error('Lỗi nội bộ MetaMask. Vui lòng thử lại');
+      } else {
+        toast.error(`Lỗi kết nối ví: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const switchToSupportedNetwork = async (networkName = 'pioneZero') => {
-    try {
-      const networkConfig = getNetworkConfig(networkName);
-      
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: networkConfig.chainId }],
-      });
-      
-      setCurrentNetwork(networkName);
-    } catch (switchError) {
-      // This error code indicates that the chain has not been added to MetaMask
-      if (switchError.code === 4902) {
-        try {
-          const networkConfig = getNetworkConfig(networkName);
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [networkConfig],
-          });
-          setCurrentNetwork(networkName);
-        } catch (addError) {
-          toast.error(`Không thể thêm mạng ${BLOCKCHAIN_NETWORKS[networkName]?.name}`);
-        }
-      }
-    }
-  };
+  // ❌ Ngắt kết nối ví
+  const disconnectWallet = useCallback(async () => {
+    if (!account) return;
 
-  const disconnectWallet = async () => {
     try {
-      // Update wallet status in backend database
-      await userAPI.disconnectWallet(account);
+      console.log('🔌 Disconnecting wallet...');
       
-      // Update local user data
-      const user = getCurrentUser();
-      if (user) {
-        const updatedUser = {
-          ...user,
-          walletAddress: null,
-          chainId: null,
-          networkName: null,
-          walletConnected: false
-        };
-        saveUserToLocalStorage(updatedUser);
-      }
+      // Delete from database
+      await walletAPI.deleteWallet(account);
       
-      toast.success('Đã ngắt kết nối ví và cập nhật database');
-    } catch (error) {
-      console.error('Failed to disconnect wallet from backend:', error);
-      toast.error('Ngắt kết nối ví thành công nhưng không thể cập nhật database');
-    } finally {
+      // Clear state
       setAccount(null);
       setProvider(null);
       setSigner(null);
-      setIsConnected(false);
       setChainId(null);
       setCurrentNetwork('pioneZero');
-    }
-  };
+      setIsConnected(false);
+      setUserDisconnected(true);
 
-  const getAccountBalance = async () => {
-    if (!provider || !account) return '0';
-    try {
-      const balance = await provider.getBalance(account);
-      return ethers.utils.formatEther(balance);
-    } catch (error) {
-      console.error('Error getting balance:', error);
-      return '0';
-    }
-  };
+      // Clear localStorage
+      localStorage.removeItem('walletAddress');
+      localStorage.removeItem('isWalletConnected');
+      localStorage.removeItem('walletChainId');
+      localStorage.removeItem('walletNetwork');
+      localStorage.removeItem('walletProvider');
+      localStorage.removeItem('walletSigner');
 
-  // Listen for account changes
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-          disconnectWallet();
-        } else {
-          setAccount(accounts[0]);
-        }
-      });
-
-      window.ethereum.on('chainChanged', (chainId) => {
-        const newChainId = parseInt(chainId, 16);
-        setChainId(newChainId);
-        
-        if (!NetworkUtils.isSupportedNetwork(newChainId)) {
-          toast.error('Vui lòng chuyển sang mạng được hỗ trợ (Pione Zero hoặc Pione Chain)');
-        } else {
-          const networkName = NetworkUtils.getNetworkName(newChainId);
-          setCurrentNetwork(networkName.toLowerCase().replace(' ', ''));
-        }
-      });
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners();
+      // Update user in localStorage
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        delete currentUser.walletAddress;
+        delete currentUser.walletInfo;
+        saveUserToLocalStorage(currentUser);
       }
-    };
-  }, []);
 
-  // Khôi phục kết nối ví từ database khi component mount
-  useEffect(() => {
-    const restoreConnection = async () => {
-      try {
-        // Lấy thông tin user từ localStorage
-        const user = getCurrentUser();
-        if (user && user.walletAddress && user.walletConnected && window.ethereum) {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const accounts = await provider.listAccounts();
+      console.log('✅ Wallet disconnected and removed from database');
+      toast.success('Đã ngắt kết nối ví!');
+      
+    } catch (error) {
+      console.error('❌ Error disconnecting wallet:', error);
+      toast.error('Lỗi khi ngắt kết nối ví');
+    }
+  }, [account]);
+
+  // 🔄 Kiểm tra kết nối ví khi reload trang (chỉ dùng eth_accounts, không gây popup)
+  const checkWalletConnection = useCallback(async () => {
+    if (!window.ethereum || !isAuthenticated || userDisconnected) {
+      console.log('⚠️ Skipping wallet check:', { 
+        hasEthereum: !!window.ethereum, 
+        isAuthenticated, 
+        userDisconnected 
+      });
+      return;
+    }
+
+    try {
+      console.log('🔍 Checking wallet connection (silent check)...');
+      
+      // Get current accounts from MetaMask (không gây popup)
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+
+      if (accounts.length > 0) {
+        const address = ethers.utils.getAddress(accounts[0]);
+        console.log('🔍 Found account in MetaMask:', address);
+        
+        // Check if wallet exists in database
+        try {
+          const response = await walletAPI.checkWallet(address);
           
-          if (accounts.length > 0 && accounts[0].toLowerCase() === user.walletAddress.toLowerCase()) {
-            const signer = provider.getSigner();
-            const network = await provider.getNetwork();
+          if (response.data.exists && response.data.wallet.connected) {
+            console.log('✅ Wallet found in database, restoring connection...');
             
+            // Get network info
+            const network = await window.ethereum.request({ method: 'eth_chainId' });
+            const chainId = parseInt(network, 16);
+            const networkConfig = NetworkUtils.getNetworkByChainId(chainId);
+            
+            // Create provider and signer
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+
+            // Update state
+            setAccount(address);
             setProvider(provider);
             setSigner(signer);
-            setAccount(user.walletAddress);
-            setChainId(user.chainId || network.chainId);
+            setChainId(chainId);
+            setCurrentNetwork(networkConfig ? networkConfig.name : 'Unknown Network');
             setIsConnected(true);
-            setCurrentNetwork(user.networkName || 'pioneZero');
-            
-            // Kiểm tra network hiện tại
-            if (!NetworkUtils.isSupportedNetwork(network.chainId)) {
-              await switchToSupportedNetwork(user.networkName || 'pioneZero');
+
+            // Update user in localStorage
+            const currentUser = getCurrentUser();
+            if (currentUser) {
+              currentUser.walletAddress = address;
+              currentUser.walletInfo = {
+                address,
+                chainId,
+                network: networkConfig ? networkConfig.name : 'Unknown Network',
+                isConnected: true
+              };
+              saveUserToLocalStorage(currentUser);
             }
-            
-            console.log('Wallet connection restored from database');
+
+            console.log('✅ Wallet restored from database:', {
+              address,
+              chainId,
+              network: networkConfig ? networkConfig.name : 'Unknown Network'
+            });
+
+            toast.success('Ví đã được khôi phục!');
           } else {
-            // Account không khớp, cập nhật database
-            console.log('Account mismatch, updating database');
-            await userAPI.disconnectWallet(user.walletAddress);
-            setAccount(null);
-            setProvider(null);
-            setSigner(null);
-            setIsConnected(false);
-            setChainId(null);
+            console.log('❌ Wallet not found in database or disconnected');
           }
+        } catch (apiError) {
+          console.error('❌ Error checking wallet in database:', apiError);
         }
-      } catch (error) {
-        console.error('Failed to restore wallet connection:', error);
-        // Nếu có lỗi, reset trạng thái
-        setAccount(null);
-        setProvider(null);
-        setSigner(null);
-        setIsConnected(false);
-        setChainId(null);
+      } else {
+        console.log('❌ No accounts connected in MetaMask');
+      }
+    } catch (error) {
+      console.error('❌ Error checking wallet connection:', error);
+      // Không hiển thị toast error cho auto-check để tránh spam
+    }
+  }, [isAuthenticated, userDisconnected]);
+
+  // 🧠 Lắng nghe khi đổi ví hoặc ngắt kết nối trong MetaMask
+  useEffect(() => {
+    if (!window.ethereum) return;
+
+    const handleAccountsChanged = async (accounts) => {
+      console.log('🔄 Accounts changed:', accounts);
+      
+      if (accounts.length === 0) {
+        // User disconnected in MetaMask
+        await disconnectWallet();
+      } else {
+        // User switched accounts
+        const newAddress = ethers.utils.getAddress(accounts[0]);
+        
+        if (newAddress !== account) {
+          console.log('🔄 Switching to new account:', newAddress);
+          
+          // Get network info
+          const network = await window.ethereum.request({ method: 'eth_chainId' });
+          const chainId = parseInt(network, 16);
+          const networkConfig = NetworkUtils.getNetworkByChainId(chainId);
+          
+          // Create provider and signer
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+
+          // Update state
+          setAccount(newAddress);
+          setProvider(provider);
+          setSigner(signer);
+          setChainId(chainId);
+          setCurrentNetwork(networkConfig ? networkConfig.name : 'Unknown Network');
+          setIsConnected(true);
+
+          // Save new wallet to database
+          await walletAPI.saveWallet({
+            address: newAddress,
+            chainId,
+            network: networkConfig ? networkConfig.name : 'Unknown Network'
+          });
+
+          // Update user in localStorage
+          const currentUser = getCurrentUser();
+          if (currentUser) {
+            currentUser.walletAddress = newAddress;
+            currentUser.walletInfo = {
+              address: newAddress,
+              chainId,
+              network: networkConfig ? networkConfig.name : 'Unknown Network',
+              isConnected: true
+            };
+            saveUserToLocalStorage(currentUser);
+          }
+
+          console.log('✅ Switched to new wallet:', newAddress);
+          toast.success('Đã chuyển sang ví mới!');
+        }
       }
     };
 
-    restoreConnection();
+    const handleChainChanged = (chainId) => {
+      console.log('🔄 Chain changed:', chainId);
+      const newChainId = parseInt(chainId, 16);
+      const networkConfig = NetworkUtils.getNetworkByChainId(newChainId);
+      
+      setChainId(newChainId);
+      setCurrentNetwork(networkConfig ? networkConfig.name : 'Unknown Network');
+      
+      toast.info(`Đã chuyển sang mạng: ${networkConfig ? networkConfig.name : 'Unknown Network'}`);
+    };
+
+    // Add event listeners
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+
+    // Cleanup
+    return () => {
+      if (window.ethereum.removeListener) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      }
+    };
+  }, [account, isAuthenticated, userDisconnected, disconnectWallet]);
+
+  // 🔄 Check MetaMask availability when page loads (không tự động connect)
+  useEffect(() => {
+    if (window.ethereum) {
+      console.log('✅ MetaMask detected and ready');
+    } else {
+      console.log('⚠️ MetaMask not detected');
+    }
   }, []);
 
-  // Lưu trạng thái vào localStorage khi có thay đổi
+  // 🔄 Auto-restore wallet when page loads (chỉ khi user đã connect trước đó)
   useEffect(() => {
-    localStorage.setItem('walletAccount', account || '');
-    localStorage.setItem('walletConnected', isConnected.toString());
-    localStorage.setItem('walletChainId', chainId?.toString() || '');
-    localStorage.setItem('currentNetwork', currentNetwork);
-  }, [account, isConnected, chainId, currentNetwork]);
+    if (isAuthenticated && !userDisconnected) {
+      // Delay to ensure authentication is complete
+      const timer = setTimeout(() => {
+        checkWalletConnection();
+      }, 2000);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, userDisconnected, checkWalletConnection]);
+
+  // Reset userDisconnected when user logs in
+  useEffect(() => {
+    if (isAuthenticated) {
+      setUserDisconnected(false);
+    }
+  }, [isAuthenticated]);
+
+  // Clear wallet state when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAccount(null);
+      setProvider(null);
+      setSigner(null);
+      setChainId(null);
+      setCurrentNetwork('pioneZero');
+      setIsConnected(false);
+      setUserDisconnected(false);
+    }
+  }, [isAuthenticated]);
+
+  // Get account balance
+  const getAccountBalance = async () => {
+    if (!account || !provider) {
+      console.log('❌ No account or provider available for balance check');
+      return '0.0000';
+    }
+
+    try {
+      console.log('💰 Getting account balance for:', account);
+      const balance = await provider.getBalance(account);
+      const balanceInEth = ethers.utils.formatEther(balance);
+      console.log('💰 Account balance:', balanceInEth, 'ETH');
+      return balanceInEth;
+    } catch (error) {
+      console.error('❌ Error getting account balance:', error);
+      return '0.0000';
+    }
+  };
+
 
   const value = {
+    // State
     account,
     provider,
     signer,
@@ -273,11 +413,14 @@ export const WalletProvider = ({ children }) => {
     isLoading,
     chainId,
     currentNetwork,
+    userDisconnected,
+    
+    // Actions
     connectWallet,
     disconnectWallet,
     getAccountBalance,
-    switchToSupportedNetwork,
-    BLOCKCHAIN_NETWORKS,
+    
+    // Network utilities
     NetworkUtils,
   };
 

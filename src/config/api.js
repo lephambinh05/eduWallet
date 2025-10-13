@@ -92,10 +92,26 @@ export const userAPI = {
   updateUser: (id, data) => api.put(`/api/users/${id}`, data),
   deleteUser: (id) => api.delete(`/api/users/${id}`),
   
-  // Wallet management
+  // Wallet management (legacy - keeping for backward compatibility)
   connectWallet: (walletData) => api.post('/api/users/wallet', walletData),
   disconnectWallet: (walletAddress) => api.delete('/api/users/wallet', { data: { walletAddress } }),
   getWalletInfo: (walletAddress) => api.get('/api/users/wallet', { params: { walletAddress } }),
+  getCurrentUserWallet: () => api.get('/api/users/me/wallet'),
+};
+
+// New wallet API endpoints
+export const walletAPI = {
+  // Save wallet (idempotent)
+  saveWallet: (walletData) => api.post('/api/wallet/save', walletData),
+  
+  // Delete wallet
+  deleteWallet: (address) => api.post('/api/wallet/delete', { address }),
+  
+  // Check wallet exists
+  checkWallet: (address) => api.post('/api/wallet/check', { address }),
+  
+  // Get user wallets
+  getUserWallets: () => api.get('/api/wallet/user'),
 };
 
 export const institutionAPI = {

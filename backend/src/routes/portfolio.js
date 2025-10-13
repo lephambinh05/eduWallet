@@ -4,6 +4,8 @@ const User = require('../models/User');
 const Course = require('../models/Course');
 const Certificate = require('../models/Certificate');
 const Badge = require('../models/Badge');
+const SimpleCertificate = require('../models/SimpleCertificate');
+const SimpleBadge = require('../models/SimpleBadge');
 
 // Get user portfolio data
 router.get('/:userId', async (req, res) => {
@@ -20,18 +22,41 @@ router.get('/:userId', async (req, res) => {
     }
 
     // Get Courses
-    const courses = await Course.findByUser(userId);
+    const courses = await Course.find({ userId }).catch(() => []);
     
     // Get Certificates
-    const certificates = await Certificate.findByUser(userId);
+    const certificates = await Certificate.find({ userId }).catch(() => []);
     
     // Get Badges
-    const badges = await Badge.findByUser(userId);
+    const badges = await Badge.find({ userId }).catch(() => []);
     
-    // Get statistics
-    const courseStats = await Course.getUserStats(userId);
-    const certificateStats = await Certificate.getUserStats(userId);
-    const badgeStats = await Badge.getUserBadgeStats(userId);
+    // Calculate statistics
+    const courseStats = {
+      totalCourses: courses.length,
+      averageScore: courses.length > 0 ? 
+        Math.round(courses.reduce((sum, course) => sum + (course.score || 0), 0) / courses.length) : 0,
+      completionRate: courses.length > 0 ? 
+        Math.round((courses.filter(c => c.status === 'Completed').length / courses.length) * 100) : 0
+    };
+    
+    const certificateStats = {
+      totalCertificates: certificates.length,
+      certificatesThisMonth: certificates.filter(c => {
+        const certDate = new Date(c.createdAt);
+        const now = new Date();
+        return certDate.getMonth() === now.getMonth() && certDate.getFullYear() === now.getFullYear();
+      }).length
+    };
+    
+    const badgeStats = {
+      totalBadges: badges.length,
+      badgesThisWeek: badges.filter(b => {
+        const badgeDate = new Date(b.createdAt);
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return badgeDate >= weekAgo;
+      }).length
+    };
     
     // Calculate overall statistics
     const statistics = {
@@ -41,33 +66,32 @@ router.get('/:userId', async (req, res) => {
       gpa: user.academicInfo?.gpa || 0,
       totalCredits: user.academicInfo?.totalCredits || 0,
       completedCredits: user.academicInfo?.completedCredits || 0,
-      averageScore: courseStats.averageScore || 0,
-      completionRate: courseStats.completionRate || 0,
-      learningStreak: user.statistics?.learningStreak || 0,
-      totalStudyHours: user.statistics?.totalStudyHours || 0,
-      certificatesThisMonth: certificateStats.certificatesThisMonth || 0,
-      badgesThisWeek: badgeStats.badgesThisWeek || 0,
-      topSkills: courseStats.topSkills || [],
-      achievements: badgeStats.achievements || []
+      averageScore: courseStats.averageScore,
+      completionRate: courseStats.completionRate,
+      learningStreak: user.stats?.learningStreak || 0,
+      totalStudyHours: user.stats?.totalStudyHours || 0,
+      certificatesThisMonth: certificateStats.certificatesThisMonth,
+      badgesThisWeek: badgeStats.badgesThisWeek,
+      topSkills: [],
+      achievements: []
     };
 
     res.json({
       success: true,
-        data: {
-          user: {
-            id: user._id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            name: user.name,
-            studentId: user.studentId,
-            academicInfo: user.academicInfo
-          },
-          courses,
-          certificates,
-          badges,
-          statistics
-        }
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          studentId: user.studentId,
+          academicInfo: user.academicInfo
+        },
+        courses,
+        certificates,
+        badges,
+        statistics
+      }
     });
   } catch (error) {
     console.error('Error getting portfolio data:', error);
@@ -93,8 +117,73 @@ router.get('/email/:email', async (req, res) => {
       });
     }
 
-    // Redirect to user ID endpoint
-    return res.redirect(`/api/portfolio/${user._id}`);
+    // Get portfolio data directly instead of redirecting
+    const userId = user._id;
+    
+    // Get Courses
+    const courses = await Course.find({ userId }).catch(() => []);
+    
+    // Get Certificates (try SimpleCertificate first, fallback to Certificate)
+    let certificates = [];
+    try {
+      certificates = await SimpleCertificate.find({ userId });
+      console.log('✅ Found', certificates.length, 'SimpleCertificates for user:', email);
+    } catch (error) {
+      try {
+        certificates = await Certificate.find({ userId });
+        console.log('✅ Found', certificates.length, 'Certificates for user:', email);
+      } catch (error2) {
+        certificates = [];
+        console.log('⚠️ No certificates found for user:', email);
+      }
+    }
+    
+    // Get Badges (try SimpleBadge first, fallback to Badge)
+    let badges = [];
+    try {
+      badges = await SimpleBadge.find({ userId });
+      console.log('✅ Found', badges.length, 'SimpleBadges for user:', email);
+    } catch (error) {
+      try {
+        badges = await Badge.find({ userId });
+        console.log('✅ Found', badges.length, 'Badges for user:', email);
+      } catch (error2) {
+        badges = [];
+        console.log('⚠️ No badges found for user:', email);
+      }
+    }
+    
+    // Calculate statistics
+    const statistics = {
+      totalCourses: courses.length,
+      totalCertificates: certificates.length,
+      totalBadges: badges.length,
+      gpa: user.academicInfo?.gpa || 0,
+      totalCredits: user.academicInfo?.totalCredits || 0,
+      completedCredits: user.academicInfo?.completedCredits || 0,
+      averageScore: courses.length > 0 ? 
+        Math.round(courses.reduce((sum, course) => sum + (course.score || 0), 0) / courses.length) : 0,
+      completionRate: courses.length > 0 ? 
+        Math.round((courses.filter(c => c.status === 'Completed').length / courses.length) * 100) : 0
+    };
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          studentId: user.studentId,
+          academicInfo: user.academicInfo
+        },
+        courses,
+        certificates,
+        badges,
+        statistics
+      }
+    });
   } catch (error) {
     console.error('Error getting portfolio by email:', error);
     res.status(500).json({

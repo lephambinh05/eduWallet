@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import demoData from '../data/demoData.json';
+// import demoData from '../data/demoData.json'; // Removed mock data
 import { FaTrophy } from 'react-icons/fa';
 
 const Container = styled.div`
@@ -49,7 +49,8 @@ const BadgeIcon = styled.div`
 `;
 
 const Badges = () => {
-  const { badges } = demoData;
+  // Removed mock data usage - load from API instead
+  const badges = [];
   return (
     <Container>
       <h2 style={{ color: '#667eea', marginBottom: 24 }}>Danh hiệu & phần thưởng</h2>

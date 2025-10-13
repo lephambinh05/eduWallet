@@ -6,7 +6,7 @@ import { useWallet } from '../../context/WalletContext';
 import portfolioNFTService from '../../services/portfolioNFTService';
 import ipfsService from '../../services/ipfsService';
 import { getCurrentUser } from '../../utils/userUtils';
-import portfolioDataFromDB from '../../data/portfolioData.json';
+// import portfolioDataFromDB from '../../data/portfolioData.json'; // Removed to fix webpack warning
 import toast from 'react-hot-toast';
 
 const ModalOverlay = styled(motion.div)`
@@ -293,10 +293,10 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
 
   const loadPortfolioData = async () => {
     const user = getCurrentUser();
-    if (user && user.email === 'lephambinh05@gmail.com') {
+    if (user && user.email) {
       try {
-        // Try to load from MongoDB API first, fallback to local data
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/lephambinh05@gmail.com`);
+        // Try to load from MongoDB API
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/${user.email}`);
         const apiData = await response.json();
         
         if (apiData.success) {
@@ -305,29 +305,27 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
           throw new Error('API returned unsuccessful response');
         }
       } catch (error) {
-        console.warn('Failed to load from API, using local data:', error.message);
-        // Fallback to local data
-        try {
-          setPortfolioData(portfolioDataFromDB);
-        } catch (requireError) {
-          console.error('Failed to load local data:', requireError.message);
-          // Use minimal fallback data
-          setPortfolioData({
-            user: { firstName: 'Lê Phạm', lastName: 'Bình', email: 'lephambinh05@gmail.com' },
-            courses: [],
-            certificates: [],
-            badges: [],
-            statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
-          });
-        }
+        console.warn('Failed to load from API:', error.message);
+        // Show empty portfolio for authenticated users
+        setPortfolioData({
+          user: { 
+            firstName: user?.firstName || 'User', 
+            lastName: user?.lastName || 'Name', 
+            email: user?.email || 'user@example.com' 
+          },
+          courses: [],
+          certificates: [],
+          badges: [],
+          statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
+        });
       }
     } else {
-      // For other users, try to load their data or show empty
+      // For unauthenticated users, show empty portfolio
       setPortfolioData({
         user: { 
-          firstName: user?.firstName || 'User', 
-          lastName: user?.lastName || 'Name', 
-          email: user?.email || 'user@example.com' 
+          firstName: 'Guest', 
+          lastName: 'User', 
+          email: 'guest@example.com' 
         },
         courses: [],
         certificates: [],

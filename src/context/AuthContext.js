@@ -33,14 +33,17 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser));
           setIsAuthenticated(true);
 
-          // Verify token is still valid
-          try {
-            const response = await authAPI.getProfile();
-            setUser(response.data.data.user);
-          } catch (error) {
-            // Token is invalid, clear auth state
-            logout();
-          }
+          // Temporarily disable token verification to prevent logout on refresh
+          // try {
+          //   const response = await authAPI.getProfile();
+          //   setUser(response.data.data.user);
+          // } catch (error) {
+          //   // Token is invalid, clear auth state
+          //   logout();
+          // }
+        } else {
+          // No stored auth data, user is not authenticated
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
