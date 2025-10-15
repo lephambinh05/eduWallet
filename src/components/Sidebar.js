@@ -411,7 +411,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { path: '/transfer', icon: FaWallet, text: 'Chuyển tiền', section: 'main', protected: true },
     { path: '/verify', icon: FaShieldAlt, text: 'Xác thực', section: 'main' },
     { path: '/about', icon: FaIdCard, text: 'Giới thiệu', section: 'main' },
+    // Partner link will be injected conditionally below if user has partner role
   ];
+
+  // If user is partner, add partner nav
+  if (user && user.role === 'partner') {
+    navItems.push({ path: '/partner', icon: FaStore, text: 'Partner', section: 'main', protected: true });
+  }
 
   const renderNavItems = (items) => {
     return items.map((item) => {

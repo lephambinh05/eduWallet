@@ -27,27 +27,42 @@ export const AuthProvider = ({ children }) => {
         const storedRefreshToken = localStorage.getItem('refreshToken');
         const storedUser = localStorage.getItem('user');
 
+        console.log('Initializing auth state:', {
+          hasAccessToken: !!storedAccessToken,
+          hasRefreshToken: !!storedRefreshToken,
+          hasUserData: !!storedUser
+        });
+
         if (storedAccessToken && storedRefreshToken && storedUser) {
+          const userData = JSON.parse(storedUser);
+          console.log('Stored user data:', userData);
+          
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken);
-          setUser(JSON.parse(storedUser));
+          setUser(userData);
           setIsAuthenticated(true);
 
-          // Temporarily disable token verification to prevent logout on refresh
-          // try {
-          //   const response = await authAPI.getProfile();
-          //   setUser(response.data.data.user);
-          // } catch (error) {
-          //   // Token is invalid, clear auth state
-          //   logout();
-          // }
+          // Verify token and get fresh user data
+          try {
+            const response = await authAPI.getProfile();
+            const freshUserData = response.data.data.user;
+            console.log('Fresh user data:', freshUserData);
+            
+            setUser(freshUserData);
+            localStorage.setItem('user', JSON.stringify(freshUserData));
+          } catch (error) {
+            console.error('Token verification failed:', error);
+            await logout();
+            return;
+          }
         } else {
-          // No stored auth data, user is not authenticated
+          console.log('No stored auth data found');
           setIsAuthenticated(false);
+          await logout();
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        logout();
+        await logout();
       } finally {
         setIsLoading(false);
       }

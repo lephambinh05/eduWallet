@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 
@@ -24,6 +24,9 @@ import CreateNFT from './pages/CreateNFT';
 import Portfolio from './pages/Portfolio';
 import PortfolioNFT from './pages/PortfolioNFT';
 import MetaMaskGuide from './pages/MetaMaskGuide';
+// Partner module (local to src/partner)
+import PartnerDashboard from './partner/pages/PartnerDashboard';
+import RoleProtectedRoute from './partner/components/RoleProtectedRoute';
 
 // Context
 import { WalletProvider } from './context/WalletContext';
@@ -153,6 +156,14 @@ function App() {
           </ProtectedRoute>
         } />
                 <Route path="*" element={<NotFound />} />
+                <Route path="/partner/*" element={
+                  <RoleProtectedRoute role="partner">
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/partner/dashboard" replace />} />
+                      <Route path="/dashboard" element={<PartnerDashboard />} />
+                    </Routes>
+                  </RoleProtectedRoute>
+                } />
               </Routes>
             </Layout>
             <Toaster

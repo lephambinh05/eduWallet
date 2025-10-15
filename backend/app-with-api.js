@@ -14,6 +14,8 @@ app.use(express.json());
 const portfolioRoutes = require('./src/routes/portfolio');
 const walletRoutes = require('./routes/wallet');
 const User = require('./src/models/User');
+// Partner routes (local to backend/partner)
+const partnerRoutes = require('./partner/routes/partners');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eduwallet', {
@@ -41,6 +43,8 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/wallet', walletRoutes);
+// Mount partner routes
+app.use('/api/partners', partnerRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {
