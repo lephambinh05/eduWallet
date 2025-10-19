@@ -37,6 +37,8 @@ const learnPassRoutes = require('./routes/learnPass');
 const certificateRoutes = require('./routes/certificates');
 const marketplaceRoutes = require('./routes/marketplace');
 const blockchainRoutes = require('./routes/blockchain');
+const eduWalletDataStoreRoutes = require('./routes/eduWalletDataStore');
+const pointRoutes = require('./routes/point');
 const adminRoutes = require('./routes/admin');
 
 // Import middleware
@@ -160,6 +162,8 @@ app.use('/api/learnpass', learnPassRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/blockchain', blockchainRoutes);
+app.use('/api/eduwallet', eduWalletDataStoreRoutes);
+app.use('/api/point', pointRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Socket.IO connection handling

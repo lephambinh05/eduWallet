@@ -46,7 +46,8 @@ class BlockchainService {
       learnPassNFT: process.env.LEARNPASS_NFT_ADDRESS,
       certificateNFT: process.env.CERTIFICATE_NFT_ADDRESS,
       factory: process.env.FACTORY_ADDRESS,
-      marketplace: process.env.MARKETPLACE_ADDRESS
+      marketplace: process.env.MARKETPLACE_ADDRESS,
+      eduWalletDataStore: process.env.EDUWALLET_DATASTORE_ADDRESS
     };
 
     // Contract ABIs (simplified - in production, load from JSON files)
@@ -100,6 +101,35 @@ class BlockchainService {
         "function purchaseItem(uint256 _itemId)",
         "function getActiveItems() view returns (tuple(uint256 itemId, string name, string description, uint256 price, uint256 stock, bool isActive, uint256 createdAt, uint256 lastUpdated)[])",
         "function getItemDetails(uint256 _itemId) view returns (tuple(uint256 itemId, string name, string description, uint256 price, uint256 stock, bool isActive, uint256 createdAt, uint256 lastUpdated))"
+      ],
+      eduWalletDataStore: [
+        // Learning Records
+        "function addLearningRecord(string memory _studentName, string memory _institution, string memory _courseName, string memory _certificateHash, uint256 _score, address _student) external",
+        "function getLearningRecord(uint256 _id) external view returns (uint256 id, string memory studentName, string memory institution, string memory courseName, string memory certificateHash, uint256 completionDate, uint256 score, bool verified, address issuer, address student)",
+        "function getStudentRecords(address _student) external view returns (uint256[] memory)",
+        
+        // Badges
+        "function earnBadge(string memory _name, string memory _description, string memory _imageHash, address _student) external",
+        "function getBadge(uint256 _id) external view returns (uint256 id, string memory name, string memory description, string memory imageHash, uint256 earnedDate, address student, bool active)",
+        "function getStudentBadges(address _student) external view returns (uint256[] memory)",
+        
+        // Portfolios
+        "function createPortfolio(string memory _title, string memory _description, string memory _projectHash, string[] memory _skills) external",
+        "function getPortfolio(uint256 _id) external view returns (uint256 id, string memory title, string memory description, string memory projectHash, string[] memory skills, uint256 createdDate, address owner)",
+        "function getStudentPortfolios(address _student) external view returns (uint256[] memory)",
+        
+        // Authorization
+        "function authorizeIssuer(address _issuer, bool _authorized) external",
+        "function authorizedIssuers(address _issuer) external view returns (bool)",
+        
+        // Counts
+        "function getCounts() external view returns (uint256 records, uint256 badges, uint256 portfolios)",
+        "function recordCount() external view returns (uint256)",
+        "function badgeCount() external view returns (uint256)",
+        "function portfolioCount() external view returns (uint256)",
+        
+        // Owner
+        "function owner() external view returns (address)"
       ]
     };
 

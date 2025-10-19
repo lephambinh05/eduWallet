@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useWallet } from '../context/WalletContext';
 import { getCurrentUser } from '../utils/userUtils';
-import { FaGraduationCap, FaUser, FaCertificate, FaTrophy, FaCoins, FaWallet, FaPlus, FaCheck } from 'react-icons/fa';
+import { FaGraduationCap, FaUser, FaCertificate, FaTrophy, FaCoins, FaWallet, FaPlus, FaCheck, FaCode, FaProjectDiagram } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import portfolioContractService from '../services/portfolioContractService';
 
 const Container = styled.div`
   max-width: 1000px;
@@ -150,6 +151,14 @@ const CreateNFT = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [nftCreated, setNftCreated] = useState(false);
+  const [isCreatingPortfolio, setIsCreatingPortfolio] = useState(false);
+  const [portfolioCreated, setPortfolioCreated] = useState(false);
+  
+  // Portfolio form states
+  const [portfolioTitle, setPortfolioTitle] = useState('');
+  const [portfolioDescription, setPortfolioDescription] = useState('');
+  const [portfolioSkills, setPortfolioSkills] = useState('');
+  const [portfolioProjectHash, setPortfolioProjectHash] = useState('');
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -157,6 +166,65 @@ const CreateNFT = () => {
       setCurrentUser(user);
     }
   }, []);
+
+  // Tạo Portfolio NFT
+  const createPortfolioNFT = async () => {
+    if (!isConnected || !account) {
+      toast.error('Vui lòng kết nối ví trước!');
+      return;
+    }
+
+    if (!portfolioTitle || !portfolioDescription || !portfolioSkills) {
+      toast.error('Vui lòng điền đầy đủ thông tin Portfolio!');
+      return;
+    }
+
+    setIsCreatingPortfolio(true);
+
+    try {
+      // Kết nối với contract
+      const connected = await portfolioContractService.connectWallet();
+      if (!connected) {
+        toast.error('Không thể kết nối với smart contract!');
+        return;
+      }
+
+      // Chuẩn bị dữ liệu
+      const skillsArray = portfolioSkills.split(',').map(skill => skill.trim()).filter(skill => skill);
+      const projectHash = portfolioProjectHash || `0x${Date.now().toString(16)}`;
+
+      const portfolioData = {
+        title: portfolioTitle,
+        description: portfolioDescription,
+        projectHash: projectHash,
+        skills: skillsArray
+      };
+
+      // Gọi smart contract
+      const result = await portfolioContractService.createPortfolioNFT(portfolioData);
+
+      if (result.success) {
+        toast.success('✅ Tạo Portfolio NFT thành công!');
+        setPortfolioCreated(true);
+        
+        // Reset form
+        setPortfolioTitle('');
+        setPortfolioDescription('');
+        setPortfolioSkills('');
+        setPortfolioProjectHash('');
+        
+        console.log('Portfolio NFT created:', result);
+      } else {
+        toast.error('❌ Lỗi: ' + result.error);
+      }
+
+    } catch (error) {
+      console.error('Error creating Portfolio NFT:', error);
+      toast.error('Có lỗi xảy ra khi tạo Portfolio NFT: ' + error.message);
+    } finally {
+      setIsCreatingPortfolio(false);
+    }
+  };
 
   const createLearnPassNFT = async () => {
     if (!isConnected || !account) {
@@ -389,6 +457,146 @@ const CreateNFT = () => {
                   <>
                     <FaPlus />
                     Tạo LearnPass NFT
+                  </>
+                )}
+              </CreateButton>
+            </div>
+          )}
+        </Card>
+      </Section>
+
+      <Section>
+        <SectionTitle>
+          <FaProjectDiagram /> Tạo Portfolio NFT
+        </SectionTitle>
+        
+        <Card>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#667eea', marginBottom: '1rem' }}>Thông tin Portfolio</h3>
+            
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>
+                  Tiêu đề dự án *
+                </label>
+                <input
+                  type="text"
+                  value={portfolioTitle}
+                  onChange={(e) => setPortfolioTitle(e.target.value)}
+                  placeholder="Ví dụ: EduWallet DApp"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>
+                  Mô tả dự án *
+                </label>
+                <textarea
+                  value={portfolioDescription}
+                  onChange={(e) => setPortfolioDescription(e.target.value)}
+                  placeholder="Mô tả chi tiết về dự án của bạn..."
+                  rows="4"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>
+                  Kỹ năng sử dụng * (phân cách bằng dấu phẩy)
+                </label>
+                <input
+                  type="text"
+                  value={portfolioSkills}
+                  onChange={(e) => setPortfolioSkills(e.target.value)}
+                  placeholder="Ví dụ: React, Node.js, Solidity, MongoDB"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#fff' }}>
+                  Project Hash (tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  value={portfolioProjectHash}
+                  onChange={(e) => setPortfolioProjectHash(e.target.value)}
+                  placeholder="Hash của dự án hoặc để trống để tự động tạo"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <NFTPreview style={{ background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)' }}>
+            <NFTIcon>
+              <FaProjectDiagram />
+            </NFTIcon>
+            <h3>Portfolio NFT</h3>
+            <p>Dự án của {currentUser.firstName} {currentUser.lastName}</p>
+            <p style={{ opacity: 0.8, fontSize: '0.9rem' }}>
+              NFT này sẽ chứa thông tin dự án và kỹ năng của bạn
+            </p>
+          </NFTPreview>
+
+          {!isConnected ? (
+            <div style={{ textAlign: 'center', color: '#ff6b6b', marginBottom: '1rem' }}>
+              ⚠️ Vui lòng kết nối ví để tạo Portfolio NFT
+            </div>
+          ) : portfolioCreated ? (
+            <div style={{ textAlign: 'center', color: '#4CAF50', marginBottom: '1rem' }}>
+              ✅ Portfolio NFT đã được tạo thành công!
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <CreateButton 
+                onClick={createPortfolioNFT} 
+                disabled={isCreatingPortfolio}
+                style={{ background: 'linear-gradient(90deg, #ff6b6b, #ee5a24)' }}
+              >
+                {isCreatingPortfolio ? (
+                  <>
+                    <LoadingSpinner />
+                    Đang tạo Portfolio NFT...
+                  </>
+                ) : (
+                  <>
+                    <FaCode />
+                    Tạo Portfolio NFT
                   </>
                 )}
               </CreateButton>

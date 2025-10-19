@@ -21,7 +21,8 @@ import {
   FaChartLine,
   FaAngleLeft,
   FaAngleRight,
-  FaGem
+  FaGem,
+  FaCoins
 } from 'react-icons/fa';
 import { getCurrentUser } from '../utils/userUtils';
 import { useAuth } from '../context/AuthContext';
@@ -408,6 +409,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { path: '/learnpass', icon: FaGraduationCap, text: 'LearnPass', section: 'main', protected: true },
     { path: '/marketplace', icon: FaStore, text: 'Marketplace', section: 'main', protected: true },
     { path: '/badges', icon: FaTrophy, text: 'Badges', section: 'main', protected: true },
+    { path: '/deposit-points', icon: FaCoins, text: 'Nạp Point', section: 'main', protected: true },
     { path: '/transfer', icon: FaWallet, text: 'Chuyển tiền', section: 'main', protected: true },
     { path: '/verify', icon: FaShieldAlt, text: 'Xác thực', section: 'main' },
     { path: '/about', icon: FaIdCard, text: 'Giới thiệu', section: 'main' },

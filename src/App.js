@@ -24,6 +24,7 @@ import CreateNFT from './pages/CreateNFT';
 import Portfolio from './pages/Portfolio';
 import PortfolioNFT from './pages/PortfolioNFT';
 import MetaMaskGuide from './pages/MetaMaskGuide';
+import DepositPoints from './pages/DepositPoints';
 
 // Context
 import { WalletProvider } from './context/WalletContext';
@@ -150,6 +151,11 @@ function App() {
         <Route path="/portfolio-nft" element={
           <ProtectedRoute>
             <PortfolioNFT />
+          </ProtectedRoute>
+        } />
+        <Route path="/deposit-points" element={
+          <ProtectedRoute>
+            <DepositPoints />
           </ProtectedRoute>
         } />
                 <Route path="*" element={<NotFound />} />
