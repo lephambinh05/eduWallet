@@ -26,16 +26,27 @@ import PortfolioNFT from './pages/PortfolioNFT';
 import MetaMaskGuide from './pages/MetaMaskGuide';
 import DepositPoints from './pages/DepositPoints';
 
+// Admin Pages
+import AdminLogin from './features/admin/pages/AdminLogin';
+import AdminDashboard from './features/admin/pages/AdminDashboard';
+import AdminUsers from './features/admin/pages/AdminUsers';
+import AdminActivities from './features/admin/pages/AdminActivities';
+import AdminCertificates from './features/admin/pages/AdminCertificates';
+import AdminLearnPasses from './features/admin/pages/AdminLearnPasses';
+import AdminLayout from './features/admin/components/AdminLayout';
+import AdminRoute from './features/admin/components/AdminRoute';
+
 // Context
 import { WalletProvider } from './context/WalletContext';
 import { AuthProvider } from './context/AuthContext';
+import { AdminProvider } from './features/admin/context/AdminContext';
 
 // Utils - removed setTestUser import
 
 // Utils
 import socket from './utils/socket';
 import { getUserFromLocalStorage } from './utils/userUtils';
-import { clearLocalStorage } from './utils/clearLocalStorage';
+// import { clearLocalStorage } from './utils/clearLocalStorage'; // Temporarily disabled
 
 const queryClient = new QueryClient();
 
@@ -86,92 +97,128 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WalletProvider>
-            <Router>
-            {noti && (
-              <div
-                style={{
-                  background: 'yellow',
-                  color: '#333',
-                  padding: 12,
-                  borderRadius: 6,
-                  position: 'fixed',
-                  right: 20,
-                  top: 20,
-                  zIndex: 9999
-                }}
-              >
-                {noti}
-              </div>
-            )}
-            <Layout>
+            <AdminProvider>
+              <Router>
+              {noti && (
+                <div
+                  style={{
+                    background: 'yellow',
+                    color: '#333',
+                    padding: 12,
+                    borderRadius: 6,
+                    position: 'fixed',
+                    right: 20,
+                    top: 20,
+                    zIndex: 9999
+                  }}
+                >
+                  {noti}
+                </div>
+              )}
+              
               <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }>
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="activities" element={<AdminActivities />} />
+                  <Route path="certificates" element={<AdminCertificates />} />
+                  <Route path="learnpasses" element={<AdminLearnPasses />} />
+                  {/* More admin routes will be added here */}
+                </Route>
+
+                {/* Regular App Routes */}
+                <Route path="/" element={<Layout><Home /></Layout>} />
+                <Route path="/login" element={<Layout><Login /></Layout>} />
+                <Route path="/register" element={<Layout><Register /></Layout>} />
                 <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
+                  <Layout>
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  </Layout>
                 } />
                 <Route path="/learnpass" element={
-                  <ProtectedRoute>
-                    <LearnPass />
-                  </ProtectedRoute>
+                  <Layout>
+                    <ProtectedRoute>
+                      <LearnPass />
+                    </ProtectedRoute>
+                  </Layout>
                 } />
                 <Route path="/marketplace" element={
-                  <ProtectedRoute>
-                    <Marketplace />
-                  </ProtectedRoute>
+                  <Layout>
+                    <ProtectedRoute>
+                      <Marketplace />
+                    </ProtectedRoute>
+                  </Layout>
                 } />
                 <Route path="/badges" element={
-                  <ProtectedRoute>
-                    <Badges />
-                  </ProtectedRoute>
+                  <Layout>
+                    <ProtectedRoute>
+                      <Badges />
+                    </ProtectedRoute>
+                  </Layout>
                 } />
-                <Route path="/verify" element={<Verify />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/metamask-guide" element={<MetaMaskGuide />} />
+                <Route path="/verify" element={<Layout><Verify /></Layout>} />
+                <Route path="/about" element={<Layout><About /></Layout>} />
+                <Route path="/metamask-guide" element={<Layout><MetaMaskGuide /></Layout>} />
                 {/* Route chuyển tiền bảo vệ đăng nhập */}
                 <Route path="/transfer" element={
-                  <ProtectedRoute>
-                    <Transfer />
-                  </ProtectedRoute>
+                  <Layout>
+                    <ProtectedRoute>
+                      <Transfer />
+                    </ProtectedRoute>
+                  </Layout>
                 } />
                 {/* Route tạo NFT bảo vệ đăng nhập */}
-        <Route path="/create-nft" element={
-          <ProtectedRoute>
-            <CreateNFT />
-          </ProtectedRoute>
-        } />
-        <Route path="/portfolio" element={
-          <ProtectedRoute>
-            <Portfolio />
-          </ProtectedRoute>
-        } />
-        <Route path="/portfolio-nft" element={
-          <ProtectedRoute>
-            <PortfolioNFT />
-          </ProtectedRoute>
-        } />
-        <Route path="/deposit-points" element={
-          <ProtectedRoute>
-            <DepositPoints />
-          </ProtectedRoute>
-        } />
-                <Route path="*" element={<NotFound />} />
+                <Route path="/create-nft" element={
+                  <Layout>
+                    <ProtectedRoute>
+                      <CreateNFT />
+                    </ProtectedRoute>
+                  </Layout>
+                } />
+                <Route path="/portfolio" element={
+                  <Layout>
+                    <ProtectedRoute>
+                      <Portfolio />
+                    </ProtectedRoute>
+                  </Layout>
+                } />
+                <Route path="/portfolio-nft" element={
+                  <Layout>
+                    <ProtectedRoute>
+                      <PortfolioNFT />
+                    </ProtectedRoute>
+                  </Layout>
+                } />
+                <Route path="/deposit-points" element={
+                  <Layout>
+                    <ProtectedRoute>
+                      <DepositPoints />
+                    </ProtectedRoute>
+                  </Layout>
+                } />
+                <Route path="*" element={<Layout><NotFound /></Layout>} />
               </Routes>
-            </Layout>
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-              }}
-            />
-            </Router>
+              
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#363636',
+                    color: '#fff',
+                  },
+                }}
+              />
+              </Router>
+            </AdminProvider>
           </WalletProvider>
         </AuthProvider>
       </QueryClientProvider>
