@@ -1,5 +1,6 @@
 const winston = require('winston');
 const path = require('path');
+const ActivityLog = require('../models/ActivityLog');
 
 // Create logs directory if it doesn't exist
 const fs = require('fs');
@@ -46,14 +47,112 @@ const logger = winston.createLogger({
   ]
 });
 
-// Add user action logging
-logger.logUserAction = (userId, action, metadata = {}) => {
-  logger.info('User action', {
+// Add user action logging with database persistence
+logger.logUserAction = async (userId, actionType, metadata = {}, req = null) => {
+  const logData = {
     userId,
-    action,
+    action: actionType,
     metadata,
     timestamp: new Date().toISOString()
-  });
+  };
+
+  // Log to Winston
+  logger.info('User action', logData);
+
+  // Save to database
+  try {
+    const activityLog = new ActivityLog({
+      userId,
+      actionType,
+      description: generateDescription(actionType, metadata),
+      metadata,
+      ipAddress: req?.ip || req?.connection?.remoteAddress || null,
+      userAgent: req?.get('user-agent') || null,
+      status: 'success'
+    });
+
+    await activityLog.save();
+  } catch (error) {
+    logger.error('Failed to save activity log to database', { error: error.message });
+  }
+};
+
+// Generate human-readable description
+function generateDescription(actionType, metadata) {
+  const descriptions = {
+    'user_created': `Created user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_updated': `Updated user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_deleted': `Deleted user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_role_updated': `Changed role to ${metadata.newRole} for user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_status_updated': `Changed status to ${metadata.newStatus} for user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_blocked': `Blocked user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'user_unblocked': `Unblocked user: ${metadata.targetUserEmail || 'Unknown'}`,
+    'users_bulk_deleted': `Bulk deleted ${metadata.count} users`,
+    'users_bulk_role_updated': `Bulk updated role to ${metadata.newRole} for ${metadata.count} users`,
+    'institution_approved': `Approved institution ID: ${metadata.institutionId}`,
+    'institution_rejected': `Rejected institution ID: ${metadata.institutionId}`,
+    'login': 'User logged in',
+    'logout': 'User logged out',
+    'password_changed': 'Password changed',
+    'profile_updated': 'Profile updated'
+  };
+
+  return descriptions[actionType] || `Action: ${actionType}`;
+}
+
+// Get user activities
+logger.getUserActivities = async (userId, options = {}) => {
+  const { page = 1, limit = 20 } = options;
+  const skip = (page - 1) * limit;
+
+  const [activities, total] = await Promise.all([
+    ActivityLog.find({ userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ActivityLog.countDocuments({ userId })
+  ]);
+
+  return {
+    activities,
+    pagination: {
+      current: page,
+      pages: Math.ceil(total / limit),
+      total,
+      limit
+    }
+  };
+};
+
+// Get system activities
+logger.getActivities = async (options = {}) => {
+  const { page = 1, limit = 50, actionType, userId } = options;
+  const skip = (page - 1) * limit;
+
+  const query = {};
+  if (actionType) query.actionType = actionType;
+  if (userId) query.userId = userId;
+
+  const [activities, total] = await Promise.all([
+    ActivityLog.find(query)
+      .populate('userId', 'username email firstName lastName')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ActivityLog.countDocuments(query)
+  ]);
+
+  return {
+    activities,
+    pagination: {
+      current: page,
+      pages: Math.ceil(total / limit),
+      total,
+      limit
+    }
+  };
 };
 
 // Add system event logging

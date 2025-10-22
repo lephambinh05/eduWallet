@@ -146,6 +146,55 @@ const schemas = {
 
   adminBlockUser: Joi.object({
     reason: Joi.string().min(1).max(200).required()
+  }),
+
+  adminCreateUser: Joi.object({
+    username: Joi.string().alphanum().min(3).max(30).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+    firstName: Joi.string().min(1).max(50).required(),
+    lastName: Joi.string().min(1).max(50).required(),
+    dateOfBirth: Joi.date().max('now').required(),
+    phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).optional(),
+    role: Joi.string().valid('student', 'institution', 'admin', 'super_admin').default('student'),
+    isActive: Joi.boolean().default(true),
+    isEmailVerified: Joi.boolean().default(false)
+  }),
+
+  adminUpdateUser: Joi.object({
+    username: Joi.string().alphanum().min(3).max(30).optional(),
+    email: Joi.string().email().optional(),
+    firstName: Joi.string().min(1).max(50).optional(),
+    lastName: Joi.string().min(1).max(50).optional(),
+    dateOfBirth: Joi.date().max('now').optional(),
+    phone: Joi.string().pattern(/^[0-9+\-\s()]+$/).optional().allow(''),
+    role: Joi.string().valid('student', 'institution', 'admin', 'super_admin').optional(),
+    isActive: Joi.boolean().optional(),
+    isEmailVerified: Joi.boolean().optional(),
+    studentId: Joi.string().optional().allow(''),
+    avatar: Joi.string().uri().optional().allow('')
+  }),
+
+  adminUpdateUserStatus: Joi.object({
+    isActive: Joi.boolean().required(),
+    reason: Joi.string().min(1).max(200).optional()
+  }),
+
+  adminUsersQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    role: Joi.string().valid('student', 'institution', 'admin', 'super_admin').optional(),
+    status: Joi.string().valid('active', 'inactive', 'blocked').optional(),
+    search: Joi.string().min(1).max(100).optional(),
+    sortBy: Joi.string().valid('createdAt', 'updatedAt', 'username', 'email', 'firstName', 'lastName').default('createdAt'),
+    order: Joi.string().valid('asc', 'desc').default('desc'),
+    isEmailVerified: Joi.boolean().optional()
+  }),
+
+  objectId: Joi.object({
+    id: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().messages({
+      'string.pattern.base': 'Invalid ID format'
+    })
   })
 };
 

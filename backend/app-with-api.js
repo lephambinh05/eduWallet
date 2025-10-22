@@ -10,10 +10,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Import routes and models
+// Import models (must be loaded before routes that use them)
+const User = require('./src/models/User');
+require('./src/models/Institution');
+require('./src/models/Certificate');
+require('./src/models/LearnPass');
+
+// Import routes
 const portfolioRoutes = require('./src/routes/portfolio');
 const walletRoutes = require('./routes/wallet');
-const User = require('./src/models/User');
+const adminRoutes = require('./src/routes/admin');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/eduwallet', {
@@ -41,6 +47,7 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -453,12 +460,13 @@ const connectDB = async () => {
     console.log('✅ MongoDB connected successfully!');
     
     // Start server
-    const PORT = process.env.PORT || 3003;
+    const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`🚀 EduWallet Backend Server running on http://localhost:${PORT}`);
       console.log(`📋 Health check: http://localhost:${PORT}/health`);
       console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth/*`);
       console.log(`👤 User endpoints: http://localhost:${PORT}/api/users/*`);
+      console.log(`👑 Admin endpoints: http://localhost:${PORT}/api/admin/*`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
     });
     

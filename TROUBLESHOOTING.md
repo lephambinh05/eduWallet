@@ -1,6 +1,52 @@
 # Hướng dẫn khắc phục sự cố - EduWallet
 
-## 🚨 Lỗi thường gặp và cách khắc phục
+## � ADMIN LOGIN ISSUE - FIXED! ✅
+
+### ✅ Problem: Login Failed với đúng credentials
+**Credentials:** `admin@example.com` / `Admin123456`
+**Error:** Login failed mặc dù nhập đúng
+
+### 🔍 Root Causes & Fixes:
+
+#### 1. ❌ Wrong API Port
+**Fixed in:** `src/services/adminService.js`
+```javascript
+// BEFORE (WRONG - Port 3001)
+const API_BASE_URL = 'http://localhost:3001/api';
+
+// AFTER (CORRECT - Port 5000)
+const API_BASE_URL = 'http://localhost:5000/api';
+```
+
+#### 2. ❌ Wrong Response Property
+**Fixed in:** `src/context/AdminContext.js`
+```javascript
+// BEFORE (WRONG)
+const { user, accessToken } = response.data;
+
+// AFTER (CORRECT)
+const { user, token } = response.data;
+```
+
+#### 3. ❌ Wrong User Property in Toast
+**Fixed in:** `src/context/AdminContext.js`
+```javascript
+// BEFORE (WRONG - firstName might not exist)
+toast.success(`Welcome back, ${user.firstName}!`);
+
+// AFTER (CORRECT - username always exists)
+toast.success(`Welcome back, ${user.username}!`);
+```
+
+### ✅ How to Test Now:
+1. Refresh browser: `Ctrl + Shift + R`
+2. Go to: `http://localhost:3000/admin/login`
+3. Login with: `admin@example.com` / `Admin123456`
+4. Should redirect to dashboard with success toast!
+
+---
+
+## �🚨 Lỗi thường gặp và cách khắc phục
 
 ### 1. Lỗi "react-scripts is not recognized"
 
