@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaEye, FaEyeSlash, FaUser, FaLock, FaGraduationCap } from 'react-icons/fa';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUser,
+  FaLock,
+  FaGraduationCap,
+} from "react-icons/fa";
 // import toast from 'react-hot-toast'; // Removed unused import
 
 const LoginContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+  background: linear-gradient(
+    135deg,
+    #0c0c0c 0%,
+    #1a1a2e 25%,
+    #16213e 50%,
+    #0f3460 75%,
+    #533483 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,7 +30,7 @@ const LoginContainer = styled.div`
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -37,9 +50,22 @@ const LoginCard = styled(motion.div)`
   padding: 3rem;
   width: 100%;
   max-width: 450px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   position: relative;
   z-index: 1;
+
+  @media (max-width: 768px) {
+    padding: 2rem;
+    margin: 1rem;
+    max-width: 100%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1.5rem;
+    margin: 0.5rem;
+    border-radius: 16px;
+  }
 `;
 
 const Logo = styled.div`
@@ -47,13 +73,13 @@ const Logo = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 2rem;
-  
+
   .logo-icon {
     font-size: 3rem;
     color: #a259ff;
     margin-right: 1rem;
   }
-  
+
   .logo-text {
     font-size: 2rem;
     font-weight: 700;
@@ -61,6 +87,30 @@ const Logo = styled.div`
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+
+    .logo-icon {
+      font-size: 2.5rem;
+    }
+
+    .logo-text {
+      font-size: 1.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 1.25rem;
+
+    .logo-icon {
+      font-size: 2rem;
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+    }
   }
 `;
 
@@ -70,6 +120,14 @@ const Title = styled.h1`
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -77,12 +135,30 @@ const Subtitle = styled.p`
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 2rem;
   font-size: 1rem;
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem;
+  }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 1rem;
+  }
 `;
 
 const InputGroup = styled.div`
@@ -98,16 +174,33 @@ const Input = styled.input`
   color: white;
   font-size: 1rem;
   transition: all 0.3s ease;
-  
+  -webkit-appearance: none;
+  appearance: none;
+
   &::placeholder {
     color: rgba(255, 255, 255, 0.5);
   }
-  
+
   &:focus {
     outline: none;
     border-color: #a259ff;
     background: rgba(255, 255, 255, 0.08);
     box-shadow: 0 0 0 3px rgba(162, 89, 255, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.9rem 0.9rem 0.9rem 2.75rem;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+
+  @media (hover: none) {
+    font-size: 16px; /* Prevent auto-zoom on iOS */
   }
 `;
 
@@ -119,6 +212,16 @@ const InputIcon = styled.div`
   color: rgba(255, 255, 255, 0.5);
   font-size: 1.1rem;
   z-index: 2;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    left: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    left: 0.8rem;
+  }
 `;
 
 const PasswordToggle = styled.button`
@@ -133,9 +236,30 @@ const PasswordToggle = styled.button`
   font-size: 1.1rem;
   z-index: 2;
   transition: color 0.3s ease;
-  
+  padding: 0.5rem;
+  -webkit-tap-highlight-color: transparent;
+
   &:hover {
     color: #a259ff;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    right: 0.75rem;
+    padding: 0.4rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    right: 0.5rem;
+    padding: 0.3rem;
+  }
+
+  @media (hover: none) {
+    &:active {
+      color: #a259ff;
+      transform: translateY(-50%) scale(0.95);
+    }
   }
 `;
 
@@ -145,9 +269,27 @@ const ForgotPassword = styled(Link)`
   font-size: 0.9rem;
   text-align: right;
   transition: color 0.3s ease;
-  
+  -webkit-tap-highlight-color: transparent;
+  padding: 0.2rem 0;
+  display: inline-block;
+
   &:hover {
     color: #3772ff;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
+
+  @media (hover: none) {
+    &:active {
+      color: #3772ff;
+      transform: scale(0.98);
+    }
   }
 `;
 
@@ -164,19 +306,43 @@ const SubmitButton = styled(motion.button)`
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  
+  -webkit-tap-highlight-color: transparent;
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
   }
-  
+
   &:not(:disabled):hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(162, 89, 255, 0.3);
   }
-  
+
   &:not(:disabled):active {
     transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.9rem;
+    font-size: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  @media (hover: none) {
+    &:not(:disabled):hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    &:not(:disabled):active {
+      transform: scale(0.98);
+      opacity: 0.95;
+    }
   }
 `;
 
@@ -184,19 +350,37 @@ const Divider = styled.div`
   display: flex;
   align-items: center;
   margin: 1.5rem 0;
-  
+
   &::before,
   &::after {
-    content: '';
+    content: "";
     flex: 1;
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   span {
     color: rgba(255, 255, 255, 0.5);
     padding: 0 1rem;
     font-size: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    margin: 1.25rem 0;
+
+    span {
+      padding: 0 0.75rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    margin: 1rem 0;
+
+    span {
+      padding: 0 0.5rem;
+      font-size: 0.8rem;
+    }
   }
 `;
 
@@ -207,25 +391,42 @@ const RegisterLink = styled(Link)`
   text-decoration: none;
   font-size: 0.95rem;
   transition: color 0.3s ease;
-  
+  -webkit-tap-highlight-color: transparent;
+  padding: 0.2rem 0;
+
   &:hover {
     color: #a259ff;
   }
-  
+
   strong {
     color: #a259ff;
     font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+  }
+
+  @media (hover: none) {
+    &:active {
+      color: #a259ff;
+      transform: scale(0.98);
+    }
   }
 `;
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -244,10 +445,10 @@ const Login = () => {
       const result = await login(formData.email, formData.password);
       if (result.success) {
         // Redirect to dashboard after successful login
-        navigate('/dashboard');
+        navigate("/dashboard");
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -264,10 +465,10 @@ const Login = () => {
           <FaGraduationCap className="logo-icon" />
           <span className="logo-text">EduWallet</span>
         </Logo>
-        
+
         <Title>Chào mừng trở lại!</Title>
         <Subtitle>Đăng nhập để tiếp tục hành trình học tập của bạn</Subtitle>
-        
+
         <Form onSubmit={handleSubmit}>
           <InputGroup>
             <InputIcon>
@@ -282,13 +483,13 @@ const Login = () => {
               required
             />
           </InputGroup>
-          
+
           <InputGroup>
             <InputIcon>
               <FaLock />
             </InputIcon>
             <Input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Mật khẩu"
               value={formData.password}
@@ -302,24 +503,22 @@ const Login = () => {
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </PasswordToggle>
           </InputGroup>
-          
-          <ForgotPassword to="/forgot-password">
-            Quên mật khẩu?
-          </ForgotPassword>
-          
+
+          <ForgotPassword to="/forgot-password">Quên mật khẩu?</ForgotPassword>
+
           <SubmitButton
             type="submit"
             disabled={isLoading}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </SubmitButton>
-          
+
           <Divider>
             <span>hoặc</span>
           </Divider>
-          
+
           <RegisterLink to="/register">
             Chưa có tài khoản? <strong>Tạo tài khoản mới</strong>
           </RegisterLink>

@@ -1,11 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { useWallet } from '../context/WalletContext';
-import { FaGraduationCap, FaWallet, FaBars, FaTimes, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaCopy, FaCheck, FaIdCard } from 'react-icons/fa';
-import { getCurrentUser, logoutUser } from '../utils/userUtils';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import { useWallet } from "../context/WalletContext";
+import {
+  FaGraduationCap,
+  FaWallet,
+  FaBars,
+  FaTimes,
+  FaUser,
+  FaSignOutAlt,
+  FaSignInAlt,
+  FaUserPlus,
+  FaCopy,
+  FaCheck,
+  FaIdCard,
+} from "react-icons/fa";
+import { getCurrentUser, logoutUser } from "../utils/userUtils";
+import toast from "react-hot-toast";
 
 // Các styled-component phía dưới (giữ nguyên như file bạn gửi, không đổi tên)
 
@@ -18,7 +30,7 @@ const Nav = styled.nav`
   top: 0;
   z-index: 1000;
   padding: 1rem 0;
-  box-shadow: 0 4px 32px 0 rgba(83,52,131,0.18);
+  box-shadow: 0 4px 32px 0 rgba(83, 52, 131, 0.18);
 `;
 
 const NavContainer = styled.div`
@@ -28,6 +40,13 @@ const NavContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 1024px) {
+    padding: 0 1.25rem;
+  }
+  @media (max-width: 480px) {
+    padding: 0 0.75rem;
+  }
 `;
 
 const Logo = styled(Link)`
@@ -35,13 +54,21 @@ const Logo = styled(Link)`
   align-items: center;
   text-decoration: none;
   color: white;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   .logo-icon {
-    margin-right: 0.6rem;
+    margin-right: 0.5rem;
     color: #a259ff;
-    font-size: 2rem;
+    font-size: 1.8rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+    .logo-icon {
+      font-size: 1.4rem;
+      margin-right: 0.4rem;
+    }
   }
 `;
 
@@ -58,10 +85,11 @@ const NavMenu = styled.div`
 `;
 
 const NavLink = styled(Link)`
-  color: ${props => props.active ? 'transparent' : 'white'};
-  background: ${props => props.active ? 'linear-gradient(90deg, #a259ff, #3772ff)' : 'none'};
-  -webkit-background-clip: ${props => props.active ? 'text' : 'unset'};
-  background-clip: ${props => props.active ? 'text' : 'unset'};
+  color: ${(props) => (props.active ? "transparent" : "white")};
+  background: ${(props) =>
+    props.active ? "linear-gradient(90deg, #a259ff, #3772ff)" : "none"};
+  -webkit-background-clip: ${(props) => (props.active ? "text" : "unset")};
+  background-clip: ${(props) => (props.active ? "text" : "unset")};
   font-weight: 600;
   text-decoration: none;
   font-size: 1.08rem;
@@ -72,11 +100,11 @@ const NavLink = styled(Link)`
     color: #a259ff;
   }
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     bottom: -6px;
-    width: ${props => props.active ? '100%' : '0'};
+    width: ${(props) => (props.active ? "100%" : "0")};
     height: 3px;
     border-radius: 2px;
     background: linear-gradient(90deg, #a259ff, #3772ff);
@@ -107,11 +135,11 @@ const AvatarButton = styled.button`
   font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 12px rgba(162,89,255,0.12);
+  box-shadow: 0 2px 12px rgba(162, 89, 255, 0.12);
   position: relative;
   transition: box-shadow 0.2s, transform 0.2s;
   &:hover {
-    box-shadow: 0 4px 24px rgba(162,89,255,0.22);
+    box-shadow: 0 4px 24px rgba(162, 89, 255, 0.22);
     transform: scale(1.07);
   }
 `;
@@ -123,7 +151,7 @@ const Dropdown = styled.div`
   min-width: 180px;
   background: rgba(30, 30, 50, 0.98);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(162,89,255,0.18);
+  box-shadow: 0 8px 32px rgba(162, 89, 255, 0.18);
   padding: 1rem 0.7rem;
   z-index: 2000;
   display: flex;
@@ -131,8 +159,14 @@ const Dropdown = styled.div`
   gap: 0.7rem;
   animation: fadeIn 0.2s;
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 `;
 
@@ -165,11 +199,11 @@ const WalletButton = styled(motion.button)`
   align-items: center;
   gap: 0.7rem;
   font-size: 1rem;
-  box-shadow: 0 2px 12px rgba(162,89,255,0.12);
+  box-shadow: 0 2px 12px rgba(162, 89, 255, 0.12);
   transition: all 0.2s;
   &:hover {
     transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 25px rgba(55,114,255,0.18);
+    box-shadow: 0 8px 25px rgba(55, 114, 255, 0.18);
     background: linear-gradient(90deg, #3772ff, #a259ff);
   }
   &:disabled {
@@ -180,7 +214,7 @@ const WalletButton = styled(motion.button)`
 `;
 
 const WalletAddress = styled.div`
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 0.5rem 1.1rem;
   font-family: monospace;
@@ -192,7 +226,7 @@ const WalletAddress = styled.div`
   cursor: pointer;
   transition: background 0.18s;
   &:hover {
-    background: rgba(162,89,255,0.18);
+    background: rgba(162, 89, 255, 0.18);
     color: #fff;
   }
 `;
@@ -219,7 +253,7 @@ const LoginButton = styled(Link)`
   font-size: 1rem;
   &:hover {
     transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 25px rgba(162,89,255,0.18);
+    box-shadow: 0 8px 25px rgba(162, 89, 255, 0.18);
     color: white;
     background: linear-gradient(90deg, #3772ff, #a259ff);
   }
@@ -243,7 +277,7 @@ const RegisterButton = styled(Link)`
     background: #a259ff;
     color: white;
     transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 25px rgba(162,89,255,0.18);
+    box-shadow: 0 8px 25px rgba(162, 89, 255, 0.18);
   }
 `;
 
@@ -290,10 +324,9 @@ const MobileNavLink = styled(Link)`
   }
 `;
 
-
 function getInitials(name) {
-  if (!name) return '';
-  const parts = name.trim().split(' ');
+  if (!name) return "";
+  const parts = name.trim().split(" ");
   if (parts.length === 1) return parts[0][0].toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
@@ -303,7 +336,8 @@ const Navbar = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { isConnected, account, connectWallet, disconnectWallet, isLoading } = useWallet();
+  const { isConnected, account, connectWallet, disconnectWallet, isLoading } =
+    useWallet();
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef();
@@ -324,7 +358,6 @@ const Navbar = () => {
     // eslint-disable-next-line
   }, [currentUser, isConnected, isLoading]);
 
-
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -332,30 +365,30 @@ const Navbar = () => {
       }
     }
     if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     } else {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
 
   const navItems = [
-    { path: '/', label: 'Trang chủ' },
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/learnpass', label: 'LearnPass' },
-    { path: '/marketplace', label: 'Marketplace' },
-    { path: '/badges', label: 'Badges' },
-    { path: '/transfer', label: 'Chuyển tiền' },   // Đã thêm chuyển tiền ở đây!
-    { path: '/verify', label: 'Xác minh' },
-    { path: '/about', label: 'Giới thiệu' },
+    { path: "/", label: "Trang chủ" },
+    { path: "/dashboard", label: "Dashboard" },
+    { path: "/learnpass", label: "LearnPass" },
+    { path: "/marketplace", label: "Marketplace" },
+    { path: "/badges", label: "Badges" },
+    { path: "/transfer", label: "Chuyển tiền" }, // Đã thêm chuyển tiền ở đây!
+    { path: "/verify", label: "Xác minh" },
+    { path: "/about", label: "Giới thiệu" },
   ];
 
   const handleWalletAction = () => {
     if (!currentUser) {
-      toast.error('Vui lòng đăng nhập trước khi kết nối ví!');
+      toast.error("Vui lòng đăng nhập trước khi kết nối ví!");
       return;
     }
-    
+
     if (isConnected) {
       disconnectWallet();
     } else {
@@ -367,8 +400,8 @@ const Navbar = () => {
     logoutUser();
     setCurrentUser(null);
     setShowDropdown(false);
-    toast.success('Đăng xuất thành công!');
-    navigate('/');
+    toast.success("Đăng xuất thành công!");
+    navigate("/");
   };
 
   const formatAddress = (address) => {
@@ -379,7 +412,7 @@ const Navbar = () => {
     if (account) {
       navigator.clipboard.writeText(account);
       setCopied(true);
-      toast.success('Đã copy địa chỉ ví!');
+      toast.success("Đã copy địa chỉ ví!");
       setTimeout(() => setCopied(false), 1200);
     }
   };
@@ -407,16 +440,36 @@ const Navbar = () => {
         <UserSection>
           {currentUser ? (
             <>
-              <div style={{ position: 'relative' }}>
-                <AvatarButton onClick={() => setShowDropdown((v) => !v)} title={currentUser.name}>
+              <div style={{ position: "relative" }}>
+                <AvatarButton
+                  onClick={() => setShowDropdown((v) => !v)}
+                  title={currentUser.name}
+                >
                   <FaIdCard />
                 </AvatarButton>
                 {showDropdown && (
                   <Dropdown ref={dropdownRef}>
-                    <div style={{ fontWeight: 600, color: '#a259ff', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "#a259ff",
+                        marginBottom: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
                       <FaUser /> {currentUser.name}
                     </div>
-                    <div style={{ fontSize: '0.95rem', color: '#bbb', marginBottom: 8 }}>{currentUser.email}</div>
+                    <div
+                      style={{
+                        fontSize: "0.95rem",
+                        color: "#bbb",
+                        marginBottom: 8,
+                      }}
+                    >
+                      {currentUser.email}
+                    </div>
                     <DropdownItem onClick={handleLogout}>
                       <FaSignOutAlt /> Đăng xuất
                     </DropdownItem>
@@ -427,7 +480,11 @@ const Navbar = () => {
                 <WalletAddress onClick={handleCopy} title="Copy địa chỉ ví">
                   <FaWallet />
                   {formatAddress(account)}
-                  {copied ? <FaCheck style={{ color: '#4CAF50' }} /> : <FaCopy />}
+                  {copied ? (
+                    <FaCheck style={{ color: "#4CAF50" }} />
+                  ) : (
+                    <FaCopy />
+                  )}
                 </WalletAddress>
               ) : (
                 <WalletButton
@@ -437,7 +494,7 @@ const Navbar = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <FaWallet />
-                  {isLoading ? 'Đang kết nối...' : 'Kết nối ví'}
+                  {isLoading ? "Đang kết nối..." : "Kết nối ví"}
                 </WalletButton>
               )}
             </>
@@ -453,7 +510,9 @@ const Navbar = () => {
               </RegisterButton>
             </AuthButtons>
           )}
-          <MobileMenuButton onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <MobileMenuButton
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
           </MobileMenuButton>
         </UserSection>
@@ -475,38 +534,78 @@ const Navbar = () => {
             </MobileNavLink>
           ))}
           {currentUser ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '2rem', alignItems: 'center' }}>
-              <AvatarButton style={{ width: 54, height: 54, fontSize: 26, marginBottom: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.2rem",
+                marginTop: "2rem",
+                alignItems: "center",
+              }}
+            >
+              <AvatarButton
+                style={{ width: 54, height: 54, fontSize: 26, marginBottom: 8 }}
+              >
                 <FaIdCard />
               </AvatarButton>
-              <div style={{ color: '#a259ff', fontWeight: 600 }}>{currentUser.name}</div>
-              <div style={{ color: '#bbb', fontSize: 14, marginBottom: 8 }}>{currentUser.email}</div>
-              <DropdownItem onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
+              <div style={{ color: "#a259ff", fontWeight: 600 }}>
+                {currentUser.name}
+              </div>
+              <div style={{ color: "#bbb", fontSize: 14, marginBottom: 8 }}>
+                {currentUser.email}
+              </div>
+              <DropdownItem
+                onClick={() => {
+                  handleLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
                 <FaSignOutAlt /> Đăng xuất
               </DropdownItem>
               {isConnected ? (
                 <WalletAddress onClick={handleCopy} style={{ marginTop: 8 }}>
                   <FaWallet />
                   {formatAddress(account)}
-                  {copied ? <FaCheck style={{ color: '#4CAF50' }} /> : <FaCopy />}
+                  {copied ? (
+                    <FaCheck style={{ color: "#4CAF50" }} />
+                  ) : (
+                    <FaCopy />
+                  )}
                 </WalletAddress>
               ) : (
                 <WalletButton
-                  onClick={() => { handleWalletAction(); setIsMobileMenuOpen(false); }}
+                  onClick={() => {
+                    handleWalletAction();
+                    setIsMobileMenuOpen(false);
+                  }}
                   style={{ marginTop: 8 }}
                 >
                   <FaWallet />
-                  {isLoading ? 'Đang kết nối...' : 'Kết nối ví'}
+                  {isLoading ? "Đang kết nối..." : "Kết nối ví"}
                 </WalletButton>
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '2rem', alignItems: 'center' }}>
-              <LoginButton to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.2rem",
+                marginTop: "2rem",
+                alignItems: "center",
+              }}
+            >
+              <LoginButton
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <FaSignInAlt />
                 Đăng nhập
               </LoginButton>
-              <RegisterButton to="/register" onClick={() => setIsMobileMenuOpen(false)}>
+              <RegisterButton
+                to="/register"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <FaUserPlus />
                 Đăng ký
               </RegisterButton>
