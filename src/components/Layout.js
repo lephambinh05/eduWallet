@@ -20,15 +20,15 @@ const LayoutContainer = styled.div`
 `;
 
 const MainContent = styled(motion.main).attrs((props) => ({
-  "data-sidebar-open": props.sidebarOpen,
+  "data-sidebar-open": props.$sidebarOpen,
 }))`
   flex: 1;
-  margin-left: ${(props) => (props.sidebarOpen ? "280px" : "80px")};
+  margin-left: ${(props) => (props.$sidebarOpen ? "280px" : "80px")};
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
 
   @media (max-width: 1024px) {
-    margin-left: ${(props) => (props.sidebarOpen ? "240px" : "70px")};
+    margin-left: ${(props) => (props.$sidebarOpen ? "240px" : "70px")};
   }
 
   @media (max-width: 768px) {
@@ -99,7 +99,7 @@ const Layout = ({ children }) => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        sidebarOpen={sidebarOpen}
+        $sidebarOpen={sidebarOpen}
       >
         <ContentWrapper>
           <PageContent

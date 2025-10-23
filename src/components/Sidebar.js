@@ -29,13 +29,13 @@ import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 const SidebarContainer = styled(motion.div).attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
-  width: ${(props) => (props.isOpen ? "280px" : "80px")};
+  width: ${(props) => (props.$isOpen ? "280px" : "80px")};
   background: rgba(20, 20, 40, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -49,15 +49,15 @@ const SidebarContainer = styled(motion.div).attrs((props) => ({
 
   @media (max-width: 768px) {
     width: 280px;
-    transform: translateX(${(props) => (props.isOpen ? "0" : "-100%")});
+    transform: translateX(${(props) => (props.$isOpen ? "0" : "-100%")});
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: ${(props) =>
-      props.isOpen ? "4px 0 32px rgba(83, 52, 131, 0.18)" : "none"};
+      props.$isOpen ? "4px 0 32px rgba(83, 52, 131, 0.18)" : "none"};
   }
 `;
 
 const SidebarHeader = styled.div.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   padding: 2rem 1.5rem 1.5rem;
   border-bottom: 1px solid rgba(120, 80, 220, 0.1);
@@ -68,7 +68,7 @@ const SidebarHeader = styled.div.attrs((props) => ({
 `;
 
 const Logo = styled(Link).attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   display: flex;
   align-items: center;
@@ -81,22 +81,22 @@ const Logo = styled(Link).attrs((props) => ({
   .logo-icon {
     color: #a259ff;
     font-size: 1.8rem;
-    margin-right: ${(props) => (props.isOpen ? "0.8rem" : "0")};
+    margin-right: ${(props) => (props.$isOpen ? "0.8rem" : "0")};
     transition: margin 0.3s;
   }
 
   .logo-text {
-    opacity: ${(props) => (props.isOpen ? "1" : "0")};
+    opacity: ${(props) => (props.$isOpen ? "1" : "0")};
     transition: opacity 0.3s;
     white-space: nowrap;
-    width: ${(props) => (props.isOpen ? "auto" : "0")};
+    width: ${(props) => (props.$isOpen ? "auto" : "0")};
     overflow: hidden;
     display: inline-block;
   }
 `;
 
 const ToggleButton = styled.button.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   position: absolute;
   top: 18px;
@@ -147,7 +147,7 @@ const NavSection = styled.div`
 `;
 
 const SectionTitle = styled.h3.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.8rem;
@@ -155,7 +155,7 @@ const SectionTitle = styled.h3.attrs((props) => ({
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0 1.5rem 1rem;
-  opacity: ${(props) => (props.isOpen ? "1" : "0")};
+  opacity: ${(props) => (props.$isOpen ? "1" : "0")};
   transition: opacity 0.3s;
   white-space: nowrap;
 `;
@@ -165,14 +165,14 @@ const NavItem = styled(motion.div)`
 `;
 
 const NavLink = styled(Link).attrs((props) => ({
-  "data-active": props.active,
+  "data-active": props.$active,
 }))`
   display: flex;
   align-items: center;
   padding: 0.8rem 1rem;
-  color: ${(props) => (props.active ? "white" : "rgba(255, 255, 255, 0.7)")};
+  color: ${(props) => (props.$active ? "white" : "rgba(255, 255, 255, 0.7)")};
   background: ${(props) =>
-    props.active
+    props.$active
       ? "linear-gradient(90deg, rgba(162, 89, 255, 0.2), rgba(55, 114, 255, 0.2))"
       : "transparent"};
   border-radius: 12px;
@@ -181,11 +181,11 @@ const NavLink = styled(Link).attrs((props) => ({
   font-size: 0.95rem;
   transition: all 0.2s;
   border: 1px solid
-    ${(props) => (props.active ? "rgba(162, 89, 255, 0.3)" : "transparent")};
+    ${(props) => (props.$active ? "rgba(162, 89, 255, 0.3)" : "transparent")};
 
   &:hover {
     background: ${(props) =>
-      props.active
+      props.$active
         ? "linear-gradient(90deg, rgba(162, 89, 255, 0.25), rgba(55, 114, 255, 0.25))"
         : "rgba(162, 89, 255, 0.1)"};
     color: white;
@@ -194,13 +194,13 @@ const NavLink = styled(Link).attrs((props) => ({
 
   .nav-icon {
     font-size: 1.2rem;
-    margin-right: ${(props) => (props.isOpen ? "0.8rem" : "0")};
+    margin-right: ${(props) => (props.$isOpen ? "0.8rem" : "0")};
     min-width: 1.2rem;
     text-align: center;
   }
 
   .nav-text {
-    opacity: ${(props) => (props.isOpen ? "1" : "0")};
+    opacity: ${(props) => (props.$isOpen ? "1" : "0")};
     transition: opacity 0.3s;
     white-space: nowrap;
   }
@@ -215,12 +215,12 @@ const UserSection = styled.div`
 `;
 
 const UserInfo = styled.div.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
-  opacity: ${(props) => (props.isOpen ? "1" : "0")};
+  opacity: ${(props) => (props.$isOpen ? "1" : "0")};
   transition: opacity 0.3s;
 `;
 
@@ -261,13 +261,13 @@ const UserEmail = styled.div`
 `;
 
 const WalletInfo = styled.div.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   background: rgba(162, 89, 255, 0.1);
   border-radius: 10px;
   padding: 0.8rem;
   margin-bottom: 1rem;
-  opacity: ${(props) => (props.isOpen ? "1" : "0")};
+  opacity: ${(props) => (props.$isOpen ? "1" : "0")};
   transition: opacity 0.3s;
 `;
 
@@ -292,12 +292,12 @@ const WalletAddress = styled.div`
 `;
 
 const ActionButtons = styled.div.attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  opacity: ${(props) => (props.isOpen ? "1" : "0")};
+  opacity: ${(props) => (props.$isOpen ? "1" : "0")};
   transition: opacity 0.3s;
 `;
 
@@ -327,7 +327,7 @@ const ActionButton = styled.button.attrs((props) => ({
 `;
 
 const MobileOverlay = styled(motion.div).attrs((props) => ({
-  "data-is-open": props.isOpen,
+  "data-is-open": props.$isOpen,
 }))`
   position: fixed;
   top: 0;
@@ -339,7 +339,7 @@ const MobileOverlay = styled(motion.div).attrs((props) => ({
   display: none;
 
   @media (max-width: 768px) {
-    display: ${(props) => (props.isOpen ? "block" : "none")};
+    display: ${(props) => (props.$isOpen ? "block" : "none")};
   }
 `;
 
@@ -484,8 +484,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <NavItem key={item.path}>
           <NavLink
             to={item.path}
-            active={location.pathname === item.path}
-            isOpen={isOpen}
+            $active={location.pathname === item.path}
+            $isOpen={isOpen}
             onClick={() => {
               if (window.innerWidth <= 768) {
                 setIsOpen(false);
@@ -507,7 +507,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       </MobileToggle>
 
       <MobileOverlay
-        isOpen={isOpen}
+        $isOpen={isOpen}
         onClick={() => setIsOpen(false)}
         initial={{ opacity: 0 }}
         animate={{ opacity: isOpen ? 1 : 0 }}
@@ -515,16 +515,16 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       />
 
       <SidebarContainer
-        isOpen={isOpen}
+        $isOpen={isOpen}
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <ToggleButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
+        <ToggleButton $isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <FaAngleLeft /> : <FaAngleRight />}
         </ToggleButton>
-        <SidebarHeader isOpen={isOpen}>
-          <Logo to="/" isOpen={isOpen}>
+        <SidebarHeader $isOpen={isOpen}>
+          <Logo to="/" $isOpen={isOpen}>
             <FaGraduationCap className="logo-icon" />
             <span className="logo-text">EduWallet</span>
           </Logo>
@@ -532,7 +532,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
         <SidebarContent>
           <NavSection>
-            <SectionTitle isOpen={isOpen}>Điều hướng</SectionTitle>
+            <SectionTitle $isOpen={isOpen}>Điều hướng</SectionTitle>
             {renderNavItems(navItems)}
           </NavSection>
         </SidebarContent>
@@ -540,7 +540,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <UserSection>
           {user && (
             <>
-              <UserInfo isOpen={isOpen}>
+              <UserInfo $isOpen={isOpen}>
                 <Avatar>
                   {getInitials(user.name || user.username || "User")}
                 </Avatar>
@@ -551,7 +551,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               </UserInfo>
 
               {isConnected && account && (
-                <WalletInfo isOpen={isOpen}>
+                <WalletInfo $isOpen={isOpen}>
                   <WalletLabel>Ví của bạn</WalletLabel>
                   <WalletAddress onClick={handleCopy}>
                     {formatAddress(account)}
@@ -560,7 +560,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </WalletInfo>
               )}
 
-              <ActionButtons isOpen={isOpen}>
+              <ActionButtons $isOpen={isOpen}>
                 <ActionButton variant="primary" onClick={handleWalletAction}>
                   <FaWallet />
                   {isConnected && account ? "Ngắt kết nối ví" : "Kết nối ví"}
@@ -574,7 +574,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           )}
 
           {!user && (
-            <ActionButtons isOpen={isOpen}>
+            <ActionButtons $isOpen={isOpen}>
               <ActionButton
                 variant="primary"
                 onClick={() => navigate("/login")}

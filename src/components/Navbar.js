@@ -85,11 +85,11 @@ const NavMenu = styled.div`
 `;
 
 const NavLink = styled(Link)`
-  color: ${(props) => (props.active ? "transparent" : "white")};
+  color: ${(props) => (props.$active ? "transparent" : "white")};
   background: ${(props) =>
-    props.active ? "linear-gradient(90deg, #a259ff, #3772ff)" : "none"};
-  -webkit-background-clip: ${(props) => (props.active ? "text" : "unset")};
-  background-clip: ${(props) => (props.active ? "text" : "unset")};
+    props.$active ? "linear-gradient(90deg, #a259ff, #3772ff)" : "none"};
+  -webkit-background-clip: ${(props) => (props.$active ? "text" : "unset")};
+  background-clip: ${(props) => (props.$active ? "text" : "unset")};
   font-weight: 600;
   text-decoration: none;
   font-size: 1.08rem;
@@ -104,7 +104,7 @@ const NavLink = styled(Link)`
     position: absolute;
     left: 0;
     bottom: -6px;
-    width: ${(props) => (props.active ? "100%" : "0")};
+    width: ${(props) => (props.$active ? "100%" : "0")};
     height: 3px;
     border-radius: 2px;
     background: linear-gradient(90deg, #a259ff, #3772ff);
@@ -430,7 +430,7 @@ const Navbar = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              active={location.pathname === item.path}
+              $active={location.pathname === item.path}
             >
               {item.label}
             </NavLink>

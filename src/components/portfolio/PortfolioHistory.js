@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { 
-  FaHistory, 
-  FaSpinner, 
-  FaCheck, 
-  FaTimes, 
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import {
+  FaHistory,
+  FaSpinner,
+  FaTimes,
   FaPlus,
   FaEdit,
   FaCertificate,
@@ -13,14 +12,8 @@ import {
   FaGraduationCap,
   FaClock,
   FaUser,
-  FaBuilding,
-  FaExternalLinkAlt,
-  FaCopy,
-  FaShieldAlt
-} from 'react-icons/fa';
-import portfolioNFTService from '../../services/portfolioNFTService';
-import ipfsService from '../../services/ipfsService';
-import toast from 'react-hot-toast';
+  FaShieldAlt,
+} from "react-icons/fa";
 
 const Container = styled.div`
   max-width: 1000px;
@@ -57,7 +50,7 @@ const SearchForm = styled.form`
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
   }
@@ -69,12 +62,12 @@ const Input = styled.input`
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 
   &:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
   }
 `;
 
@@ -83,20 +76,20 @@ const Button = styled.button`
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 12px 24px;
+  padding: 12px 20px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
+  transition: all 0.2s ease;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-width: 120px;
+  min-width: 140px;
   justify-content: center;
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
   }
 
   &:disabled {
@@ -108,10 +101,14 @@ const Button = styled.button`
 
 const LoadingSpinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -146,9 +143,9 @@ const StatusMessage = styled.div`
 const TimelineContainer = styled.div`
   position: relative;
   padding-left: 30px;
-  
+
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 15px;
     top: 0;
@@ -165,19 +162,36 @@ const TimelineItem = styled(motion.div)`
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid ${props => props.type === 'mint' ? '#28a745' : props.type === 'update' ? '#ffc107' : '#6c757d'};
-  
+  border-left: 4px solid
+    ${(props) =>
+      props.type === "mint"
+        ? "#28a745"
+        : props.type === "update"
+        ? "#ffc107"
+        : "#6c757d"};
+
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: -37px;
     top: 20px;
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: ${props => props.type === 'mint' ? '#28a745' : props.type === 'update' ? '#ffc107' : '#6c757d'};
+    background: ${(props) =>
+      props.type === "mint"
+        ? "#28a745"
+        : props.type === "update"
+        ? "#ffc107"
+        : "#6c757d"};
     border: 3px solid white;
-    box-shadow: 0 0 0 3px ${props => props.type === 'mint' ? '#28a745' : props.type === 'update' ? '#ffc107' : '#6c757d'};
+    box-shadow: 0 0 0 3px
+      ${(props) =>
+        props.type === "mint"
+          ? "#28a745"
+          : props.type === "update"
+          ? "#ffc107"
+          : "#6c757d"};
   }
 `;
 
@@ -227,7 +241,12 @@ const ChangeItem = styled.div`
 `;
 
 const ChangeIcon = styled.div`
-  color: ${props => props.type === 'add' ? '#28a745' : props.type === 'update' ? '#ffc107' : '#dc3545'};
+  color: ${(props) =>
+    props.type === "add"
+      ? "#28a745"
+      : props.type === "update"
+      ? "#ffc107"
+      : "#dc3545"};
   font-size: 12px;
 `;
 
@@ -260,11 +279,11 @@ const StatLabel = styled.div`
 `;
 
 const PortfolioHistory = () => {
-  const [tokenId, setTokenId] = useState('899');
+  const [tokenId, setTokenId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState([]);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState('info');
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("info");
 
   useEffect(() => {
     if (tokenId) {
@@ -274,97 +293,82 @@ const PortfolioHistory = () => {
 
   const loadPortfolioHistory = async (id) => {
     setIsLoading(true);
-    setStatusMessage('🔍 Đang tải lịch sử portfolio...');
-    setStatusType('info');
+    setStatusMessage("🔍 Đang tải lịch sử portfolio...");
+    setStatusType("info");
 
     try {
-      // Simulate loading portfolio history
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Load from localStorage mint history
+      const key = "portfolioMintHistory";
+      const raw = window.localStorage.getItem(key);
+      const all = raw ? JSON.parse(raw) : [];
 
-      // Try to load from MongoDB API first, fallback to local data
-      let portfolioDataFromDB;
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/lephambinh05@gmail.com`);
-        const apiData = await response.json();
-        
-        if (apiData.success) {
-          portfolioDataFromDB = apiData.data;
-        } else {
-          throw new Error('API returned unsuccessful response');
-        }
-      } catch (error) {
-        console.warn('Failed to load from API:', error.message);
-        // Use minimal fallback data
-        portfolioDataFromDB = {
-          courses: [],
-          certificates: [],
-          badges: [],
-          statistics: { gpa: 0 }
-        };
-      }
-      
-      // Generate history based on real data
-      const realHistory = [
-        {
-          id: 1,
-          type: 'mint',
+      // Filter by tokenId if provided
+      const filtered = id
+        ? all.filter((h) => h.tokenId?.toString() === id.toString())
+        : all;
+
+      if (filtered.length === 0) {
+        setHistory([]);
+        setStatusMessage(
+          "ℹ️ Chưa có lịch sử nào được lưu trên trình duyệt này. Hãy mint một NFT để bắt đầu."
+        );
+        setStatusType("info");
+      } else {
+        // Map to UI timeline format
+        const ui = filtered.map((r, idx) => ({
+          id: idx + 1,
+          type: "mint",
           version: 1,
-          timestamp: '2024-01-15T10:30:00Z',
-          transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+          timestamp: r.timestamp || new Date().toISOString(),
+          transactionHash: r.transactionHash,
           changes: [
-            ...portfolioDataFromDB.courses.slice(0, 3).map(course => ({
-              type: 'add',
-              item: course.courseName,
-              category: 'course'
-            })),
-            ...portfolioDataFromDB.certificates.slice(0, 2).map(cert => ({
-              type: 'add',
-              item: cert.name,
-              category: 'certificate'
-            })),
-            ...portfolioDataFromDB.badges.slice(0, 2).map(badge => ({
-              type: 'add',
-              item: badge.name,
-              category: 'badge'
-            }))
+            {
+              type: "add",
+              item: `Token #${r.tokenId}`,
+              category: "verification",
+            },
+            {
+              type: "add",
+              item: `IPFS: ${r.ipfsHash}`,
+              category: "statistics",
+            },
           ],
           stats: {
-            courses: portfolioDataFromDB.courses.length,
-            certificates: portfolioDataFromDB.certificates.length,
-            badges: portfolioDataFromDB.badges.length,
-            gpa: portfolioDataFromDB.statistics.gpa
-          }
-        }
-      ];
+            courses: r.portfolioSummary?.totalCourses || 0,
+            certificates: r.portfolioSummary?.totalCertificates || 0,
+            badges: r.portfolioSummary?.totalBadges || 0,
+            gpa: r.portfolioSummary?.gpa || 0,
+          },
+        }));
 
-      setHistory(realHistory);
-      setStatusMessage('✅ Đã tải lịch sử portfolio thành công!');
-      setStatusType('success');
-
+        setHistory(ui);
+        setStatusMessage("✅ Đã tải lịch sử portfolio từ trình duyệt");
+        setStatusType("success");
+      }
     } catch (error) {
-      console.error('Error loading portfolio history:', error);
+      console.error("Error loading portfolio history:", error);
       setStatusMessage(`❌ Lỗi: ${error.message}`);
-      setStatusType('error');
+      setStatusType("error");
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'mint':
+      case "mint":
         return <FaPlus />;
-      case 'update':
+      case "update":
         return <FaEdit />;
       default:
         return <FaHistory />;
@@ -373,36 +377,33 @@ const PortfolioHistory = () => {
 
   const getTypeLabel = (type) => {
     switch (type) {
-      case 'mint':
-        return 'Tạo mới Portfolio NFT';
-      case 'update':
-        return 'Cập nhật Portfolio';
+      case "mint":
+        return "Tạo mới Portfolio NFT";
+      case "update":
+        return "Cập nhật Portfolio";
       default:
-        return 'Thay đổi';
+        return "Thay đổi";
     }
   };
 
   const getCategoryIcon = (category) => {
     switch (category) {
-      case 'course':
+      case "course":
         return <FaGraduationCap />;
-      case 'certificate':
+      case "certificate":
         return <FaCertificate />;
-      case 'badge':
+      case "badge":
         return <FaMedal />;
-      case 'statistics':
+      case "statistics":
         return <FaUser />;
-      case 'verification':
+      case "verification":
         return <FaShieldAlt />;
       default:
         return <FaHistory />;
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Đã sao chép!');
-  };
+  // Helper for future: copyToClipboard
 
   return (
     <Container>
@@ -414,7 +415,12 @@ const PortfolioHistory = () => {
       </HistoryHeader>
 
       <SearchSection>
-        <SearchForm onSubmit={(e) => { e.preventDefault(); loadPortfolioHistory(tokenId); }}>
+        <SearchForm
+          onSubmit={(e) => {
+            e.preventDefault();
+            loadPortfolioHistory(tokenId);
+          }}
+        >
           <Input
             type="text"
             placeholder="Nhập Token ID để xem lịch sử (ví dụ: 899)"
@@ -437,113 +443,209 @@ const PortfolioHistory = () => {
         </SearchForm>
 
         {statusMessage && (
-          <StatusMessage className={statusType}>
-            {statusMessage}
-          </StatusMessage>
+          <StatusMessage className={statusType}>{statusMessage}</StatusMessage>
         )}
       </SearchSection>
 
       {history.length > 0 && (
         <>
           {/* Thống kê tổng quan */}
-          <div style={{ 
-            background: 'white', 
-            borderRadius: '16px', 
-            padding: '20px', 
-            marginBottom: '20px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h3 style={{ color: '#2d3748', marginBottom: '15px' }}>📊 Thống kê Lịch sử</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
-              <div style={{ textAlign: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '12px' }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#28a745' }}>{history.length}</div>
-                <div style={{ fontSize: '14px', color: '#718096' }}>Tổng số thay đổi</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '12px' }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#667eea' }}>{history[0]?.version || 0}</div>
-                <div style={{ fontSize: '14px', color: '#718096' }}>Version hiện tại</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '12px' }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffc107' }}>{history.filter(h => h.type === 'update').length}</div>
-                <div style={{ fontSize: '14px', color: '#718096' }}>Lần cập nhật</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '12px' }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: '#6c757d' }}>
-                  {history.length > 0 ? Math.ceil((new Date() - new Date(history[history.length - 1].timestamp)) / (1000 * 60 * 60 * 24)) : 0}
+          <div
+            style={{
+              background: "white",
+              borderRadius: "16px",
+              padding: "20px",
+              marginBottom: "20px",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <h3 style={{ color: "#2d3748", marginBottom: "15px" }}>
+              📊 Thống kê Lịch sử
+            </h3>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "15px",
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "15px",
+                  background: "#f8f9fa",
+                  borderRadius: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "#28a745",
+                  }}
+                >
+                  {history.length}
                 </div>
-                <div style={{ fontSize: '14px', color: '#718096' }}>Ngày từ lần cuối</div>
+                <div style={{ fontSize: "14px", color: "#718096" }}>
+                  Tổng số thay đổi
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "15px",
+                  background: "#f8f9fa",
+                  borderRadius: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "#667eea",
+                  }}
+                >
+                  {history[0]?.version || 0}
+                </div>
+                <div style={{ fontSize: "14px", color: "#718096" }}>
+                  Version hiện tại
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "15px",
+                  background: "#f8f9fa",
+                  borderRadius: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "#ffc107",
+                  }}
+                >
+                  {history.filter((h) => h.type === "update").length}
+                </div>
+                <div style={{ fontSize: "14px", color: "#718096" }}>
+                  Lần cập nhật
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "15px",
+                  background: "#f8f9fa",
+                  borderRadius: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "#6c757d",
+                  }}
+                >
+                  {history.length > 0
+                    ? Math.ceil(
+                        (new Date() -
+                          new Date(history[history.length - 1].timestamp)) /
+                          (1000 * 60 * 60 * 24)
+                      )
+                    : 0}
+                </div>
+                <div style={{ fontSize: "14px", color: "#718096" }}>
+                  Ngày từ lần cuối
+                </div>
               </div>
             </div>
           </div>
 
           <TimelineContainer>
             {history.map((item, index) => (
-            <TimelineItem
-              key={item.id}
-              type={item.type}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <TimelineHeader>
-                <TimelineTitle>
-                  {getTypeIcon(item.type)}
-                  {getTypeLabel(item.type)} - Version {item.version}
-                </TimelineTitle>
-                <TimelineDate>
-                  <FaClock />
-                  {formatDate(item.timestamp)}
-                </TimelineDate>
-              </TimelineHeader>
+              <TimelineItem
+                key={item.id}
+                type={item.type}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <TimelineHeader>
+                  <TimelineTitle>
+                    {getTypeIcon(item.type)}
+                    {getTypeLabel(item.type)} - Version {item.version}
+                  </TimelineTitle>
+                  <TimelineDate>
+                    <FaClock />
+                    {formatDate(item.timestamp)}
+                  </TimelineDate>
+                </TimelineHeader>
 
-              <TimelineContent>
-                <p><strong>🔗 Transaction Hash:</strong> {item.transactionHash}</p>
-                
-                <ChangeList>
-                  <h4 style={{ marginBottom: '10px', color: '#2d3748' }}>📝 Thay đổi:</h4>
-                  {item.changes.map((change, changeIndex) => (
-                    <ChangeItem key={changeIndex}>
-                      <ChangeIcon type={change.type}>
-                        {change.type === 'add' ? <FaPlus /> : 
-                         change.type === 'update' ? <FaEdit /> : <FaTimes />}
-                      </ChangeIcon>
-                      <span>
-                        <strong>{change.type === 'add' ? 'Thêm' : 
-                                change.type === 'update' ? 'Cập nhật' : 'Xóa'}:</strong> {change.item}
-                      </span>
-                      {getCategoryIcon(change.category)}
-                    </ChangeItem>
-                  ))}
-                </ChangeList>
+                <TimelineContent>
+                  <p>
+                    <strong>🔗 Transaction Hash:</strong> {item.transactionHash}
+                  </p>
 
-                <StatsGrid>
-                  <StatCard>
-                    <StatNumber>{item.stats.courses}</StatNumber>
-                    <StatLabel>Khóa học</StatLabel>
-                  </StatCard>
-                  <StatCard>
-                    <StatNumber>{item.stats.certificates}</StatNumber>
-                    <StatLabel>Chứng chỉ</StatLabel>
-                  </StatCard>
-                  <StatCard>
-                    <StatNumber>{item.stats.badges}</StatNumber>
-                    <StatLabel>Huy hiệu</StatLabel>
-                  </StatCard>
-                  <StatCard>
-                    <StatNumber>{item.stats.gpa}</StatNumber>
-                    <StatLabel>GPA</StatLabel>
-                  </StatCard>
-                </StatsGrid>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
+                  <ChangeList>
+                    <h4 style={{ marginBottom: "10px", color: "#2d3748" }}>
+                      📝 Thay đổi:
+                    </h4>
+                    {item.changes.map((change, changeIndex) => (
+                      <ChangeItem key={changeIndex}>
+                        <ChangeIcon type={change.type}>
+                          {change.type === "add" ? (
+                            <FaPlus />
+                          ) : change.type === "update" ? (
+                            <FaEdit />
+                          ) : (
+                            <FaTimes />
+                          )}
+                        </ChangeIcon>
+                        <span>
+                          <strong>
+                            {change.type === "add"
+                              ? "Thêm"
+                              : change.type === "update"
+                              ? "Cập nhật"
+                              : "Xóa"}
+                            :
+                          </strong>{" "}
+                          {change.item}
+                        </span>
+                        {getCategoryIcon(change.category)}
+                      </ChangeItem>
+                    ))}
+                  </ChangeList>
+
+                  <StatsGrid>
+                    <StatCard>
+                      <StatNumber>{item.stats.courses}</StatNumber>
+                      <StatLabel>Khóa học</StatLabel>
+                    </StatCard>
+                    <StatCard>
+                      <StatNumber>{item.stats.certificates}</StatNumber>
+                      <StatLabel>Chứng chỉ</StatLabel>
+                    </StatCard>
+                    <StatCard>
+                      <StatNumber>{item.stats.badges}</StatNumber>
+                      <StatLabel>Huy hiệu</StatLabel>
+                    </StatCard>
+                    <StatCard>
+                      <StatNumber>{item.stats.gpa}</StatNumber>
+                      <StatLabel>GPA</StatLabel>
+                    </StatCard>
+                  </StatsGrid>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
           </TimelineContainer>
         </>
       )}
 
       {history.length === 0 && !isLoading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
-          <FaHistory style={{ fontSize: '48px', marginBottom: '20px' }} />
+        <div style={{ textAlign: "center", padding: "40px", color: "#718096" }}>
+          <FaHistory style={{ fontSize: "48px", marginBottom: "20px" }} />
           <p>Chưa có lịch sử thay đổi nào cho Portfolio NFT này.</p>
         </div>
       )}

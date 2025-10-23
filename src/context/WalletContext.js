@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import { NetworkUtils } from "../config/blockchain";
+import { NetworkUtils, BLOCKCHAIN_NETWORKS } from "../config/blockchain";
 import { walletAPI } from "../config/api";
 import { useAuth } from "./AuthContext";
 import { getCurrentUser, saveUserToLocalStorage } from "../utils/userUtils";
@@ -32,6 +32,13 @@ export const WalletProvider = ({ children }) => {
   const [chainId, setChainId] = useState(null);
   const [currentNetwork, setCurrentNetwork] = useState("pioneZero");
   const [userDisconnected, setUserDisconnected] = useState(false);
+  const [pzoBalance, setPzoBalance] = useState("0.0000");
+  const [tokenSymbol, setTokenSymbol] = useState("PZO");
+
+  // Contract state
+  const [pzoToken, setPzoToken] = useState(null);
+
+  // PZO Token functions will be declared later
 
   // Initialize userDisconnected from localStorage so explicit disconnect persists
   useEffect(() => {
@@ -91,10 +98,18 @@ export const WalletProvider = ({ children }) => {
       const address = ethers.utils.getAddress(accounts[0]);
       console.log("✅ Selected account:", address);
 
-      // Get network info
+      // Get network info and validate Pione Zero network
       const network = await window.ethereum.request({ method: "eth_chainId" });
       const chainId = parseInt(network, 16);
-      const networkConfig = NetworkUtils.getNetworkByChainId(chainId);
+
+      // Check if connected to Pione Zero
+      if (chainId !== BLOCKCHAIN_NETWORKS.pioneZero.chainId) {
+        throw new Error(
+          `Vui lòng chuyển sang mạng ${BLOCKCHAIN_NETWORKS.pioneZero.name} để tiếp tục`
+        );
+      }
+
+      const networkConfig = BLOCKCHAIN_NETWORKS.pioneZero;
 
       // Create provider and signer
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -369,14 +384,17 @@ export const WalletProvider = ({ children }) => {
       const newChainId = parseInt(chainId, 16);
       const networkConfig = NetworkUtils.getNetworkByChainId(newChainId);
 
-      setChainId(newChainId);
-      setCurrentNetwork(networkConfig ? networkConfig.name : "Unknown Network");
+      // Only allow Pione Zero network
+      if (newChainId !== BLOCKCHAIN_NETWORKS.pioneZero.chainId) {
+        toast.error(
+          `Vui lòng chuyển sang mạng ${BLOCKCHAIN_NETWORKS.pioneZero.name} để tiếp tục`
+        );
+        return;
+      }
 
-      toast.info(
-        `Đã chuyển sang mạng: ${
-          networkConfig ? networkConfig.name : "Unknown Network"
-        }`
-      );
+      setChainId(newChainId);
+      setCurrentNetwork(BLOCKCHAIN_NETWORKS.pioneZero.name);
+      toast.info(`Đã chuyển sang mạng: ${BLOCKCHAIN_NETWORKS.pioneZero.name}`);
     };
 
     // Add event listeners
@@ -408,7 +426,66 @@ export const WalletProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated && !userDisconnected) {
       // Delay to ensure authentication is complete
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
+        // Check if already on Pione Zero network
+        if (window.ethereum) {
+          const chainId = parseInt(
+            await window.ethereum.request({ method: "eth_chainId" }),
+            16
+          );
+          if (chainId !== BLOCKCHAIN_NETWORKS.pioneZero.chainId) {
+            // Try to switch to Pione Zero network
+            try {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [
+                  {
+                    chainId: `0x${BLOCKCHAIN_NETWORKS.pioneZero.chainId.toString(
+                      16
+                    )}`,
+                  },
+                ],
+              });
+            } catch (switchError) {
+              // If network doesn't exist, try to add it
+              if (switchError.code === 4902) {
+                try {
+                  await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [
+                      {
+                        chainId: `0x${BLOCKCHAIN_NETWORKS.pioneZero.chainId.toString(
+                          16
+                        )}`,
+                        chainName: BLOCKCHAIN_NETWORKS.pioneZero.name,
+                        nativeCurrency:
+                          BLOCKCHAIN_NETWORKS.pioneZero.nativeCurrency,
+                        rpcUrls: [BLOCKCHAIN_NETWORKS.pioneZero.rpcUrl],
+                        blockExplorerUrls:
+                          BLOCKCHAIN_NETWORKS.pioneZero.blockExplorerUrls,
+                      },
+                    ],
+                  });
+                } catch (addError) {
+                  console.error("Error adding Pione Zero network:", addError);
+                  toast.error(
+                    "Không thể thêm mạng Pione Zero. Vui lòng thêm mạng thủ công."
+                  );
+                  return;
+                }
+              } else {
+                console.error(
+                  "Error switching to Pione Zero network:",
+                  switchError
+                );
+                toast.error(
+                  "Không thể chuyển sang mạng Pione Zero. Vui lòng chuyển mạng thủ công."
+                );
+                return;
+              }
+            }
+          }
+        }
         checkWalletConnection();
       }, 2000);
 
@@ -416,25 +493,44 @@ export const WalletProvider = ({ children }) => {
     }
   }, [isAuthenticated, userDisconnected, checkWalletConnection]);
 
-  // Reset userDisconnected when user logs in
-  // NOTE: we intentionally do NOT reset userDisconnected automatically on login.
-  // If the user explicitly disconnected earlier we persist that choice and
-  // prevent auto-restore until they manually connect again.
-
-  // Clear wallet state when user logs out
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setAccount(null);
-      setProvider(null);
-      setSigner(null);
-      setChainId(null);
-      setCurrentNetwork("pioneZero");
-      setIsConnected(false);
-      // Do not clear userDisconnected here. Preserve explicit disconnect choice across sessions.
+  // Initialize PZO Token contract when signer changes
+  const initializePZOToken = useCallback(async () => {
+    if (!signer || !provider) {
+      console.log("❌ No signer or provider available");
+      return;
     }
-  }, [isAuthenticated]);
 
-  // Get account balance
+    try {
+      const pzoTokenAddress =
+        process.env.REACT_APP_PZO_TOKEN_ADDRESS ||
+        "0x8DCdD7AdCa0005E505E0A78E8712fBb4f0AFC370";
+      console.log("🔍 PZO Token address:", pzoTokenAddress);
+
+      if (!pzoTokenAddress || pzoTokenAddress === "undefined") {
+        console.error("❌ PZO Token address not found in env");
+        return;
+      }
+
+      const pzoTokenABI = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)",
+        "function approve(address spender, uint256 amount) returns (bool)",
+        "function allowance(address owner, address spender) view returns (uint256)",
+      ];
+
+      const tokenContract = new ethers.Contract(
+        pzoTokenAddress,
+        pzoTokenABI,
+        signer
+      );
+      setPzoToken(tokenContract);
+      console.log("✅ PZO Token contract initialized");
+    } catch (error) {
+      console.error("❌ Error initializing PZO Token contract:", error);
+    }
+  }, [signer, provider]);
+
+  // Get native token balance
   const getAccountBalance = async () => {
     if (!account || !provider) {
       console.log("❌ No account or provider available for balance check");
@@ -453,6 +549,58 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
+  // Get PZO Token balance (Native balance - không dùng contract)
+  const getPZOBalance = useCallback(async () => {
+    if (!account || !provider) {
+      console.log("❌ No account or provider available");
+      setPzoBalance("0.0000");
+      return "0.0000";
+    }
+
+    try {
+      // Get current network's token symbol
+      const symbol =
+        chainId === BLOCKCHAIN_NETWORKS.pioneChain.chainId ? "PIO" : "PZO";
+
+      console.log(`💰 Getting native ${symbol} balance for:`, account);
+
+      // Get native balance (PZO/PIO là native token của mạng)
+      const balance = await provider.getBalance(account);
+      const formattedBalance = ethers.utils.formatEther(balance);
+
+      console.log(`💰 Native ${symbol} balance:`, formattedBalance, symbol);
+      setPzoBalance(formattedBalance);
+      return formattedBalance;
+    } catch (error) {
+      console.error("❌ Error getting native balance:", error);
+      setPzoBalance("0.0000");
+      return "0.0000";
+    }
+  }, [account, provider, chainId]);
+
+  // Initialize PZO Token contract when signer changes
+  useEffect(() => {
+    if (signer && isConnected) {
+      initializePZOToken();
+    }
+  }, [signer, isConnected, initializePZOToken]);
+
+  // Update PZO balance when account or provider changes
+  useEffect(() => {
+    if (account && provider) {
+      getPZOBalance();
+    }
+  }, [account, provider, getPZOBalance]);
+
+  // Update token symbol when chain changes
+  useEffect(() => {
+    if (chainId) {
+      const symbol =
+        chainId === BLOCKCHAIN_NETWORKS.pioneChain.chainId ? "PIO" : "PZO";
+      setTokenSymbol(symbol);
+    }
+  }, [chainId]);
+
   const value = {
     // State
     account,
@@ -463,11 +611,17 @@ export const WalletProvider = ({ children }) => {
     chainId,
     currentNetwork,
     userDisconnected,
+    pzoBalance,
+    tokenSymbol,
 
     // Actions
     connectWallet,
     disconnectWallet,
     getAccountBalance,
+    getPZOBalance,
+
+    // Contract state
+    pzoToken,
 
     // Network utilities
     NetworkUtils,
