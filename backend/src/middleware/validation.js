@@ -269,9 +269,55 @@ const validate = (schema) => {
   };
 };
 
-// Export schemas and validation function
+// Validate query parameters
+const validateQuery = (schema) => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req.query, { abortEarly: false });
+    
+    if (error) {
+      const errors = error.details.map(detail => ({
+        field: detail.path.join('.'),
+        message: detail.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Query validation failed',
+        errors
+      });
+    }
+    
+    next();
+  };
+};
+
+// Validate URL parameters
+const validateParams = (schema) => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req.params, { abortEarly: false });
+    
+    if (error) {
+      const errors = error.details.map(detail => ({
+        field: detail.path.join('.'),
+        message: detail.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter validation failed',
+        errors
+      });
+    }
+    
+    next();
+  };
+};
+
+// Export schemas and validation functions
 module.exports = {
   validate,
+  validateQuery,
+  validateParams,
   schemas: {
     addLearningRecord,
     earnBadge,

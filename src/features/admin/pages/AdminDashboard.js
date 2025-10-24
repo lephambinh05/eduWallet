@@ -104,29 +104,29 @@ const AdminDashboard = () => {
       <StatsGrid>
         <StatsCard
           title="Total Users"
-          value={stats?.totalUsers}
+          value={stats?.overview?.totalUsers || 0}
           icon={<FaUsers />}
           color="#a259ff"
           loading={loading}
         />
         <StatsCard
           title="Active Users"
-          value={stats?.activeUsers}
+          value={stats?.overview?.activeUsers || 0}
           icon={<FaUserCheck />}
           color="#3772ff"
           loading={loading}
         />
         <StatsCard
           title="New This Month"
-          value={stats?.newUsersThisMonth}
+          value={stats?.overview?.newUsersThisMonth || 0}
           icon={<FaUserPlus />}
           color="#66bb6a"
-          trend={stats?.newUsersThisMonth > 0 ? `+${stats?.newUsersThisMonth}` : '0'}
+          trend={stats?.overview?.newUsersThisMonth > 0 ? `+${stats?.overview?.newUsersThisMonth}` : '0'}
           loading={loading}
         />
         <StatsCard
           title="Inactive Users"
-          value={stats?.inactiveUsers}
+          value={stats?.overview?.inactiveUsers || 0}
           icon={<FaUserTimes />}
           color="#ff6b6b"
           loading={loading}
@@ -137,15 +137,15 @@ const AdminDashboard = () => {
       <SecondaryStatsGrid>
         <StatsCard
           title="New This Week"
-          value={stats?.newUsersThisWeek}
+          value={stats?.overview?.newUsersThisWeek || 0}
           icon={<FaCalendarAlt />}
           color="#ffa726"
-          trend={stats?.newUsersThisWeek > 0 ? `+${stats?.newUsersThisWeek}` : '0'}
+          trend={stats?.overview?.newUsersThisWeek > 0 ? `+${stats?.overview?.newUsersThisWeek}` : '0'}
           loading={loading}
         />
         <StatsCard
           title="Growth Rate"
-          value={stats?.totalUsers > 0 ? `${((stats?.newUsersThisMonth / stats?.totalUsers) * 100).toFixed(1)}%` : '0%'}
+          value={stats?.overview?.totalUsers > 0 ? `${((stats?.overview?.newUsersThisMonth / stats?.overview?.totalUsers) * 100).toFixed(1)}%` : '0%'}
           icon={<FaChartLine />}
           color="#ab47bc"
           loading={loading}
@@ -210,10 +210,10 @@ const AdminDashboard = () => {
           <UserStatsGrid>
             <UserStatItem>
               <StatLabel>Students</StatLabel>
-              <StatValue>{stats?.usersByRole?.student || 0}</StatValue>
+              <StatValue>{stats?.usersByRole?.students || 0}</StatValue>
               <StatBar>
                 <StatBarFill 
-                  width={stats?.totalUsers > 0 ? (stats?.usersByRole?.student / stats?.totalUsers * 100) : 0}
+                  width={stats?.overview?.totalUsers > 0 ? (stats?.usersByRole?.students / stats?.overview?.totalUsers * 100) : 0}
                   color="#a259ff"
                 />
               </StatBar>
@@ -221,10 +221,10 @@ const AdminDashboard = () => {
             
             <UserStatItem>
               <StatLabel>Institutions</StatLabel>
-              <StatValue>{stats?.usersByRole?.institution || 0}</StatValue>
+              <StatValue>{stats?.usersByRole?.institutions || 0}</StatValue>
               <StatBar>
                 <StatBarFill 
-                  width={stats?.totalUsers > 0 ? (stats?.usersByRole?.institution / stats?.totalUsers * 100) : 0}
+                  width={stats?.overview?.totalUsers > 0 ? (stats?.usersByRole?.institutions / stats?.overview?.totalUsers * 100) : 0}
                   color="#3772ff"
                 />
               </StatBar>
@@ -232,10 +232,10 @@ const AdminDashboard = () => {
             
             <UserStatItem>
               <StatLabel>Admins</StatLabel>
-              <StatValue>{stats?.usersByRole?.admin || 0}</StatValue>
+              <StatValue>{stats?.usersByRole?.admins || 0}</StatValue>
               <StatBar>
                 <StatBarFill 
-                  width={stats?.totalUsers > 0 ? (stats?.usersByRole?.admin / stats?.totalUsers * 100) : 0}
+                  width={stats?.overview?.totalUsers > 0 ? (stats?.usersByRole?.admins / stats?.overview?.totalUsers * 100) : 0}
                   color="#66bb6a"
                 />
               </StatBar>
