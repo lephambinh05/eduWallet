@@ -23,6 +23,7 @@ class IPFSService {
     // Alternative: Use Pinata for better reliability
     this.pinataApiKey = process.env.REACT_APP_PINATA_API_KEY;
     this.pinataSecretKey = process.env.REACT_APP_PINATA_SECRET_KEY;
+    this.pinataJWT = process.env.REACT_APP_PINATA_JWT;
   }
 
   /**
@@ -32,46 +33,63 @@ class IPFSService {
    */
   async uploadPortfolioData(portfolioData) {
     try {
-      // For demo purposes, return a mock IPFS hash
-      // In production, implement actual Pinata upload
-      const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      console.log('✅ Portfolio data uploaded to IPFS (mock):', mockHash);
-      return mockHash;
-      
-      /* Production code:
-      const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'pinata_api_key': this.pinataApiKey,
-          'pinata_secret_api_key': this.pinataSecretKey
-        },
-        body: JSON.stringify({
-          pinataContent: portfolioData,
-          pinataMetadata: {
-            name: `portfolio-${portfolioData.owner}-v${portfolioData.version}-${Date.now()}.json`,
-            keyvalues: {
-              owner: portfolioData.owner,
-              version: portfolioData.version.toString(),
-              type: 'portfolio'
-            }
-          },
-          pinataOptions: {
-            cidVersion: 1
-          }
-        })
-      });
+      // Check if Pinata credentials are configured
+      if (!this.pinataJWT && (!this.pinataApiKey || !this.pinataSecretKey)) {
+        console.warn("⚠️ Pinata API keys not configured, using mock IPFS hash");
+        const mockHash =
+          "Qm" +
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        console.log("✅ Portfolio data uploaded to IPFS (mock):", mockHash);
+        return mockHash;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (this.pinataJWT) {
+        headers["Authorization"] = `Bearer ${this.pinataJWT}`;
+      } else {
+        headers["pinata_api_key"] = this.pinataApiKey;
+        headers["pinata_secret_api_key"] = this.pinataSecretKey;
+      }
+
+      const response = await fetch(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            pinataContent: portfolioData,
+            pinataMetadata: {
+              name: `portfolio-${portfolioData.owner}-${Date.now()}.json`,
+              keyvalues: {
+                owner: portfolioData.owner,
+                version: (portfolioData.version || 1).toString(),
+                type: "portfolio",
+                timestamp: new Date().toISOString(),
+              },
+            },
+            pinataOptions: {
+              cidVersion: 1,
+            },
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Pinata upload failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Pinata upload failed: ${response.statusText} - ${JSON.stringify(
+            errorData
+          )}`
+        );
       }
 
       const result = await response.json();
-      console.log('✅ Portfolio data uploaded to IPFS:', result.IpfsHash);
       return result.IpfsHash;
-      */
     } catch (error) {
-      console.error('❌ Error uploading to IPFS:', error);
+      console.error("❌ Error uploading to IPFS:", error);
       throw error;
     }
   }
@@ -84,11 +102,14 @@ class IPFSService {
   async uploadPortfolioImage(imageFile) {
     try {
       // For demo purposes, return a mock IPFS hash
-      const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      console.log('✅ Portfolio image uploaded to IPFS (mock):', mockHash);
+      const mockHash =
+        "Qm" +
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+      console.log("✅ Portfolio image uploaded to IPFS (mock):", mockHash);
       return mockHash;
     } catch (error) {
-      console.error('❌ Error uploading image to IPFS:', error);
+      console.error("❌ Error uploading image to IPFS:", error);
       throw error;
     }
   }
@@ -100,53 +121,86 @@ class IPFSService {
    */
   async getPortfolioData(ipfsHash) {
     try {
-      // For demo purposes, return mock data
-      // In production, fetch from actual IPFS gateways
-      // Try to load from MongoDB API first, fallback to local data
-      let portfolioDataFromDB;
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/lephambinh05@gmail.com`);
-        const apiData = await response.json();
-        
-        if (apiData.success) {
-          portfolioDataFromDB = apiData.data;
-        } else {
-          throw new Error('API returned unsuccessful response');
+      console.log("📥 Fetching portfolio data from IPFS:", ipfsHash);
+
+      // Try multiple IPFS gateways for reliability
+      const gateways = [
+        `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+        `https://ipfs.io/ipfs/${ipfsHash}`,
+        `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`,
+        `https://dweb.link/ipfs/${ipfsHash}`,
+      ];
+
+      let lastError;
+      for (const gateway of gateways) {
+        try {
+          console.log(`🔗 Trying gateway: ${gateway}`);
+          const response = await fetch(gateway, {
+            headers: {
+              Accept: "application/json",
+            },
+            // Add timeout
+            signal: AbortSignal.timeout(10000), // 10 seconds timeout
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Gateway returned ${response.status}: ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+          console.log("✅ Portfolio data retrieved from IPFS successfully");
+          console.log("📊 Data summary:", {
+            courses: data.courses?.length || 0,
+            certificates: data.certificates?.length || 0,
+            badges: data.badges?.length || 0,
+            gpa: data.statistics?.gpa || 0,
+          });
+
+          return data;
+        } catch (error) {
+          console.warn(`⚠️ Gateway ${gateway} failed:`, error.message);
+          lastError = error;
+          continue; // Try next gateway
         }
-      } catch (error) {
-        console.warn('Failed to load from API:', error.message);
-        // Use minimal fallback data for unauthenticated users
-        portfolioDataFromDB = {
-          user: { firstName: 'Guest', lastName: 'User', email: 'guest@example.com' },
-          courses: [],
-          certificates: [],
-          badges: [],
-          statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
-        };
       }
-      
-      const realData = {
-        version: 1,
-        timestamp: new Date().toISOString(),
-        owner: '0x1234567890123456789012345678901234567890',
-        user: portfolioDataFromDB.user,
-        courses: portfolioDataFromDB.courses || [],
-        certificates: portfolioDataFromDB.certificates || [],
-        badges: portfolioDataFromDB.badges || [],
-        statistics: portfolioDataFromDB.statistics || { gpa: 0, totalCredits: 0, completionRate: 0 }
-      };
-      
-      console.log('📊 Portfolio data loaded:', {
-        courses: realData.courses.length,
-        certificates: realData.certificates.length,
-        badges: realData.badges.length,
-        gpa: realData.statistics.gpa
-      });
-      
-      console.log('✅ Portfolio data retrieved from IPFS (real data):', ipfsHash);
-      return realData;
+
+      // All gateways failed, try fallback to database
+      console.warn("⚠️ All IPFS gateways failed, falling back to database");
+      const response = await fetch(
+        `${
+          process.env.REACT_APP_BACKEND_URL || "http://localhost:3003"
+        }/api/portfolio/email/lephambinh05@gmail.com`
+      );
+
+      if (response.ok) {
+        const apiData = await response.json();
+        if (apiData.success) {
+          console.log("✅ Loaded portfolio from database fallback");
+          return {
+            version: 1,
+            timestamp: new Date().toISOString(),
+            owner: "0x0000000000000000000000000000000000000000",
+            user: apiData.data.user,
+            courses: apiData.data.courses || [],
+            certificates: apiData.data.certificates || [],
+            badges: apiData.data.badges || [],
+            statistics: apiData.data.statistics || {
+              gpa: 0,
+              totalCredits: 0,
+              completionRate: 0,
+            },
+          };
+        }
+      }
+
+      throw (
+        lastError ||
+        new Error("Failed to retrieve portfolio data from IPFS and database")
+      );
     } catch (error) {
-      console.error('❌ Error retrieving from IPFS:', error);
+      console.error("❌ Error retrieving from IPFS:", error);
       throw error;
     }
   }
@@ -159,54 +213,60 @@ class IPFSService {
    */
   generatePortfolioMetadata(portfolioData, imageIpfsHash) {
     const { user, courses, certificates, badges, statistics } = portfolioData;
-    
+    const userName =
+      user.name ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      "Student";
+
     return {
-      name: `${user.firstName} ${user.lastName} - Portfolio NFT`,
-      description: `Complete academic portfolio of ${user.firstName} ${user.lastName} including ${courses.length} courses, ${certificates.length} certificates, and ${badges.length} badges.`,
+      name: `${userName} - Portfolio NFT`,
+      description: `Complete academic portfolio of ${userName} including ${courses.length} courses, ${certificates.length} certificates, and ${badges.length} badges.`,
       image: `ipfs://${imageIpfsHash}`,
       external_url: `ipfs://${portfolioData.ipfsHash}`,
       attributes: [
         {
           trait_type: "Total Courses",
-          value: courses.length.toString()
+          value: courses.length.toString(),
         },
         {
-          trait_type: "Total Certificates", 
-          value: certificates.length.toString()
+          trait_type: "Total Certificates",
+          value: certificates.length.toString(),
         },
         {
           trait_type: "Total Badges",
-          value: badges.length.toString()
+          value: badges.length.toString(),
         },
         {
           trait_type: "GPA",
-          value: (statistics.gpa / 100).toFixed(1)
+          value: (statistics.gpa / 100).toFixed(1),
         },
         {
           trait_type: "Completion Rate",
-          value: `${statistics.completionRate}%`
+          value: `${statistics.completionRate || 0}%`,
         },
         {
           trait_type: "Version",
-          value: portfolioData.version.toString()
+          value: (portfolioData.version || 1).toString(),
         },
         {
           trait_type: "Verified",
-          value: portfolioData.isVerified ? "Yes" : "No"
+          value:
+            portfolioData.verified || portfolioData.isVerified ? "Yes" : "No",
         },
         {
           trait_type: "Institution",
-          value: portfolioData.institution || "Self-verified"
-        }
+          value:
+            portfolioData.institution || user.institution || "Self-verified",
+        },
       ],
       properties: {
-        owner: user.email,
-        studentId: user.studentId,
-        totalCredits: statistics.totalCredits,
-        completedCredits: statistics.completedCredits,
-        averageScore: statistics.averageScore,
-        topSkills: statistics.topSkills || []
-      }
+        owner: user.email || "N/A",
+        studentId: user.studentId || user.id || "N/A",
+        totalCredits: statistics.totalCredits || 0,
+        completedCredits: statistics.completedCredits || 0,
+        averageScore: statistics.averageScore || 0,
+        topSkills: statistics.topSkills || [],
+      },
     };
   }
 
@@ -217,12 +277,63 @@ class IPFSService {
    */
   async uploadMetadata(metadata) {
     try {
-      // For demo purposes, return a mock IPFS hash
-      const mockHash = 'Qm' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      console.log('✅ Portfolio metadata uploaded to IPFS (mock):', mockHash);
-      return mockHash;
+      // Check if Pinata credentials are configured
+      if (!this.pinataJWT && (!this.pinataApiKey || !this.pinataSecretKey)) {
+        console.warn(
+          "⚠️ Pinata API keys not configured, using mock metadata hash"
+        );
+        const mockHash =
+          "Qm" +
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        console.log("✅ Portfolio metadata uploaded to IPFS (mock):", mockHash);
+        return mockHash;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (this.pinataJWT) {
+        headers["Authorization"] = `Bearer ${this.pinataJWT}`;
+      } else {
+        headers["pinata_api_key"] = this.pinataApiKey;
+        headers["pinata_secret_api_key"] = this.pinataSecretKey;
+      }
+
+      const response = await fetch(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            pinataContent: metadata,
+            pinataMetadata: {
+              name: `metadata-${Date.now()}.json`,
+              keyvalues: {
+                type: "nft-metadata",
+                timestamp: new Date().toISOString(),
+              },
+            },
+            pinataOptions: {
+              cidVersion: 1,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Pinata metadata upload failed: ${
+            response.statusText
+          } - ${JSON.stringify(errorData)}`
+        );
+      }
+
+      const result = await response.json();
+      return result.IpfsHash;
     } catch (error) {
-      console.error('❌ Error uploading metadata to IPFS:', error);
+      console.error("❌ Error uploading metadata to IPFS:", error);
       throw error;
     }
   }
@@ -238,19 +349,22 @@ class IPFSService {
       ...portfolioData,
       ipfsHash: undefined, // Remove IPFS hash from calculation
       timestamp: undefined,
-      version: portfolioData.version // Keep version for verification
+      version: portfolioData.version, // Keep version for verification
     };
 
-    const dataString = JSON.stringify(dataForHash, Object.keys(dataForHash).sort());
+    const dataString = JSON.stringify(
+      dataForHash,
+      Object.keys(dataForHash).sort()
+    );
     // Simple hash function for demo purposes
     // In production, use proper cryptographic hash
     let hash = 0;
     for (let i = 0; i < dataString.length; i++) {
       const char = dataString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    return '0x' + Math.abs(hash).toString(16).padStart(8, '0');
+    return "0x" + Math.abs(hash).toString(16).padStart(8, "0");
   }
 
   /**
