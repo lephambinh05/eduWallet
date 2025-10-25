@@ -29,6 +29,11 @@ try {
   logger.warn('Blockchain service initialization failed:', error.message);
 }
 
+// Import models (must be loaded before routes that use them)
+require('./models/Institution');
+require('./models/Certificate');
+require('./models/LearnPass');
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
