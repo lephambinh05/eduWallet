@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { 
-  FaSearch, 
-  FaSpinner, 
-  FaCheck, 
-  FaTimes, 
+import React, { useState } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import {
+  FaSearch,
+  FaSpinner,
+  FaCheck,
+  FaTimes,
   FaGraduationCap,
   FaCertificate,
   FaMedal,
@@ -15,11 +15,11 @@ import {
   FaClock,
   FaUser,
   FaBuilding,
-  FaLink
-} from 'react-icons/fa';
-import portfolioNFTService from '../../services/portfolioNFTService';
-import ipfsService from '../../services/ipfsService';
-import toast from 'react-hot-toast';
+  FaLink,
+} from "react-icons/fa";
+import portfolioNFTService from "../../services/portfolioNFTService";
+import ipfsService from "../../services/ipfsService";
+import toast from "react-hot-toast";
 
 const Container = styled.div`
   max-width: 1200px;
@@ -66,7 +66,7 @@ const SearchForm = styled.form`
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
   }
@@ -117,10 +117,14 @@ const Button = styled.button`
 
 const LoadingSpinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -200,9 +204,9 @@ const VerificationBadge = styled.div`
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
-  background: ${props => props.verified ? '#d4edda' : '#fff3cd'};
-  color: ${props => props.verified ? '#155724' : '#856404'};
-  border: 1px solid ${props => props.verified ? '#c3e6cb' : '#ffeaa7'};
+  background: ${(props) => (props.verified ? "#d4edda" : "#fff3cd")};
+  color: ${(props) => (props.verified ? "#155724" : "#856404")};
+  border: 1px solid ${(props) => (props.verified ? "#c3e6cb" : "#ffeaa7")};
 `;
 
 const StatsGrid = styled.div`
@@ -370,62 +374,67 @@ const CopyButton = styled.button`
 `;
 
 const PortfolioViewer = () => {
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [portfolioData, setPortfolioData] = useState(null);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState('info');
-  const [searchType, setSearchType] = useState('tokenId'); // tokenId, owner, ipfsHash
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("info");
+  const [searchType, setSearchType] = useState("tokenId"); // tokenId, owner, ipfsHash
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    
+
     if (!searchInput.trim()) {
-      toast.error('Please enter a search term');
+      toast.error("Please enter a search term");
       return;
     }
 
     setIsLoading(true);
-    setStatusMessage('🔍 Searching for portfolio...');
-    setStatusType('info');
+    setStatusMessage("🔍 Searching for portfolio...");
+    setStatusType("info");
     setPortfolioData(null);
 
     try {
       let result;
 
       switch (searchType) {
-        case 'tokenId':
-          result = await portfolioNFTService.getCompletePortfolio(parseInt(searchInput));
+        case "tokenId":
+          result = await portfolioNFTService.getCompletePortfolio(
+            parseInt(searchInput)
+          );
           break;
-        case 'owner':
-          const tokenId = await portfolioNFTService.getPortfolioByOwner(searchInput);
+        case "owner":
+          const tokenId = await portfolioNFTService.getPortfolioByOwner(
+            searchInput
+          );
           if (tokenId) {
-            result = await portfolioNFTService.getCompletePortfolio(parseInt(tokenId));
+            result = await portfolioNFTService.getCompletePortfolio(
+              parseInt(tokenId)
+            );
           } else {
-            throw new Error('No portfolio found for this address');
+            throw new Error("No portfolio found for this address");
           }
           break;
-        case 'ipfsHash':
+        case "ipfsHash":
           // Direct IPFS lookup
           const detailedData = await ipfsService.getPortfolioData(searchInput);
           result = {
             detailedData,
             isValid: true,
-            tokenId: 'IPFS Direct'
+            tokenId: "IPFS Direct",
           };
           break;
         default:
-          throw new Error('Invalid search type');
+          throw new Error("Invalid search type");
       }
 
       setPortfolioData(result);
-      setStatusMessage('✅ Portfolio found successfully!');
-      setStatusType('success');
-
+      setStatusMessage("✅ Portfolio found successfully!");
+      setStatusType("success");
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       setStatusMessage(`❌ Error: ${error.message}`);
-      setStatusType('error');
+      setStatusType("error");
       toast.error(`Search failed: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -434,14 +443,14 @@ const PortfolioViewer = () => {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
+    toast.success("Copied to clipboard!");
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -449,7 +458,21 @@ const PortfolioViewer = () => {
     if (!portfolioData) return null;
 
     const { detailedData, isValid, tokenId } = portfolioData;
-    const { user, courses, certificates, badges, statistics } = detailedData;
+    // Defensive defaults: IPFS payloads can vary, ensure UI doesn't crash
+    const data = detailedData || {};
+    const user = data.user || {};
+    const courses = data.courses || [];
+    const certificates = data.certificates || [];
+    const badges = data.badges || [];
+    const statistics = data.statistics || {
+      gpa: 0,
+      totalCredits: 0,
+      completedCredits: 0,
+      completionRate: 0,
+      averageScore: 0,
+      learningStreak: 0,
+      totalStudyHours: 0,
+    };
 
     return (
       <PortfolioCard
@@ -459,34 +482,46 @@ const PortfolioViewer = () => {
       >
         <PortfolioHeader>
           <UserInfo>
-            <UserName>{user.firstName} {user.lastName}</UserName>
+            <UserName>
+              {user.firstName} {user.lastName}
+            </UserName>
             <UserEmail>{user.email}</UserEmail>
-            {user.studentId && <StudentId>Student ID: {user.studentId}</StudentId>}
+            {user.studentId && (
+              <StudentId>Student ID: {user.studentId}</StudentId>
+            )}
           </UserInfo>
           <VerificationBadge verified={isValid}>
             <FaShieldAlt />
-            {isValid ? 'Verified' : 'Unverified'}
+            {isValid ? "Verified" : "Unverified"}
           </VerificationBadge>
         </PortfolioHeader>
 
         <StatsGrid>
           <StatCard>
-            <StatIcon><FaGraduationCap /></StatIcon>
+            <StatIcon>
+              <FaGraduationCap />
+            </StatIcon>
             <StatNumber>{courses.length}</StatNumber>
             <StatLabel>Khóa học</StatLabel>
           </StatCard>
           <StatCard>
-            <StatIcon><FaCertificate /></StatIcon>
+            <StatIcon>
+              <FaCertificate />
+            </StatIcon>
             <StatNumber>{certificates.length}</StatNumber>
             <StatLabel>Chứng chỉ</StatLabel>
           </StatCard>
           <StatCard>
-            <StatIcon><FaMedal /></StatIcon>
+            <StatIcon>
+              <FaMedal />
+            </StatIcon>
             <StatNumber>{badges.length}</StatNumber>
             <StatLabel>Huy hiệu</StatLabel>
           </StatCard>
           <StatCard>
-            <StatIcon><FaUser /></StatIcon>
+            <StatIcon>
+              <FaUser />
+            </StatIcon>
             <StatNumber>{statistics.gpa}</StatNumber>
             <StatLabel>GPA</StatLabel>
           </StatCard>
@@ -498,25 +533,50 @@ const PortfolioViewer = () => {
             <FaUser />
             Thông tin Học tập Chi tiết
           </SectionTitle>
-          <div style={{ 
-            background: 'white', 
-            border: '2px solid #e2e8f0', 
-            borderRadius: '12px', 
-            padding: '20px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+          <div
+            style={{
+              background: "white",
+              border: "2px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "20px",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "15px",
+              }}
+            >
               <div>
-                <p><strong>📊 Tổng tín chỉ:</strong> {statistics.totalCredits}</p>
-                <p><strong>✅ Đã hoàn thành:</strong> {statistics.completedCredits}</p>
+                <p>
+                  <strong>📊 Tổng tín chỉ:</strong> {statistics.totalCredits}
+                </p>
+                <p>
+                  <strong>✅ Đã hoàn thành:</strong>{" "}
+                  {statistics.completedCredits}
+                </p>
               </div>
               <div>
-                <p><strong>📈 Tỷ lệ hoàn thành:</strong> {statistics.completionRate}%</p>
-                <p><strong>🎯 Điểm trung bình:</strong> {statistics.averageScore}%</p>
+                <p>
+                  <strong>📈 Tỷ lệ hoàn thành:</strong>{" "}
+                  {statistics.completionRate}%
+                </p>
+                <p>
+                  <strong>🎯 Điểm trung bình:</strong> {statistics.averageScore}
+                  %
+                </p>
               </div>
               <div>
-                <p><strong>🔥 Chuỗi học tập:</strong> {statistics.learningStreak} ngày</p>
-                <p><strong>⏰ Tổng giờ học:</strong> {statistics.totalStudyHours} giờ</p>
+                <p>
+                  <strong>🔥 Chuỗi học tập:</strong> {statistics.learningStreak}{" "}
+                  ngày
+                </p>
+                <p>
+                  <strong>⏰ Tổng giờ học:</strong> {statistics.totalStudyHours}{" "}
+                  giờ
+                </p>
               </div>
             </div>
           </div>
@@ -536,24 +596,35 @@ const PortfolioViewer = () => {
                       <ItemTitle>{course.courseName}</ItemTitle>
                       <ItemIssuer>📚 {course.issuer}</ItemIssuer>
                     </div>
-                    {course.score && (
-                      <ItemScore>{course.score}%</ItemScore>
-                    )}
+                    {course.score && <ItemScore>{course.score}%</ItemScore>}
                   </ItemHeader>
                   <ItemDetails>
-                    <div style={{ marginBottom: '10px' }}>
-                      <p><strong>📋 Mã khóa học:</strong> {course.courseCode}</p>
-                      <p><strong>🎯 Tín chỉ:</strong> {course.credits} credits</p>
-                      <p><strong>⭐ Điểm:</strong> {course.grade} ({course.score}%)</p>
+                    <div style={{ marginBottom: "10px" }}>
+                      <p>
+                        <strong>📋 Mã khóa học:</strong> {course.courseCode}
+                      </p>
+                      <p>
+                        <strong>🎯 Tín chỉ:</strong> {course.credits} credits
+                      </p>
+                      <p>
+                        <strong>⭐ Điểm:</strong> {course.grade} ({course.score}
+                        %)
+                      </p>
                     </div>
                     {course.instructor && (
-                      <p><strong>👨‍🏫 Giảng viên:</strong> {course.instructor}</p>
+                      <p>
+                        <strong>👨‍🏫 Giảng viên:</strong> {course.instructor}
+                      </p>
                     )}
                     {course.semester && (
-                      <p><strong>📅 Học kỳ:</strong> {course.semester}</p>
+                      <p>
+                        <strong>📅 Học kỳ:</strong> {course.semester}
+                      </p>
                     )}
                     {course.gpa && (
-                      <p><strong>📊 GPA:</strong> {course.gpa}</p>
+                      <p>
+                        <strong>📊 GPA:</strong> {course.gpa}
+                      </p>
                     )}
                   </ItemDetails>
                 </ItemCard>
@@ -576,34 +647,45 @@ const PortfolioViewer = () => {
                       <ItemTitle>{cert.name}</ItemTitle>
                       <ItemIssuer>🏆 {cert.issuer}</ItemIssuer>
                     </div>
-                    {cert.score && (
-                      <ItemScore>{cert.score}%</ItemScore>
-                    )}
+                    {cert.score && <ItemScore>{cert.score}%</ItemScore>}
                   </ItemHeader>
                   <ItemDetails>
-                    <div style={{ marginBottom: '10px' }}>
-                      <p><strong>📊 Cấp độ:</strong> {cert.level}</p>
-                      <p><strong>📂 Danh mục:</strong> {cert.category}</p>
-                      <p><strong>📅 Ngày cấp:</strong> {formatDate(cert.issuedDate)}</p>
+                    <div style={{ marginBottom: "10px" }}>
+                      <p>
+                        <strong>📊 Cấp độ:</strong> {cert.level}
+                      </p>
+                      <p>
+                        <strong>📂 Danh mục:</strong> {cert.category}
+                      </p>
+                      <p>
+                        <strong>📅 Ngày cấp:</strong>{" "}
+                        {formatDate(cert.issuedDate)}
+                      </p>
                     </div>
                     {cert.description && (
-                      <p><strong>📝 Mô tả:</strong> {cert.description}</p>
+                      <p>
+                        <strong>📝 Mô tả:</strong> {cert.description}
+                      </p>
                     )}
                     {cert.verificationUrl && (
                       <p>
-                        <strong>🔗 Xác thực:</strong>{' '}
-                        <a 
-                          href={cert.verificationUrl} 
-                          target="_blank" 
+                        <strong>🔗 Xác thực:</strong>{" "}
+                        <a
+                          href={cert.verificationUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: '#667eea', textDecoration: 'none' }}
+                          style={{ color: "#667eea", textDecoration: "none" }}
                         >
-                          <FaExternalLinkAlt style={{ fontSize: '12px' }} /> Xem chứng chỉ
+                          <FaExternalLinkAlt style={{ fontSize: "12px" }} /> Xem
+                          chứng chỉ
                         </a>
                       </p>
                     )}
                     {cert.expiryDate && (
-                      <p><strong>⏰ Hết hạn:</strong> {formatDate(cert.expiryDate)}</p>
+                      <p>
+                        <strong>⏰ Hết hạn:</strong>{" "}
+                        {formatDate(cert.expiryDate)}
+                      </p>
                     )}
                   </ItemDetails>
                 </ItemCard>
@@ -626,34 +708,44 @@ const PortfolioViewer = () => {
                       <ItemTitle>{badge.name}</ItemTitle>
                       <ItemIssuer>🎖️ {badge.issuer}</ItemIssuer>
                     </div>
-                    {badge.score && (
-                      <ItemScore>{badge.score}%</ItemScore>
-                    )}
+                    {badge.score && <ItemScore>{badge.score}%</ItemScore>}
                   </ItemHeader>
                   <ItemDetails>
-                    <div style={{ marginBottom: '10px' }}>
-                      <p><strong>📂 Danh mục:</strong> {badge.category}</p>
-                      <p><strong>📊 Cấp độ:</strong> {badge.level}</p>
-                      <p><strong>🏅 Đạt được:</strong> {formatDate(badge.earnedDate)}</p>
+                    <div style={{ marginBottom: "10px" }}>
+                      <p>
+                        <strong>📂 Danh mục:</strong> {badge.category}
+                      </p>
+                      <p>
+                        <strong>📊 Cấp độ:</strong> {badge.level}
+                      </p>
+                      <p>
+                        <strong>🏅 Đạt được:</strong>{" "}
+                        {formatDate(badge.earnedDate)}
+                      </p>
                     </div>
                     {badge.description && (
-                      <p><strong>📝 Mô tả:</strong> {badge.description}</p>
+                      <p>
+                        <strong>📝 Mô tả:</strong> {badge.description}
+                      </p>
                     )}
                     {badge.verificationUrl && (
                       <p>
-                        <strong>🔗 Xác thực:</strong>{' '}
-                        <a 
-                          href={badge.verificationUrl} 
-                          target="_blank" 
+                        <strong>🔗 Xác thực:</strong>{" "}
+                        <a
+                          href={badge.verificationUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          style={{ color: '#667eea', textDecoration: 'none' }}
+                          style={{ color: "#667eea", textDecoration: "none" }}
                         >
-                          <FaExternalLinkAlt style={{ fontSize: '12px' }} /> Xem huy hiệu
+                          <FaExternalLinkAlt style={{ fontSize: "12px" }} /> Xem
+                          huy hiệu
                         </a>
                       </p>
                     )}
                     {badge.criteria && (
-                      <p><strong>🎯 Tiêu chí:</strong> {badge.criteria}</p>
+                      <p>
+                        <strong>🎯 Tiêu chí:</strong> {badge.criteria}
+                      </p>
                     )}
                   </ItemDetails>
                 </ItemCard>
@@ -668,31 +760,67 @@ const PortfolioViewer = () => {
             <FaShieldAlt />
             Thông tin Xác thực & Bảo mật
           </SectionTitle>
-          <div style={{ 
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)', 
-            border: '2px solid #dee2e6', 
-            borderRadius: '12px', 
-            padding: '20px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+          <div
+            style={{
+              background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+              border: "2px solid #dee2e6",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "20px",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "20px",
+              }}
+            >
               <div>
-                <h4 style={{ color: '#495057', marginBottom: '10px' }}>🔐 Bảo mật Dữ liệu</h4>
-                <p><strong>✅ Tính toàn vẹn:</strong> {isValid ? 'Đã xác thực' : 'Chưa xác thực'}</p>
-                <p><strong>🔗 Blockchain:</strong> Lưu trữ vĩnh viễn</p>
-                <p><strong>🌐 IPFS:</strong> Phân tán và bảo mật</p>
+                <h4 style={{ color: "#495057", marginBottom: "10px" }}>
+                  🔐 Bảo mật Dữ liệu
+                </h4>
+                <p>
+                  <strong>✅ Tính toàn vẹn:</strong>{" "}
+                  {isValid ? "Đã xác thực" : "Chưa xác thực"}
+                </p>
+                <p>
+                  <strong>🔗 Blockchain:</strong> Lưu trữ vĩnh viễn
+                </p>
+                <p>
+                  <strong>🌐 IPFS:</strong> Phân tán và bảo mật
+                </p>
               </div>
               <div>
-                <h4 style={{ color: '#495057', marginBottom: '10px' }}>📊 Thông tin Kỹ thuật</h4>
-                <p><strong>🆔 Token ID:</strong> {tokenId}</p>
-                <p><strong>📝 Version:</strong> {detailedData.version}</p>
-                <p><strong>⏰ Cập nhật:</strong> {formatDate(detailedData.timestamp)}</p>
+                <h4 style={{ color: "#495057", marginBottom: "10px" }}>
+                  📊 Thông tin Kỹ thuật
+                </h4>
+                <p>
+                  <strong>🆔 Token ID:</strong> {tokenId}
+                </p>
+                <p>
+                  <strong>📝 Version:</strong> {data.version || "1"}
+                </p>
+                <p>
+                  <strong>⏰ Cập nhật:</strong>{" "}
+                  {formatDate(data.timestamp || new Date().toISOString())}
+                </p>
               </div>
               <div>
-                <h4 style={{ color: '#495057', marginBottom: '10px' }}>🏛️ Xác thực</h4>
-                <p><strong>🏢 Institution:</strong> {detailedData.institution || 'Self-verified'}</p>
-                <p><strong>🔍 Verification:</strong> {detailedData.isVerified ? 'Verified' : 'Pending'}</p>
-                <p><strong>📋 Status:</strong> {isValid ? 'Active' : 'Inactive'}</p>
+                <h4 style={{ color: "#495057", marginBottom: "10px" }}>
+                  🏛️ Xác thực
+                </h4>
+                <p>
+                  <strong>🏢 Institution:</strong>{" "}
+                  {data.institution || "Self-verified"}
+                </p>
+                <p>
+                  <strong>🔍 Verification:</strong>{" "}
+                  {data.isVerified ? "Verified" : "Pending"}
+                </p>
+                <p>
+                  <strong>📋 Status:</strong> {isValid ? "Active" : "Inactive"}
+                </p>
               </div>
             </div>
           </div>
@@ -715,13 +843,13 @@ const PortfolioViewer = () => {
             </MetadataItem>
             <MetadataItem>
               <MetadataLabel>Version</MetadataLabel>
-              <MetadataValue>{detailedData.version}</MetadataValue>
+              <MetadataValue>{data.version || "1"}</MetadataValue>
             </MetadataItem>
             <MetadataItem>
               <MetadataLabel>Last Updated</MetadataLabel>
               <MetadataValue>
-                <FaClock style={{ fontSize: '12px' }} />
-                {formatDate(detailedData.timestamp)}
+                <FaClock style={{ fontSize: "12px" }} />
+                {formatDate(data.timestamp || new Date().toISOString())}
               </MetadataValue>
             </MetadataItem>
             <MetadataItem>
@@ -729,23 +857,23 @@ const PortfolioViewer = () => {
               <MetadataValue>
                 {isValid ? (
                   <>
-                    <FaCheck style={{ color: '#28a745' }} />
+                    <FaCheck style={{ color: "#28a745" }} />
                     Verified
                   </>
                 ) : (
                   <>
-                    <FaTimes style={{ color: '#dc3545' }} />
+                    <FaTimes style={{ color: "#dc3545" }} />
                     Unverified
                   </>
                 )}
               </MetadataValue>
             </MetadataItem>
-            {detailedData.institution && (
+            {data.institution && (
               <MetadataItem>
                 <MetadataLabel>Institution</MetadataLabel>
                 <MetadataValue>
-                  <FaBuilding style={{ fontSize: '12px' }} />
-                  {detailedData.institution}
+                  <FaBuilding style={{ fontSize: "12px" }} />
+                  {data.institution}
                 </MetadataValue>
               </MetadataItem>
             )}
@@ -759,7 +887,9 @@ const PortfolioViewer = () => {
     <Container>
       <Header>
         <Title>Portfolio NFT Viewer</Title>
-        <Subtitle>Xem và xác thực portfolio học tập chi tiết trên blockchain</Subtitle>
+        <Subtitle>
+          Xem và xác thực portfolio học tập chi tiết trên blockchain
+        </Subtitle>
       </Header>
 
       <SearchSection>
@@ -767,27 +897,29 @@ const PortfolioViewer = () => {
           <FaSearch />
           Tìm kiếm Portfolio
         </SearchTitle>
-        
+
         <SearchForm onSubmit={handleSearch}>
           <Input
             type="text"
             placeholder={
-              searchType === 'tokenId' ? 'Nhập Token ID (ví dụ: 1)' :
-              searchType === 'owner' ? 'Nhập địa chỉ ví (0x...)' :
-              'Nhập IPFS Hash (Qm...)'
+              searchType === "tokenId"
+                ? "Nhập Token ID (ví dụ: 1)"
+                : searchType === "owner"
+                ? "Nhập địa chỉ ví (0x...)"
+                : "Nhập IPFS Hash (Qm...)"
             }
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
-          <select 
-            value={searchType} 
+          <select
+            value={searchType}
             onChange={(e) => setSearchType(e.target.value)}
             style={{
-              padding: '15px',
-              border: '2px solid #e2e8f0',
-              borderRadius: '12px',
-              fontSize: '16px',
-              background: 'white'
+              padding: "15px",
+              border: "2px solid #e2e8f0",
+              borderRadius: "12px",
+              fontSize: "16px",
+              background: "white",
             }}
           >
             <option value="tokenId">Token ID</option>
@@ -810,9 +942,7 @@ const PortfolioViewer = () => {
         </SearchForm>
 
         {statusMessage && (
-          <StatusMessage className={statusType}>
-            {statusMessage}
-          </StatusMessage>
+          <StatusMessage className={statusType}>{statusMessage}</StatusMessage>
         )}
       </SearchSection>
 

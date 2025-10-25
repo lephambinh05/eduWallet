@@ -68,10 +68,18 @@ class IPFSService {
                 version: (portfolioData.version || 1).toString(),
                 type: "portfolio",
                 timestamp: new Date().toISOString(),
+                immutable: "true",
               },
             },
             pinataOptions: {
               cidVersion: 1,
+              wrapWithDirectory: false,
+              customPinPolicy: {
+                regions: [
+                  { id: "FRA1", desiredReplicationCount: 2 },
+                  { id: "NYC1", desiredReplicationCount: 2 },
+                ],
+              },
             },
           }),
         }
@@ -312,10 +320,19 @@ class IPFSService {
               keyvalues: {
                 type: "nft-metadata",
                 timestamp: new Date().toISOString(),
+                immutable: "true",
+                standard: "ERC721",
               },
             },
             pinataOptions: {
               cidVersion: 1,
+              wrapWithDirectory: false,
+              customPinPolicy: {
+                regions: [
+                  { id: "FRA1", desiredReplicationCount: 2 },
+                  { id: "NYC1", desiredReplicationCount: 2 },
+                ],
+              },
             },
           }),
         }
