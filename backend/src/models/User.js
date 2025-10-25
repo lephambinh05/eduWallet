@@ -169,6 +169,52 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
+  // Blocking Information
+  blockedReason: {
+    type: String,
+    default: null
+  },
+
+  blockedAt: {
+    type: Date,
+    default: null
+  },
+
+  blockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+
+  // Deactivation Information
+  deactivationReason: {
+    type: String,
+    default: null
+  },
+
+  deactivatedAt: {
+    type: Date,
+    default: null
+  },
+
+  deactivatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+
+  // Deletion Information (Soft Delete)
+  deletedAt: {
+    type: Date,
+    default: null
+  },
+
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   
   // Role and Permissions
   role: {
