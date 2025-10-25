@@ -12,9 +12,7 @@ class PortfolioNFTService {
     this.contract = null;
     this.provider = null;
     this.signer = null;
-    this.contractAddress =
-      process.env.REACT_APP_PORTFOLIO_NFT_ADDRESS ||
-      "0xA50a542B08CeEA9A0AAf89497288890d38aA0971";
+    this.contractAddress = process.env.REACT_APP_PORTFOLIO_NFT_ADDRESS;
     this.contractABI = this.getContractABI();
     console.log(
       "🔍 Portfolio NFT Service initialized with address:",

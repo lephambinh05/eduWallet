@@ -1,14 +1,14 @@
-const { exec } = require('child_process');
-const os = require('os');
+const { exec } = require("child_process");
+const os = require("os");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 function killPort(port) {
   return new Promise((resolve, reject) => {
     const platform = os.platform();
     let command;
 
-    if (platform === 'win32') {
+    if (platform === "win32") {
       // Windows command
       command = `netstat -ano | findstr :${port}`;
     } else {
@@ -24,12 +24,12 @@ function killPort(port) {
         return;
       }
 
-      if (platform === 'win32') {
+      if (platform === "win32") {
         // Parse Windows output to get PID
-        const lines = stdout.trim().split('\n');
+        const lines = stdout.trim().split("\n");
         const pids = new Set();
-        
-        lines.forEach(line => {
+
+        lines.forEach((line) => {
           const parts = line.trim().split(/\s+/);
           if (parts.length >= 5) {
             const pid = parts[parts.length - 1];
@@ -46,11 +46,13 @@ function killPort(port) {
         }
 
         // Kill processes on Windows
-        const killPromises = Array.from(pids).map(pid => {
+        const killPromises = Array.from(pids).map((pid) => {
           return new Promise((killResolve, killReject) => {
             exec(`taskkill /F /PID ${pid}`, (killError) => {
               if (killError) {
-                console.log(`⚠️  Could not kill process ${pid}: ${killError.message}`);
+                console.log(
+                  `⚠️  Could not kill process ${pid}: ${killError.message}`
+                );
               } else {
                 console.log(`🔪 Killed process ${pid} on port ${port}`);
               }
@@ -63,22 +65,26 @@ function killPort(port) {
           console.log(`✅ Cleared port ${port}`);
           resolve();
         });
-
       } else {
         // Unix/Linux/Mac - kill processes
-        const pids = stdout.trim().split('\n').filter(pid => pid && !isNaN(pid));
-        
+        const pids = stdout
+          .trim()
+          .split("\n")
+          .filter((pid) => pid && !isNaN(pid));
+
         if (pids.length === 0) {
           console.log(`✅ Port ${port} is available`);
           resolve();
           return;
         }
 
-        const killPromises = pids.map(pid => {
+        const killPromises = pids.map((pid) => {
           return new Promise((killResolve, killReject) => {
             exec(`kill -9 ${pid}`, (killError) => {
               if (killError) {
-                console.log(`⚠️  Could not kill process ${pid}: ${killError.message}`);
+                console.log(
+                  `⚠️  Could not kill process ${pid}: ${killError.message}`
+                );
               } else {
                 console.log(`🔪 Killed process ${pid} on port ${port}`);
               }
@@ -103,6 +109,6 @@ killPort(PORT)
     process.exit(0);
   })
   .catch((error) => {
-    console.error('❌ Error killing port:', error);
+    console.error("❌ Error killing port:", error);
     process.exit(1);
   });

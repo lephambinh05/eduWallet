@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaGraduationCap, FaCertificate, FaMedal, FaCopy, FaFilter } from 'react-icons/fa';
-import { getCurrentUser } from '../utils/userUtils';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion } from "framer-motion";
+import {
+  FaGraduationCap,
+  FaCertificate,
+  FaMedal,
+  FaCopy,
+  FaFilter,
+} from "react-icons/fa";
+import { getCurrentUser } from "../utils/userUtils";
 // import portfolioDataFromDB from '../data/portfolioData.json'; // Removed to fix webpack warning
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 const Container = styled(motion.div)`
   max-width: 1200px;
@@ -158,7 +164,8 @@ const CardIcon = styled.div`
   width: 60px;
   height: 60px;
   border-radius: 12px;
-  background: ${props => props.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+  background: ${(props) =>
+    props.gradient || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,15 +231,15 @@ const CardFooter = styled.div`
 `;
 
 const ScoreBadge = styled.div`
-  background: ${props => {
-    if (props.score >= 90) return 'rgba(76, 175, 80, 0.2)';
-    if (props.score >= 80) return 'rgba(255, 193, 7, 0.2)';
-    return 'rgba(255, 107, 107, 0.2)';
+  background: ${(props) => {
+    if (props.score >= 90) return "rgba(76, 175, 80, 0.2)";
+    if (props.score >= 80) return "rgba(255, 193, 7, 0.2)";
+    return "rgba(255, 107, 107, 0.2)";
   }};
-  color: ${props => {
-    if (props.score >= 90) return '#4CAF50';
-    if (props.score >= 80) return '#ffc107';
-    return '#ff6b6b';
+  color: ${(props) => {
+    if (props.score >= 90) return "#4CAF50";
+    if (props.score >= 80) return "#ffc107";
+    return "#ff6b6b";
   }};
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -275,30 +282,32 @@ const Portfolio = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [portfolioData, setPortfolioData] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterType, setFilterType] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
     const loadPortfolioData = async () => {
       const user = getCurrentUser();
       if (user) {
         setCurrentUser(user);
-        
+
         // Try to load from API first
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/${user.email}`);
+          const response = await fetch(
+            `${process.env.REACT_APP_API_BASE_URL}/api/portfolio/email/${user.email}`
+          );
           const apiData = await response.json();
-          
+
           if (apiData.success) {
             setPortfolioData(apiData.data);
             setFilteredData(apiData.data.courses || []);
             return;
           }
         } catch (error) {
-          console.warn('Failed to load from API:', error.message);
+          console.warn("Failed to load from API:", error.message);
         }
-        
+
         // Show empty portfolio for users without data
         const emptyData = {
           courses: [],
@@ -309,8 +318,8 @@ const Portfolio = () => {
             totalCourses: 0,
             totalCertificates: 0,
             totalBadges: 0,
-            completionRate: 0
-          }
+            completionRate: 0,
+          },
         };
         setPortfolioData(emptyData);
         setFilteredData([]);
@@ -324,53 +333,74 @@ const Portfolio = () => {
     if (!portfolioData) return;
 
     let data = [];
-    
+
     // Combine all data types
-    if (filterType === 'all' || filterType === 'course') {
-      data = [...data, ...(portfolioData.courses || []).map(item => ({ ...item, type: 'course' }))];
+    if (filterType === "all" || filterType === "course") {
+      data = [
+        ...data,
+        ...(portfolioData.courses || []).map((item) => ({
+          ...item,
+          type: "course",
+        })),
+      ];
     }
-    if (filterType === 'all' || filterType === 'certificate') {
-      data = [...data, ...(portfolioData.certificates || []).map(item => ({ ...item, type: 'certificate' }))];
+    if (filterType === "all" || filterType === "certificate") {
+      data = [
+        ...data,
+        ...(portfolioData.certificates || []).map((item) => ({
+          ...item,
+          type: "certificate",
+        })),
+      ];
     }
-    if (filterType === 'all' || filterType === 'badge') {
-      data = [...data, ...(portfolioData.badges || []).map(item => ({ ...item, type: 'badge' }))];
+    if (filterType === "all" || filterType === "badge") {
+      data = [
+        ...data,
+        ...(portfolioData.badges || []).map((item) => ({
+          ...item,
+          type: "badge",
+        })),
+      ];
     }
 
     // Apply search filter
     if (searchTerm) {
-      data = data.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.issuer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.skills?.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+      data = data.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.issuer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.skills?.some((skill) =>
+            skill.toLowerCase().includes(searchTerm.toLowerCase())
+          )
       );
     }
 
     // Apply category filter
-    if (filterCategory !== 'all') {
-      data = data.filter(item => item.category === filterCategory);
+    if (filterCategory !== "all") {
+      data = data.filter((item) => item.category === filterCategory);
     }
 
     setFilteredData(data);
   }, [portfolioData, searchTerm, filterCategory, filterType]);
 
   const getCardGradient = (type, category) => {
-    if (type === 'course') {
-      return 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-    } else if (type === 'certificate') {
-      return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-    } else if (type === 'badge') {
-      return 'linear-gradient(135deg, #ffd700 0%, #ffb347 100%)';
+    if (type === "course") {
+      return "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
+    } else if (type === "certificate") {
+      return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+    } else if (type === "badge") {
+      return "linear-gradient(135deg, #ffd700 0%, #ffb347 100%)";
     }
-    return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
   };
 
   const getCardIcon = (type) => {
     switch (type) {
-      case 'course':
+      case "course":
         return <FaGraduationCap />;
-      case 'certificate':
+      case "certificate":
         return <FaCertificate />;
-      case 'badge':
+      case "badge":
         return <FaMedal />;
       default:
         return <FaGraduationCap />;
@@ -379,25 +409,27 @@ const Portfolio = () => {
 
   const handleCopyVerification = (url) => {
     navigator.clipboard.writeText(url);
-    toast.success('Đã sao chép link xác thực!');
+    toast.success("Đã sao chép link xác thực!");
   };
 
   if (!currentUser) {
     return (
       <Container>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h2 style={{ color: '#fff' }}>Vui lòng đăng nhập để xem Portfolio</h2>
+        <div style={{ textAlign: "center", padding: "2rem" }}>
+          <h2 style={{ color: "#fff" }}>Vui lòng đăng nhập để xem Portfolio</h2>
         </div>
       </Container>
     );
   }
 
-  const categories = [...new Set([
-    'all',
-    ...(portfolioData?.courses?.map(item => item.category) || []),
-    ...(portfolioData?.certificates?.map(item => item.category) || []),
-    ...(portfolioData?.badges?.map(item => item.category) || [])
-  ])];
+  const categories = [
+    ...new Set([
+      "all",
+      ...(portfolioData?.courses?.map((item) => item.category) || []),
+      ...(portfolioData?.certificates?.map((item) => item.category) || []),
+      ...(portfolioData?.badges?.map((item) => item.category) || []),
+    ]),
+  ];
 
   return (
     <Container
@@ -411,7 +443,8 @@ const Portfolio = () => {
           Portfolio
         </Title>
         <Subtitle>
-          Bộ sưu tập chứng chỉ, LearnPass và huy hiệu của {currentUser.firstName} {currentUser.lastName}
+          Bộ sưu tập chứng chỉ, LearnPass và huy hiệu của{" "}
+          {currentUser.firstName} {currentUser.lastName}
         </Subtitle>
       </Header>
 
@@ -431,7 +464,7 @@ const Portfolio = () => {
               <StatLabel>Huy hiệu</StatLabel>
             </StatCard>
             <StatCard>
-              <StatNumber>{portfolioData.statistics?.gpa || 'N/A'}</StatNumber>
+              <StatNumber>{portfolioData.statistics?.gpa || "N/A"}</StatNumber>
               <StatLabel>GPA</StatLabel>
             </StatCard>
           </StatsGrid>
@@ -461,9 +494,9 @@ const Portfolio = () => {
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
-                {categories.map(category => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
-                    {category === 'all' ? 'Tất cả danh mục' : category}
+                    {category === "all" ? "Tất cả danh mục" : category}
                   </option>
                 ))}
               </FilterSelect>
@@ -481,21 +514,25 @@ const Portfolio = () => {
                   whileHover={{ y: -5 }}
                 >
                   <CardHeader>
-                    <CardIcon gradient={getCardGradient(item.type, item.category)}>
+                    <CardIcon
+                      gradient={getCardGradient(item.type, item.category)}
+                    >
                       {getCardIcon(item.type)}
                     </CardIcon>
                     <CardInfo>
                       <CardTitle>{item.name}</CardTitle>
                       <CardIssuer>{item.issuer}</CardIssuer>
                       <CardDate>
-                        {item.issueDate ? new Date(item.issueDate).toLocaleDateString('vi-VN') : 'N/A'}
+                        {item.issueDate
+                          ? new Date(item.issueDate).toLocaleDateString("vi-VN")
+                          : "N/A"}
                       </CardDate>
                     </CardInfo>
                   </CardHeader>
 
                   <CardContent>
                     <CardDescription>{item.description}</CardDescription>
-                    
+
                     {item.skills && (
                       <SkillsContainer>
                         {item.skills.map((skill, skillIndex) => (
@@ -507,13 +544,15 @@ const Portfolio = () => {
 
                   <CardFooter>
                     {item.score && (
-                      <ScoreBadge score={item.score}>
-                        {item.score}%
-                      </ScoreBadge>
+                      <ScoreBadge score={item.score}>{item.score}%</ScoreBadge>
                     )}
-                    
+
                     {item.verificationUrl && (
-                      <ActionButton onClick={() => handleCopyVerification(item.verificationUrl)}>
+                      <ActionButton
+                        onClick={() =>
+                          handleCopyVerification(item.verificationUrl)
+                        }
+                      >
                         <FaCopy />
                         Copy Link
                       </ActionButton>
@@ -527,7 +566,9 @@ const Portfolio = () => {
               <EmptyIcon>
                 <FaGraduationCap />
               </EmptyIcon>
-              <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Không tìm thấy kết quả</h3>
+              <h3 style={{ color: "#fff", marginBottom: "1rem" }}>
+                Không tìm thấy kết quả
+              </h3>
               <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
             </EmptyState>
           )}

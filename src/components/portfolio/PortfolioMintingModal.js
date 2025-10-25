@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaUpload, FaSpinner, FaCheck, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
-import { useWallet } from '../../context/WalletContext';
-import portfolioNFTService from '../../services/portfolioNFTService';
-import ipfsService from '../../services/ipfsService';
-import { getCurrentUser } from '../../utils/userUtils';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaTimes,
+  FaUpload,
+  FaSpinner,
+  FaCheck,
+  FaExclamationTriangle,
+  FaInfoCircle,
+} from "react-icons/fa";
+import { useWallet } from "../../context/WalletContext";
+import portfolioNFTService from "../../services/portfolioNFTService";
+import ipfsService from "../../services/ipfsService";
+import { getCurrentUser } from "../../utils/userUtils";
 // import portfolioDataFromDB from '../../data/portfolioData.json'; // Removed to fix webpack warning
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -84,8 +91,9 @@ const StepContent = styled.div`
 `;
 
 const InfoBox = styled.div`
-  background: ${props => props.type === 'warning' ? '#fff3cd' : '#d1ecf1'};
-  border: 1px solid ${props => props.type === 'warning' ? '#ffeaa7' : '#bee5eb'};
+  background: ${(props) => (props.type === "warning" ? "#fff3cd" : "#d1ecf1")};
+  border: 1px solid
+    ${(props) => (props.type === "warning" ? "#ffeaa7" : "#bee5eb")};
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 20px;
@@ -95,13 +103,13 @@ const InfoBox = styled.div`
 `;
 
 const InfoIcon = styled.div`
-  color: ${props => props.type === 'warning' ? '#856404' : '#0c5460'};
+  color: ${(props) => (props.type === "warning" ? "#856404" : "#0c5460")};
   font-size: 18px;
   margin-top: 2px;
 `;
 
 const InfoText = styled.div`
-  color: ${props => props.type === 'warning' ? '#856404' : '#0c5460'};
+  color: ${(props) => (props.type === "warning" ? "#856404" : "#0c5460")};
   font-size: 14px;
   line-height: 1.5;
 `;
@@ -189,8 +197,11 @@ const FileInput = styled.input`
 `;
 
 const Button = styled.button`
-  background: ${props => props.variant === 'primary' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#e2e8f0'};
-  color: ${props => props.variant === 'primary' ? 'white' : '#4a5568'};
+  background: ${(props) =>
+    props.variant === "primary"
+      ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      : "#e2e8f0"};
+  color: ${(props) => (props.variant === "primary" ? "white" : "#4a5568")};
   border: none;
   border-radius: 12px;
   padding: 15px 30px;
@@ -219,10 +230,14 @@ const Button = styled.button`
 
 const LoadingSpinner = styled(FaSpinner)`
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -266,7 +281,7 @@ const ProgressBar = styled.div`
 const ProgressFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, #667eea, #764ba2);
-  width: ${props => props.progress}%;
+  width: ${(props) => props.progress}%;
   transition: width 0.3s ease;
 `;
 
@@ -274,8 +289,8 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
   const { isConnected, provider, signer } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState('info');
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("info");
   const [portfolioData, setPortfolioData] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -296,41 +311,43 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
     if (user && user.email) {
       try {
         // Try to load from MongoDB API
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3003'}/api/portfolio/email/${user.email}`);
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/api/portfolio/email/${user.email}`
+        );
         const apiData = await response.json();
-        
+
         if (apiData.success) {
           setPortfolioData(apiData.data);
         } else {
-          throw new Error('API returned unsuccessful response');
+          throw new Error("API returned unsuccessful response");
         }
       } catch (error) {
-        console.warn('Failed to load from API:', error.message);
+        console.warn("Failed to load from API:", error.message);
         // Show empty portfolio for authenticated users
         setPortfolioData({
-          user: { 
-            firstName: user?.firstName || 'User', 
-            lastName: user?.lastName || 'Name', 
-            email: user?.email || 'user@example.com' 
+          user: {
+            firstName: user?.firstName || "User",
+            lastName: user?.lastName || "Name",
+            email: user?.email || "user@example.com",
           },
           courses: [],
           certificates: [],
           badges: [],
-          statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
+          statistics: { gpa: 0, totalCredits: 0, completionRate: 0 },
         });
       }
     } else {
       // For unauthenticated users, show empty portfolio
       setPortfolioData({
-        user: { 
-          firstName: 'Guest', 
-          lastName: 'User', 
-          email: 'guest@example.com' 
+        user: {
+          firstName: "Guest",
+          lastName: "User",
+          email: "guest@example.com",
         },
         courses: [],
         certificates: [],
         badges: [],
-        statistics: { gpa: 0, totalCredits: 0, completionRate: 0 }
+        statistics: { gpa: 0, totalCredits: 0, completionRate: 0 },
       });
     }
   };
@@ -339,11 +356,11 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
     if (provider && signer) {
       try {
         await portfolioNFTService.initialize(provider, signer);
-        setStatusMessage('✅ Wallet connected and service initialized');
-        setStatusType('success');
+        setStatusMessage("✅ Wallet connected and service initialized");
+        setStatusType("success");
       } catch (error) {
-        setStatusMessage('❌ Failed to initialize service');
-        setStatusType('error');
+        setStatusMessage("❌ Failed to initialize service");
+        setStatusType("error");
       }
     }
   };
@@ -351,18 +368,19 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error('File size must be less than 5MB');
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        toast.error("File size must be less than 5MB");
         return;
       }
 
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
         return;
       }
 
       setImageFile(file);
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewImage(e.target.result);
@@ -373,18 +391,18 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.currentTarget.classList.add('dragover');
+    e.currentTarget.classList.add("dragover");
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
+    e.currentTarget.classList.remove("dragover");
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-    
+    e.currentTarget.classList.remove("dragover");
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleImageUpload({ target: { files } });
@@ -393,20 +411,20 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
 
   const mintPortfolioNFT = async () => {
     if (!isConnected || !portfolioData) {
-      toast.error('Please connect wallet and ensure portfolio data is loaded');
+      toast.error("Please connect wallet and ensure portfolio data is loaded");
       return;
     }
 
     setIsLoading(true);
     setProgress(0);
-    setStatusMessage('🚀 Starting Portfolio NFT minting process...');
-    setStatusType('info');
+    setStatusMessage("🚀 Starting Portfolio NFT minting process...");
+    setStatusType("info");
 
     try {
       // Step 1: Upload preview image
       setProgress(20);
-      setStatusMessage('📤 Uploading preview image to IPFS...');
-      
+      setStatusMessage("📤 Uploading preview image to IPFS...");
+
       let imageIpfsHash = null;
       if (imageFile) {
         imageIpfsHash = await ipfsService.uploadPortfolioImage(imageFile);
@@ -415,31 +433,30 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
 
       // Step 2: Mint NFT
       setProgress(60);
-      setStatusMessage('🚀 Minting Portfolio NFT on blockchain...');
-      
+      setStatusMessage("🚀 Minting Portfolio NFT on blockchain...");
+
       const result = await portfolioNFTService.mintPortfolio(portfolioData, {
         version: 1,
         imageIpfsHash,
         transactionOptions: {
-          gasLimit: 500000 // Adjust based on network
-        }
+          gasLimit: 500000, // Adjust based on network
+        },
       });
 
       setProgress(100);
-      setStatusMessage('✅ Portfolio NFT minted successfully!');
-      setStatusType('success');
+      setStatusMessage("✅ Portfolio NFT minted successfully!");
+      setStatusType("success");
       setMintResult(result);
 
-      toast.success('Portfolio NFT minted successfully!');
-      
+      toast.success("Portfolio NFT minted successfully!");
+
       if (onSuccess) {
         onSuccess(result);
       }
-
     } catch (error) {
-      console.error('Minting error:', error);
+      console.error("Minting error:", error);
       setStatusMessage(`❌ Error: ${error.message}`);
-      setStatusType('error');
+      setStatusType("error");
       toast.error(`Minting failed: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -458,19 +475,27 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
             <PreviewTitle>Your Portfolio Summary</PreviewTitle>
             <PreviewGrid>
               <PreviewItem>
-                <PreviewNumber>{portfolioData.courses?.length || 0}</PreviewNumber>
+                <PreviewNumber>
+                  {portfolioData.courses?.length || 0}
+                </PreviewNumber>
                 <PreviewLabel>Courses</PreviewLabel>
               </PreviewItem>
               <PreviewItem>
-                <PreviewNumber>{portfolioData.certificates?.length || 0}</PreviewNumber>
+                <PreviewNumber>
+                  {portfolioData.certificates?.length || 0}
+                </PreviewNumber>
                 <PreviewLabel>Certificates</PreviewLabel>
               </PreviewItem>
               <PreviewItem>
-                <PreviewNumber>{portfolioData.badges?.length || 0}</PreviewNumber>
+                <PreviewNumber>
+                  {portfolioData.badges?.length || 0}
+                </PreviewNumber>
                 <PreviewLabel>Badges</PreviewLabel>
               </PreviewItem>
               <PreviewItem>
-                <PreviewNumber>{portfolioData.statistics?.gpa || 0}</PreviewNumber>
+                <PreviewNumber>
+                  {portfolioData.statistics?.gpa || 0}
+                </PreviewNumber>
                 <PreviewLabel>GPA</PreviewLabel>
               </PreviewItem>
             </PreviewGrid>
@@ -493,17 +518,17 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => document.getElementById('image-upload').click()}
+          onClick={() => document.getElementById("image-upload").click()}
         >
           <UploadIcon>
             <FaUpload />
           </UploadIcon>
           <UploadText>
-            {previewImage ? 'Click to change image' : 'Click to upload or drag & drop'}
+            {previewImage
+              ? "Click to change image"
+              : "Click to upload or drag & drop"}
           </UploadText>
-          <UploadSubtext>
-            PNG, JPG, GIF up to 5MB
-          </UploadSubtext>
+          <UploadSubtext>PNG, JPG, GIF up to 5MB</UploadSubtext>
           <FileInput
             id="image-upload"
             type="file"
@@ -511,18 +536,18 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
             onChange={handleImageUpload}
           />
         </UploadSection>
-        
+
         {previewImage && (
-          <div style={{ textAlign: 'center', marginTop: '15px' }}>
-            <img 
-              src={previewImage} 
-              alt="Preview" 
-              style={{ 
-                maxWidth: '200px', 
-                maxHeight: '200px', 
-                borderRadius: '8px',
-                border: '2px solid #e2e8f0'
-              }} 
+          <div style={{ textAlign: "center", marginTop: "15px" }}>
+            <img
+              src={previewImage}
+              alt="Preview"
+              style={{
+                maxWidth: "200px",
+                maxHeight: "200px",
+                borderRadius: "8px",
+                border: "2px solid #e2e8f0",
+              }}
             />
           </div>
         )}
@@ -542,15 +567,14 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
             <FaExclamationTriangle />
           </InfoIcon>
           <InfoText>
-            <strong>Important:</strong> This will create a permanent, immutable record of your portfolio on the blockchain. 
-            Make sure all information is accurate before proceeding.
+            <strong>Important:</strong> This will create a permanent, immutable
+            record of your portfolio on the blockchain. Make sure all
+            information is accurate before proceeding.
           </InfoText>
         </InfoBox>
 
         {statusMessage && (
-          <StatusMessage className={statusType}>
-            {statusMessage}
-          </StatusMessage>
+          <StatusMessage className={statusType}>{statusMessage}</StatusMessage>
         )}
 
         {isLoading && (
@@ -560,11 +584,17 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
         )}
 
         {mintResult && (
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: "20px" }}>
             <h4>✅ Minting Successful!</h4>
-            <p><strong>Token ID:</strong> {mintResult.tokenId}</p>
-            <p><strong>Transaction Hash:</strong> {mintResult.transactionHash}</p>
-            <p><strong>IPFS Hash:</strong> {mintResult.ipfsHash}</p>
+            <p>
+              <strong>Token ID:</strong> {mintResult.tokenId}
+            </p>
+            <p>
+              <strong>Transaction Hash:</strong> {mintResult.transactionHash}
+            </p>
+            <p>
+              <strong>IPFS Hash:</strong> {mintResult.ipfsHash}
+            </p>
           </div>
         )}
       </StepContent>

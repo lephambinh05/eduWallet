@@ -294,7 +294,11 @@ const Dashboard = () => {
                     Số dư ví blockchain
                   </div>
                   <div style={{ fontSize: "1.8rem", fontWeight: "bold" }}>
-                    {pzoBalance || "0.00"}{" "}
+                    {(() => {
+                      // Ensure we display a numeric balance rounded to 3 decimal places
+                      const n = Number(pzoBalance);
+                      return Number.isFinite(n) ? n.toFixed(3) : "0.000";
+                    })()}{" "}
                     <span style={{ fontSize: "1rem" }}>
                       {tokenSymbol || "PZO"}
                     </span>
@@ -404,148 +408,6 @@ const Dashboard = () => {
           </CardRow>
         </Section>
       )}
-
-      <Section>
-        <SectionTitle>
-          <FaUser /> Thông tin cá nhân
-        </SectionTitle>
-        <CardRow>
-          <Card style={{ maxWidth: 300 }}>
-            <Avatar>
-              <FaUser />
-            </Avatar>
-            <div>
-              <b>{currentUser.name}</b>
-            </div>
-            <div>{currentUser.email}</div>
-            {isConnected ? (
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  opacity: 0.8,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <FaWallet /> {account?.slice(0, 6)}...{account?.slice(-4)}
-              </div>
-            ) : (
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  color: "#ff6b6b",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <FaWallet /> Chưa kết nối ví
-              </div>
-            )}
-            {currentUser.email !== "lephambinh05@gmail.com" && (
-              <button
-                className="btn btn-secondary"
-                onClick={handleSetTestUser}
-                style={{
-                  fontSize: "0.8rem",
-                  padding: "0.4rem 0.8rem",
-                  marginTop: "0.5rem",
-                  width: "100%",
-                }}
-              >
-                🧪 Set Test User
-              </button>
-            )}
-            <Link
-              to="/learnpass"
-              className="btn btn-primary"
-              style={{
-                marginTop: 12,
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                justifyContent: "center",
-              }}
-            >
-              <FaGraduationCap /> Xem LearnPass
-            </Link>
-          </Card>
-
-          {isConnected && (
-            <>
-              <Card style={{ maxWidth: 300 }}>
-                <TokenBalance>
-                  <div
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: "bold",
-                      marginBottom: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <FaWallet /> Số dư ví
-                  </div>
-                  <div style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {pzoBalance || "0.00"} {tokenSymbol || "PZO"}
-                  </div>
-                  <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
-                    Token trên blockchain
-                  </div>
-                </TokenBalance>
-              </Card>
-
-              <Card style={{ maxWidth: 300 }}>
-                <TokenBalance
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: "bold",
-                      marginBottom: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <FaCoins /> Số dư EDU Token
-                  </div>
-                  <div style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {userBalance} EDU
-                  </div>
-                  <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
-                    Có thể đổi lấy voucher, phần thưởng
-                  </div>
-                </TokenBalance>
-                <Link
-                  to="/marketplace"
-                  className="btn btn-secondary"
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FaStore /> Đi đến Marketplace
-                </Link>
-              </Card>
-
-              {/* Wallet balance card removed per request (functionality kept in context) */}
-            </>
-          )}
-        </CardRow>
-      </Section>
-
       {/* WalletConnection section removed - controls available in Sidebar */}
 
       {/* Wallet info section removed per request (keep functionality only) */}

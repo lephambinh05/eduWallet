@@ -177,9 +177,7 @@ class IPFSService {
       // All gateways failed, try fallback to database
       console.warn("⚠️ All IPFS gateways failed, falling back to database");
       const response = await fetch(
-        `${
-          process.env.REACT_APP_BACKEND_URL || "http://localhost:3003"
-        }/api/portfolio/email/lephambinh05@gmail.com`
+        `${process.env.REACT_APP_BACKEND_URL}/api/portfolio/email/lephambinh05@gmail.com`
       );
 
       if (response.ok) {

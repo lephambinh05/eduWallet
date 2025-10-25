@@ -7,12 +7,8 @@ class PointService {
     this.pzoToken = null;
     this.pointToken = null;
     this.contractAddresses = {
-      pzoToken:
-        process.env.REACT_APP_PZO_TOKEN_ADDRESS ||
-        "0x8DCdD7AdCa0005E505E0A78E8712fBb4f0AFC370",
-      pointToken:
-        process.env.REACT_APP_POINT_TOKEN_ADDRESS ||
-        "0x19fa269A44De59395326264Db934C73eE70FF03e",
+      pzoToken: process.env.REACT_APP_PZO_TOKEN_ADDRESS,
+      pointToken: process.env.REACT_APP_POINT_TOKEN_ADDRESS,
     };
 
     console.log(
@@ -240,6 +236,29 @@ class PointService {
       };
     } catch (error) {
       console.error("Error exchanging PZO to Points:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Chuyển PZO trực tiếp tới contract (ví dụ để đổi sang EDU off-chain via backend)
+  async transferPZOToContract(pzoAmount, toAddress = null) {
+    try {
+      const pzoAmountWei = ethers.utils.parseEther(pzoAmount.toString());
+      const target = toAddress || this.contractAddresses.pointToken; // mặc định gửi tới pointToken contract
+
+      const tx = await this.pzoToken.transfer(target, pzoAmountWei);
+      const receipt = await tx.wait();
+
+      return {
+        success: true,
+        txHash: tx.hash,
+        receipt,
+      };
+    } catch (error) {
+      console.error("Error transferring PZO to contract:", error);
       return {
         success: false,
         error: error.message,

@@ -31,7 +31,7 @@ if (process.env.PRIVATE_KEY.length !== 64) {
 }
 
 // Check RPC_URL
-const rpcUrl = process.env.RPC_URL || "https://rpc.zeroscan.org";
+const rpcUrl = process.env.RPC_URL;
 console.log("✅ RPC_URL:", rpcUrl);
 
 console.log("\n🎉 Configuration looks good!");

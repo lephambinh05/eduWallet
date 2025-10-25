@@ -1,28 +1,40 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // Create axios instance
 const adminAPI = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 // Add token to requests
 adminAPI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
-    console.log('AdminAPI Interceptor - Raw token from localStorage:', token); // Debug log
-    
+    const token = localStorage.getItem("adminToken");
+    console.log("AdminAPI Interceptor - Raw token from localStorage:", token); // Debug log
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('AdminAPI Request:', config.method?.toUpperCase(), config.url, 'with token'); // Debug log
-      console.log('AdminAPI - Authorization header:', config.headers.Authorization?.substring(0, 50) + '...'); // Debug log
+      console.log(
+        "AdminAPI Request:",
+        config.method?.toUpperCase(),
+        config.url,
+        "with token"
+      ); // Debug log
+      console.log(
+        "AdminAPI - Authorization header:",
+        config.headers.Authorization?.substring(0, 50) + "..."
+      ); // Debug log
     } else {
-      console.warn('AdminAPI Request without token:', config.method?.toUpperCase(), config.url); // Debug log
-      console.warn('AdminAPI - localStorage adminToken is:', token); // Debug log
+      console.warn(
+        "AdminAPI Request without token:",
+        config.method?.toUpperCase(),
+        config.url
+      ); // Debug log
+      console.warn("AdminAPI - localStorage adminToken is:", token); // Debug log
     }
     return config;
   },
@@ -35,12 +47,16 @@ adminAPI.interceptors.request.use(
 adminAPI.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('AdminAPI Response Error:', error.response?.status, error.response?.statusText);
-    console.error('AdminAPI Error details:', error.response?.data);
-    
+    console.error(
+      "AdminAPI Response Error:",
+      error.response?.status,
+      error.response?.statusText
+    );
+    console.error("AdminAPI Error details:", error.response?.data);
+
     if (error.response?.status === 401) {
       // Token expired or invalid
-      console.warn('AdminAPI - 401 Unauthorized, token may be invalid');
+      console.warn("AdminAPI - 401 Unauthorized, token may be invalid");
       // Temporarily comment out auto-redirect for debugging
       // localStorage.removeItem('adminToken');
       // localStorage.removeItem('adminUser');
@@ -57,34 +73,48 @@ adminAPI.interceptors.response.use(
 export const AdminService = {
   // ==================== Auth ====================
   login: async (credentials) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
-    console.log('AdminService.login - Raw response:', response); // Debug log
-    console.log('AdminService.login - Response data:', response.data); // Debug log
-    console.log('AdminService.login - Token in response:', response.data?.data?.token); // Debug log
+    const response = await axios.post(
+      `${API_BASE_URL}/auth/login`,
+      credentials
+    );
+    console.log("AdminService.login - Raw response:", response); // Debug log
+    console.log("AdminService.login - Response data:", response.data); // Debug log
+    console.log(
+      "AdminService.login - Token in response:",
+      response.data?.data?.token
+    ); // Debug log
     return response.data;
   },
 
   logout: () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
   },
 
   // ==================== Dashboard ====================
   getDashboardStats: async () => {
-    console.log('AdminService.getDashboardStats - Making request to /admin/dashboard');
-    console.log('AdminService.getDashboardStats - API Base URL:', API_BASE_URL);
-    const response = await adminAPI.get('/admin/dashboard');
-    console.log('AdminService.getDashboardStats - Response received:', response);
-    console.log('AdminService.getDashboardStats - Response.data:', response.data);
+    console.log(
+      "AdminService.getDashboardStats - Making request to /admin/dashboard"
+    );
+    console.log("AdminService.getDashboardStats - API Base URL:", API_BASE_URL);
+    const response = await adminAPI.get("/admin/dashboard");
+    console.log(
+      "AdminService.getDashboardStats - Response received:",
+      response
+    );
+    console.log(
+      "AdminService.getDashboardStats - Response.data:",
+      response.data
+    );
     return response.data;
   },
 
   // ==================== User Management ====================
   getAllUsers: async (params) => {
-    console.log('AdminService.getAllUsers - Making request to /admin/users');
-    console.log('AdminService.getAllUsers - Params:', params);
-    const response = await adminAPI.get('/admin/users', { params });
-    console.log('AdminService.getAllUsers - Response received:', response);
+    console.log("AdminService.getAllUsers - Making request to /admin/users");
+    console.log("AdminService.getAllUsers - Params:", params);
+    const response = await adminAPI.get("/admin/users", { params });
+    console.log("AdminService.getAllUsers - Response received:", response);
     return response.data;
   },
 
@@ -94,7 +124,7 @@ export const AdminService = {
   },
 
   createUser: async (userData) => {
-    const response = await adminAPI.post('/admin/users', userData);
+    const response = await adminAPI.post("/admin/users", userData);
     return response.data;
   },
 
@@ -109,20 +139,24 @@ export const AdminService = {
   },
 
   updateUserRole: async (userId, role) => {
-    const response = await adminAPI.patch(`/admin/users/${userId}/role`, { role });
+    const response = await adminAPI.patch(`/admin/users/${userId}/role`, {
+      role,
+    });
     return response.data;
   },
 
   updateUserStatus: async (userId, isActive, reason) => {
-    const response = await adminAPI.patch(`/admin/users/${userId}/status`, { 
-      isActive, 
-      reason 
+    const response = await adminAPI.patch(`/admin/users/${userId}/status`, {
+      isActive,
+      reason,
     });
     return response.data;
   },
 
   blockUser: async (userId, reason) => {
-    const response = await adminAPI.post(`/admin/users/${userId}/block`, { reason });
+    const response = await adminAPI.post(`/admin/users/${userId}/block`, {
+      reason,
+    });
     return response.data;
   },
 
@@ -132,38 +166,45 @@ export const AdminService = {
   },
 
   getUserActivities: async (userId, params) => {
-    const response = await adminAPI.get(`/admin/users/${userId}/activities`, { params });
+    const response = await adminAPI.get(`/admin/users/${userId}/activities`, {
+      params,
+    });
     return response.data;
   },
 
   // ==================== Bulk Operations ====================
   bulkDeleteUsers: async (userIds) => {
-    const response = await adminAPI.post('/admin/users/bulk-delete', { userIds });
+    const response = await adminAPI.post("/admin/users/bulk-delete", {
+      userIds,
+    });
     return response.data;
   },
 
   bulkUpdateRole: async (userIds, role) => {
-    const response = await adminAPI.post('/admin/users/bulk-update-role', { userIds, role });
+    const response = await adminAPI.post("/admin/users/bulk-update-role", {
+      userIds,
+      role,
+    });
     return response.data;
   },
 
   exportUsers: async (params) => {
-    const response = await adminAPI.get('/admin/users/export', { 
+    const response = await adminAPI.get("/admin/users/export", {
       params,
-      responseType: 'blob'
+      responseType: "blob",
     });
     return response.data;
   },
 
   // ==================== Activity Logs ====================
   getActivities: async (params) => {
-    const response = await adminAPI.get('/admin/activities', { params });
+    const response = await adminAPI.get("/admin/activities", { params });
     return response.data;
   },
 
   // ==================== Certificate Management ====================
   getCertificates: async (params) => {
-    const response = await adminAPI.get('/admin/certificates', { params });
+    const response = await adminAPI.get("/admin/certificates", { params });
     return response.data;
   },
 
@@ -173,23 +214,31 @@ export const AdminService = {
   },
 
   verifyCertificate: async (certificateId) => {
-    const response = await adminAPI.post(`/admin/certificates/${certificateId}/verify`);
+    const response = await adminAPI.post(
+      `/admin/certificates/${certificateId}/verify`
+    );
     return response.data;
   },
 
   revokeCertificate: async (certificateId, data) => {
-    const response = await adminAPI.post(`/admin/certificates/${certificateId}/revoke`, data);
+    const response = await adminAPI.post(
+      `/admin/certificates/${certificateId}/revoke`,
+      data
+    );
     return response.data;
   },
 
   getCertificateActivities: async (certificateId, params) => {
-    const response = await adminAPI.get(`/admin/certificates/${certificateId}/activities`, { params });
+    const response = await adminAPI.get(
+      `/admin/certificates/${certificateId}/activities`,
+      { params }
+    );
     return response.data;
   },
 
   // ==================== LearnPass Management ====================
   getLearnPasses: async (params) => {
-    const response = await adminAPI.get('/admin/learnpasses', { params });
+    const response = await adminAPI.get("/admin/learnpasses", { params });
     return response.data;
   },
 
@@ -199,35 +248,48 @@ export const AdminService = {
   },
 
   verifyLearnPass: async (learnPassId) => {
-    const response = await adminAPI.post(`/admin/learnpasses/${learnPassId}/verify`);
+    const response = await adminAPI.post(
+      `/admin/learnpasses/${learnPassId}/verify`
+    );
     return response.data;
   },
 
   suspendLearnPass: async (learnPassId, data) => {
-    const response = await adminAPI.post(`/admin/learnpasses/${learnPassId}/suspend`, data);
+    const response = await adminAPI.post(
+      `/admin/learnpasses/${learnPassId}/suspend`,
+      data
+    );
     return response.data;
   },
 
   reactivateLearnPass: async (learnPassId) => {
-    const response = await adminAPI.post(`/admin/learnpasses/${learnPassId}/reactivate`);
+    const response = await adminAPI.post(
+      `/admin/learnpasses/${learnPassId}/reactivate`
+    );
     return response.data;
   },
 
   revokeLearnPass: async (learnPassId, data) => {
-    const response = await adminAPI.post(`/admin/learnpasses/${learnPassId}/revoke`, data);
+    const response = await adminAPI.post(
+      `/admin/learnpasses/${learnPassId}/revoke`,
+      data
+    );
     return response.data;
   },
 
   getLearnPassActivities: async (learnPassId, params) => {
-    const response = await adminAPI.get(`/admin/learnpasses/${learnPassId}/activities`, { params });
+    const response = await adminAPI.get(
+      `/admin/learnpasses/${learnPassId}/activities`,
+      { params }
+    );
     return response.data;
   },
 
   // ==================== System ====================
   getSystemHealth: async () => {
-    const response = await adminAPI.get('/admin/health');
+    const response = await adminAPI.get("/admin/health");
     return response.data;
-  }
+  },
 };
 
 export default AdminService;

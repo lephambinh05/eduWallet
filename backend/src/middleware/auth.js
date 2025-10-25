@@ -1,18 +1,18 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { AppError } = require('./errorHandler');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const { AppError } = require("./errorHandler");
 
 // Generate JWT token
 const generateToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
+    expiresIn: process.env.JWT_EXPIRE,
   });
 };
 
 // Generate refresh token
 const generateRefreshToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d'
+    expiresIn: process.env.JWT_REFRESH_EXPIRE,
   });
 };
 
@@ -30,31 +30,31 @@ const verifyRefreshToken = (token) => {
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-      throw new AppError('Access token required', 401);
+      throw new AppError("Access token required", 401);
     }
 
     const decoded = verifyToken(token);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      throw new AppError('User not found', 401);
+      throw new AppError("User not found", 401);
     }
 
     if (!user.isActive) {
-      throw new AppError('Account is deactivated', 401);
+      throw new AppError("Account is deactivated", 401);
     }
 
     req.user = user;
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return next(new AppError('Invalid token', 401));
+    if (error.name === "JsonWebTokenError") {
+      return next(new AppError("Invalid token", 401));
     }
-    if (error.name === 'TokenExpiredError') {
-      return next(new AppError('Token expired', 401));
+    if (error.name === "TokenExpiredError") {
+      return next(new AppError("Token expired", 401));
     }
     next(error);
   }
@@ -64,11 +64,11 @@ const authenticateToken = async (req, res, next) => {
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return next(new AppError('Authentication required', 401));
+      return next(new AppError("Authentication required", 401));
     }
 
     if (!roles.includes(req.user.role)) {
-      return next(new AppError('Insufficient permissions', 403));
+      return next(new AppError("Insufficient permissions", 403));
     }
 
     next();
@@ -76,19 +76,19 @@ const authorize = (...roles) => {
 };
 
 // Check ownership middleware
-const checkOwnership = (paramName = 'id') => {
+const checkOwnership = (paramName = "id") => {
   return (req, res, next) => {
     const resourceId = req.params[paramName];
     const userId = req.user._id.toString();
 
     // Admin can access any resource
-    if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+    if (req.user.role === "admin" || req.user.role === "super_admin") {
       return next();
     }
 
     // Check if user owns the resource
     if (resourceId !== userId) {
-      return next(new AppError('Access denied', 403));
+      return next(new AppError("Access denied", 403));
     }
 
     next();
@@ -99,12 +99,12 @@ const checkOwnership = (paramName = 'id') => {
 const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader && authHeader.split(" ")[1];
 
     if (token) {
       const decoded = verifyToken(token);
-      const user = await User.findById(decoded.id).select('-password');
-      
+      const user = await User.findById(decoded.id).select("-password");
+
       if (user && user.isActive) {
         req.user = user;
       }
@@ -128,7 +128,9 @@ const rateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => {
 
     // Clean old attempts
     if (attempts.has(key)) {
-      const userAttempts = attempts.get(key).filter(time => time > windowStart);
+      const userAttempts = attempts
+        .get(key)
+        .filter((time) => time > windowStart);
       attempts.set(key, userAttempts);
     } else {
       attempts.set(key, []);
@@ -137,7 +139,9 @@ const rateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => {
     const userAttempts = attempts.get(key);
 
     if (userAttempts.length >= maxAttempts) {
-      return next(new AppError('Too many attempts, please try again later', 429));
+      return next(
+        new AppError("Too many attempts, please try again later", 429)
+      );
     }
 
     userAttempts.push(now);
@@ -154,5 +158,5 @@ module.exports = {
   authorize,
   checkOwnership,
   optionalAuth,
-  rateLimit
+  rateLimit,
 };

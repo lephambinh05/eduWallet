@@ -70,22 +70,20 @@ export const DEFAULT_NETWORK = BLOCKCHAIN_NETWORKS.pioneZero;
 export const CONTRACT_ADDRESSES = {
   // Pione Zero addresses
   pioneZero: {
-    EDU_TOKEN: process.env.REACT_APP_EDU_TOKEN_ADDRESS || "",
-    LEARNPASS_NFT: process.env.REACT_APP_LEARNPASS_NFT_ADDRESS || "",
-    CERTIFICATE_NFT: process.env.REACT_APP_CERTIFICATE_NFT_ADDRESS || "",
-    FACTORY: process.env.REACT_APP_FACTORY_ADDRESS || "",
-    MARKETPLACE: process.env.REACT_APP_MARKETPLACE_ADDRESS || "",
+    EDU_TOKEN: process.env.REACT_APP_EDU_TOKEN_ADDRESS,
+    LEARNPASS_NFT: process.env.REACT_APP_LEARNPASS_NFT_ADDRESS,
+    CERTIFICATE_NFT: process.env.REACT_APP_CERTIFICATE_NFT_ADDRESS,
+    FACTORY: process.env.REACT_APP_FACTORY_ADDRESS,
+    MARKETPLACE: process.env.REACT_APP_MARKETPLACE_ADDRESS,
   },
 
   // Pione Chain addresses
   pioneChain: {
-    EDU_TOKEN: process.env.REACT_APP_PIONE_CHAIN_EDU_TOKEN_ADDRESS || "",
-    LEARNPASS_NFT:
-      process.env.REACT_APP_PIONE_CHAIN_LEARNPASS_NFT_ADDRESS || "",
-    CERTIFICATE_NFT:
-      process.env.REACT_APP_PIONE_CHAIN_CERTIFICATE_NFT_ADDRESS || "",
-    FACTORY: process.env.REACT_APP_PIONE_CHAIN_FACTORY_ADDRESS || "",
-    MARKETPLACE: process.env.REACT_APP_PIONE_CHAIN_MARKETPLACE_ADDRESS || "",
+    EDU_TOKEN: process.env.REACT_APP_PIONE_CHAIN_EDU_TOKEN_ADDRESS,
+    LEARNPASS_NFT: process.env.REACT_APP_PIONE_CHAIN_LEARNPASS_NFT_ADDRESS,
+    CERTIFICATE_NFT: process.env.REACT_APP_PIONE_CHAIN_CERTIFICATE_NFT_ADDRESS,
+    FACTORY: process.env.REACT_APP_PIONE_CHAIN_FACTORY_ADDRESS,
+    MARKETPLACE: process.env.REACT_APP_PIONE_CHAIN_MARKETPLACE_ADDRESS,
   },
 };
 
@@ -149,15 +147,13 @@ export const NetworkUtils = {
 // Environment configuration
 export const ENV_CONFIG = {
   // Default network from environment
-  DEFAULT_NETWORK: process.env.REACT_APP_DEFAULT_NETWORK || "pioneZero",
+  DEFAULT_NETWORK: process.env.REACT_APP_DEFAULT_NETWORK,
 
   // Base URI for NFT metadata
-  BASE_TOKEN_URI:
-    process.env.REACT_APP_BASE_TOKEN_URI ||
-    "https://api.eduwallet.com/metadata/",
+  BASE_TOKEN_URI: process.env.REACT_APP_BASE_TOKEN_URI,
 
   // API endpoints
-  API_BASE_URL: process.env.REACT_APP_API_BASE_URL || "http://localhost:3001",
+  API_BASE_URL: process.env.REACT_APP_API_BASE_URL,
 
   // Feature flags
   ENABLE_MARKETPLACE: process.env.REACT_APP_ENABLE_MARKETPLACE === "true",

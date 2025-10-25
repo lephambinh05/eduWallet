@@ -501,9 +501,7 @@ export const WalletProvider = ({ children }) => {
     }
 
     try {
-      const pzoTokenAddress =
-        process.env.REACT_APP_PZO_TOKEN_ADDRESS ||
-        "0x8DCdD7AdCa0005E505E0A78E8712fBb4f0AFC370";
+      const pzoTokenAddress = process.env.REACT_APP_PZO_TOKEN_ADDRESS;
       console.log("🔍 PZO Token address:", pzoTokenAddress);
 
       if (!pzoTokenAddress || pzoTokenAddress === "undefined") {
