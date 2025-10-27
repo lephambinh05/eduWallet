@@ -29,6 +29,24 @@ try {
   logger.warn("Blockchain service initialization failed:", error.message);
 }
 
+// Optionally start background reconciler for pending transactions
+if (process.env.RECONCILE_PENDING_TX === "true") {
+  try {
+    const { reconcilePending } = require('./services/txReconciler');
+    const interval = parseInt(process.env.RECONCILE_INTERVAL_MS, 10) || 30000;
+    logger.info(`Starting background tx reconciler every ${interval}ms`);
+    setInterval(async () => {
+      try {
+        await reconcilePending({ limit: parseInt(process.env.RECONCILE_BATCH_SIZE, 10) || 50 });
+      } catch (e) {
+        logger.error('Background reconciler error', { error: e.message });
+      }
+    }, interval);
+  } catch (e) {
+    logger.error('Failed to start background reconciler', { error: e.message });
+  }
+}
+
 // Import models (must be loaded before routes that use them)
 require("./models/Institution");
 require("./models/Certificate");
@@ -45,9 +63,9 @@ const blockchainRoutes = require("./routes/blockchain");
 const eduWalletDataStoreRoutes = require("./routes/eduWalletDataStore");
 const pointRoutes = require("./routes/point");
 const adminRoutes = require("./routes/admin");
+const publicRoutes = require("./routes/public");
 
 // Import middleware
-const { authenticateToken } = require("./middleware/auth");
 
 // Initialize Express app
 const app = express();
@@ -179,6 +197,43 @@ app.use("/api/blockchain", blockchainRoutes);
 app.use("/api/eduwallet", eduWalletDataStoreRoutes);
 app.use("/api/point", pointRoutes);
 app.use("/api/admin", adminRoutes);
+// Public endpoints (no auth)
+app.use("/api/public", publicRoutes);
+
+// Debug: list mounted routes (helpful for diagnosing 404s during development)
+try {
+  const list = [];
+  if (app && app._router && app._router.stack) {
+    app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+        // routes registered directly on the app
+        const methods = Object.keys(middleware.route.methods)
+          .join(",")
+          .toUpperCase();
+        list.push(`${methods} ${middleware.route.path}`);
+      } else if (
+        middleware.name === "router" &&
+        middleware.handle &&
+        middleware.handle.stack
+      ) {
+        // router middleware
+        middleware.handle.stack.forEach(function (r) {
+          if (r.route && r.route.path) {
+            const methods = Object.keys(r.route.methods)
+              .join(",")
+              .toUpperCase();
+            // Try to reconstruct full path by inspecting parent regexp if possible
+            list.push(`${methods} ${r.route.path}`);
+          }
+        });
+      }
+    });
+    console.log("🗂️ Registered routes:");
+    list.slice(0, 200).forEach((l) => console.log("  " + l));
+  }
+} catch (e) {
+  console.warn("Could not list routes:", e.message);
+}
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {

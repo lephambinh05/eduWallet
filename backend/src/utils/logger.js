@@ -193,4 +193,36 @@ logger.logBlockchainEvent = (event, metadata = {}) => {
   });
 };
 
+// Persist blockchain transaction to DB when available
+logger.logBlockchainTransaction = async (txHash, actionType, meta = {}) => {
+  try {
+    logger.info("Logging blockchain transaction", { txHash, actionType, meta });
+    // Lazy require to avoid circular deps at startup
+    const BlockchainTransaction = require("../models/BlockchainTransaction");
+
+    const record = new BlockchainTransaction({
+      userId: meta.userId || meta.user || null,
+      txHash,
+      type: actionType,
+      tokenId: meta.tokenId || null,
+      ipfsHash: meta.ipfsHash || null,
+      metadataURI: meta.metadataURI || null,
+      to: meta.to || null,
+      amount: meta.amount ? String(meta.amount) : null,
+      blockNumber: meta.blockNumber || null,
+      metadata: meta,
+    });
+
+    await record.save();
+    logger.info("Blockchain transaction persisted", { id: record._id });
+    return record;
+  } catch (error) {
+    logger.error("Failed to persist blockchain transaction", {
+      error: error.message,
+    });
+    // Do not throw to avoid breaking callers
+    return null;
+  }
+};
+
 module.exports = logger;

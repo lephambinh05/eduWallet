@@ -163,4 +163,78 @@ router.get(
   })
 );
 
+// Get transactions for authenticated user
+router.get(
+  "/transactions/me",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const BlockchainTransaction = require("../models/BlockchainTransaction");
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const skip = (page - 1) * limit;
+
+    // Support optional server-side filters: type, status
+    const { type, status } = req.query;
+    const query = { userId: req.user._id };
+    if (type) query.type = type;
+    if (status) query.status = status;
+
+    const [items, total] = await Promise.all([
+      BlockchainTransaction.find(query)
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .lean(),
+      BlockchainTransaction.countDocuments(query),
+    ]);
+
+    res.json({ success: true, data: { items, page, limit, total } });
+  })
+);
+
+// Persist a blockchain transaction record (mint/transfer) sent from frontend
+router.post(
+  "/transactions",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const {
+      txHash,
+      type,
+      tokenId,
+      ipfsHash,
+      metadataURI,
+      to,
+      amount,
+      blockNumber,
+      metadata,
+    } = req.body;
+    const loggerUtil = require("../utils/logger");
+
+    if (!txHash || !type) {
+      return res
+        .status(400)
+        .json({ success: false, message: "txHash and type are required" });
+    }
+
+    const record = await loggerUtil.logBlockchainTransaction(txHash, type, {
+      userId: req.user ? req.user._id : null,
+      tokenId,
+      ipfsHash,
+      metadataURI,
+      to,
+      amount,
+      blockNumber,
+      metadata,
+    });
+
+    if (!record) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to persist transaction" });
+    }
+
+    res.status(201).json({ success: true, data: { transaction: record } });
+  })
+);
+
 module.exports = router;

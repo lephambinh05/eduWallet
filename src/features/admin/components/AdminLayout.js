@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate, NavLink } from 'react-router-dom';
-import styled from 'styled-components';
-import { 
-  FaHome, 
-  FaUsers, 
-  FaChartLine, 
-  FaCog, 
-  FaSignOutAlt, 
-  FaBars, 
+import React, { useState } from "react";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
+import styled from "styled-components";
+import {
+  FaHome,
+  FaUsers,
+  FaHistory,
+  FaChartLine,
+  FaCog,
+  FaSignOutAlt,
+  FaBars,
   FaTimes,
   FaUserShield,
   FaCertificate,
-  FaGraduationCap
-} from 'react-icons/fa';
-import { useAdmin } from '../context/AdminContext';
-import toast from 'react-hot-toast';
+  FaGraduationCap,
+  FaGem,
+} from "react-icons/fa";
+import { useAdmin } from "../context/AdminContext";
+import toast from "react-hot-toast";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -23,7 +25,7 @@ const LayoutContainer = styled.div`
 `;
 
 const Sidebar = styled.aside`
-  width: ${props => props.$isOpen ? '250px' : '70px'};
+  width: ${(props) => (props.$isOpen ? "250px" : "70px")};
   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   border-right: 1px solid rgba(162, 89, 255, 0.1);
   transition: width 0.3s ease;
@@ -33,8 +35,8 @@ const Sidebar = styled.aside`
   overflow: hidden;
 
   @media (max-width: 768px) {
-    width: ${props => props.$isOpen ? '250px' : '0'};
-    left: ${props => props.$isOpen ? '0' : '-250px'};
+    width: ${(props) => (props.$isOpen ? "250px" : "0")};
+    left: ${(props) => (props.$isOpen ? "0" : "-250px")};
   }
 `;
 
@@ -44,19 +46,19 @@ const SidebarHeader = styled.div`
   align-items: center;
   gap: 1rem;
   border-bottom: 1px solid rgba(162, 89, 255, 0.1);
-  
+
   .icon {
     font-size: 1.8rem;
     color: #a259ff;
     min-width: 28px;
   }
-  
+
   .title {
     color: white;
     font-size: 1.3rem;
     font-weight: 700;
     white-space: nowrap;
-    opacity: ${props => props.$isOpen ? 1 : 0};
+    opacity: ${(props) => (props.$isOpen ? 1 : 0)};
   }
 `;
 
@@ -73,22 +75,22 @@ const NavItem = styled(NavLink)`
   text-decoration: none;
   transition: all 0.3s ease;
   position: relative;
-  
+
   .icon {
     font-size: 1.2rem;
     min-width: 24px;
   }
-  
+
   .label {
     white-space: nowrap;
-    opacity: ${props => props.$isOpen ? 1 : 0};
+    opacity: ${(props) => (props.$isOpen ? 1 : 0)};
   }
-  
+
   &:hover {
     background: rgba(162, 89, 255, 0.1);
     color: #a259ff;
   }
-  
+
   &.active {
     background: rgba(162, 89, 255, 0.15);
     color: #a259ff;
@@ -108,17 +110,17 @@ const LogoutButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: auto;
-  
+
   .icon {
     font-size: 1.2rem;
     min-width: 24px;
   }
-  
+
   .label {
     white-space: nowrap;
-    opacity: ${props => props.$isOpen ? 1 : 0};
+    opacity: ${(props) => (props.$isOpen ? 1 : 0)};
   }
-  
+
   &:hover {
     background: rgba(255, 100, 100, 0.1);
     color: #ff6464;
@@ -127,9 +129,9 @@ const LogoutButton = styled.button`
 
 const MainContent = styled.main`
   flex: 1;
-  margin-left: ${props => props.$sidebarOpen ? '250px' : '70px'};
+  margin-left: ${(props) => (props.$sidebarOpen ? "250px" : "70px")};
   transition: margin-left 0.3s ease;
-  
+
   @media (max-width: 768px) {
     margin-left: 0;
   }
@@ -156,7 +158,7 @@ const MenuToggle = styled.button`
   cursor: pointer;
   padding: 0.5rem;
   transition: color 0.3s ease;
-  
+
   &:hover {
     color: #a259ff;
   }
@@ -166,7 +168,7 @@ const UserInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-  
+
   .avatar {
     width: 40px;
     height: 40px;
@@ -178,18 +180,18 @@ const UserInfo = styled.div`
     color: white;
     font-weight: 600;
   }
-  
+
   .info {
     @media (max-width: 576px) {
       display: none;
     }
-    
+
     .name {
       color: white;
       font-weight: 600;
       font-size: 0.95rem;
     }
-    
+
     .role {
       color: rgba(255, 255, 255, 0.6);
       font-size: 0.85rem;
@@ -209,13 +211,15 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    toast.success('Logged out successfully');
-    navigate('/admin/login');
+    toast.success("Logged out successfully");
+    navigate("/admin/login");
   };
 
   const getInitials = () => {
-    if (!adminUser) return 'A';
-    return `${adminUser.firstName?.[0] || ''}${adminUser.lastName?.[0] || ''}`.toUpperCase();
+    if (!adminUser) return "A";
+    return `${adminUser.firstName?.[0] || ""}${
+      adminUser.lastName?.[0] || ""
+    }`.toUpperCase();
   };
 
   return (
@@ -225,51 +229,61 @@ const AdminLayout = () => {
           <FaUserShield className="icon" />
           <span className="title">Admin Panel</span>
         </SidebarHeader>
-        
+
         <SidebarNav>
           <NavItem to="/admin/dashboard" $isOpen={sidebarOpen}>
             <FaHome className="icon" />
             <span className="label">Dashboard</span>
           </NavItem>
-          
+
           <NavItem to="/admin/users" $isOpen={sidebarOpen}>
             <FaUsers className="icon" />
             <span className="label">Users</span>
           </NavItem>
-          
+
           <NavItem to="/admin/activities" $isOpen={sidebarOpen}>
             <FaChartLine className="icon" />
             <span className="label">Activities</span>
           </NavItem>
-          
+
           <NavItem to="/admin/certificates" $isOpen={sidebarOpen}>
             <FaCertificate className="icon" />
             <span className="label">Certificates</span>
           </NavItem>
-          
+
           <NavItem to="/admin/learnpasses" $isOpen={sidebarOpen}>
             <FaGraduationCap className="icon" />
             <span className="label">LearnPasses</span>
           </NavItem>
-          
+
+          <NavItem to="/admin/nft-portfolio" $isOpen={sidebarOpen}>
+            <FaGem className="icon" />
+            <span className="label">NFT Portfolio</span>
+          </NavItem>
+
+          <NavItem to="/admin/portfolio-changes" $isOpen={sidebarOpen}>
+            <FaHistory className="icon" />
+            <span className="label">Portfolio Changes</span>
+          </NavItem>
+
           <NavItem to="/admin/settings" $isOpen={sidebarOpen}>
             <FaCog className="icon" />
             <span className="label">Settings</span>
           </NavItem>
         </SidebarNav>
-        
+
         <LogoutButton onClick={handleLogout} $isOpen={sidebarOpen}>
           <FaSignOutAlt className="icon" />
           <span className="label">Logout</span>
         </LogoutButton>
       </Sidebar>
-      
+
       <MainContent $sidebarOpen={sidebarOpen}>
         <TopBar>
           <MenuToggle onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <FaTimes /> : <FaBars />}
           </MenuToggle>
-          
+
           <UserInfo>
             <div className="avatar">{getInitials()}</div>
             <div className="info">
@@ -280,7 +294,7 @@ const AdminLayout = () => {
             </div>
           </UserInfo>
         </TopBar>
-        
+
         <ContentArea>
           <Outlet />
         </ContentArea>

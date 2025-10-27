@@ -1,10 +1,12 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+// Use the same backend URL env var as the rest of the app
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Create axios instance
 const adminAPI = axios.create({
-  baseURL: API_BASE_URL,
+  // Mount admin API client with /api prefix so existing endpoints use paths like /admin/...
+  baseURL: API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, "")}/api` : undefined,
   headers: {
     "Content-Type": "application/json",
   },
@@ -55,12 +57,19 @@ adminAPI.interceptors.response.use(
     console.error("AdminAPI Error details:", error.response?.data);
 
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      console.warn("AdminAPI - 401 Unauthorized, token may be invalid");
-      // Temporarily comment out auto-redirect for debugging
-      // localStorage.removeItem('adminToken');
-      // localStorage.removeItem('adminUser');
-      // window.location.href = '/admin/login';
+      // Token expired or invalid for admin - clear admin auth.
+      // Do NOT force a navigation here to avoid surprising redirects when non-admin
+      // pages trigger a 401 from an admin request. Let the app route logic (AdminRoute)
+      // handle redirects to /admin/login when an admin page is accessed.
+      console.warn(
+        "AdminAPI - 401 Unauthorized, clearing admin auth (no forced redirect)"
+      );
+      try {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
+      } catch (e) {
+        console.warn("AdminAPI - could not clear localStorage", e);
+      }
     }
     return Promise.reject(error);
   }
@@ -73,10 +82,8 @@ adminAPI.interceptors.response.use(
 export const AdminService = {
   // ==================== Auth ====================
   login: async (credentials) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/auth/login`,
-      credentials
-    );
+    // Use the configured axios instance (baseURL already includes /api)
+    const response = await adminAPI.post(`/auth/login`, credentials);
     console.log("AdminService.login - Raw response:", response); // Debug log
     console.log("AdminService.login - Response data:", response.data); // Debug log
     console.log(
@@ -242,6 +249,18 @@ export const AdminService = {
     return response.data;
   },
 
+  // ==================== NFT Portfolio ====================
+  getNFTPortfolio: async (params) => {
+    const response = await adminAPI.get("/admin/nft-portfolio", { params });
+    return response.data;
+  },
+
+  // ==================== Portfolio Change Logs ====================
+  getPortfolioChanges: async (params) => {
+    const response = await adminAPI.get("/admin/portfolio-changes", { params });
+    return response.data;
+  },
+
   getLearnPassById: async (learnPassId) => {
     const response = await adminAPI.get(`/admin/learnpasses/${learnPassId}`);
     return response.data;
@@ -282,6 +301,17 @@ export const AdminService = {
       `/admin/learnpasses/${learnPassId}/activities`,
       { params }
     );
+    return response.data;
+  },
+
+  // ==================== Admin Wallet ====================
+  getAdminWallet: async () => {
+    const response = await adminAPI.get(`/admin/wallet`);
+    return response.data;
+  },
+
+  upsertAdminWallet: async (payload) => {
+    const response = await adminAPI.post(`/admin/wallet`, payload);
     return response.data;
   },
 

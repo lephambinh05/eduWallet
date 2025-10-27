@@ -6,6 +6,7 @@
 import { ethers } from "ethers";
 import ipfsService from "./ipfsService";
 import { getCurrentUser } from "../utils/userUtils";
+import logger from "../utils/logger";
 
 class PortfolioNFTService {
   constructor() {
@@ -14,7 +15,7 @@ class PortfolioNFTService {
     this.signer = null;
     this.contractAddress = process.env.REACT_APP_PORTFOLIO_NFT_ADDRESS;
     this.contractABI = this.getContractABI();
-    console.log(
+    logger.log(
       "🔍 Portfolio NFT Service initialized with address:",
       this.contractAddress
     );
@@ -72,7 +73,7 @@ class PortfolioNFTService {
    */
   async mintPortfolio(portfolioData, options = {}) {
     try {
-      console.log("🚀 Starting Portfolio NFT minting process...");
+      logger.log("🚀 Starting Portfolio NFT minting process...");
 
       // Check if contract is initialized
       if (!this.contract || !this.signer) {
@@ -88,7 +89,7 @@ class PortfolioNFTService {
 
       // Get wallet address
       const walletAddress = await this.signer.getAddress();
-      console.log("👤 Minting for address:", walletAddress);
+      logger.log("👤 Minting for address:", walletAddress);
 
       // Prepare portfolio data for IPFS
       const portfolioForIPFS = {
@@ -99,9 +100,9 @@ class PortfolioNFTService {
       };
 
       // Upload portfolio data to IPFS
-      console.log("📤 Uploading portfolio data to IPFS...");
+      logger.log("📤 Uploading portfolio data to IPFS...");
       const ipfsHash = await ipfsService.uploadPortfolioData(portfolioForIPFS);
-      console.log("✅ IPFS Hash:", ipfsHash);
+      logger.log("✅ IPFS Hash:", ipfsHash);
 
       // Generate metadata
       const metadata = ipfsService.generatePortfolioMetadata(
@@ -110,16 +111,16 @@ class PortfolioNFTService {
       );
 
       // Upload metadata to IPFS
-      console.log("📤 Uploading metadata to IPFS...");
+      logger.log("📤 Uploading metadata to IPFS...");
       const metadataIpfsHash = await ipfsService.uploadMetadata(metadata);
       const metadataURI = `ipfs://${metadataIpfsHash}`;
-      console.log("✅ Metadata URI:", metadataURI);
+      logger.log("✅ Metadata URI:", metadataURI);
 
       // Calculate GPA * 100 for contract
       const gpaValue = Math.round((portfolioData.statistics?.gpa || 0) * 100);
 
       // Mint NFT on blockchain
-      console.log("⛓️ Minting NFT on blockchain...");
+      logger.log("⛓️ Minting NFT on blockchain...");
       const tx = await this.contract.mintPortfolio(
         walletAddress, // to
         user.name || "Student", // studentName
@@ -131,8 +132,8 @@ class PortfolioNFTService {
         metadataURI // metadataURI
       );
 
-      console.log("⏳ Waiting for transaction confirmation...");
-      console.log("📝 Transaction hash:", tx.hash);
+      logger.log("⏳ Waiting for transaction confirmation...");
+      logger.log("📝 Transaction hash:", tx.hash);
 
       const receipt = await tx.wait();
       console.log("✅ Transaction confirmed!");
@@ -142,10 +143,10 @@ class PortfolioNFTService {
       try {
         const totalSupply = await this.contract.totalSupply();
         tokenId = totalSupply.sub(1); // Use BigNumber.sub() for ethers v5
-        console.log("🎉 Portfolio NFT minted successfully!");
-        console.log("   Token ID:", tokenId.toString());
+        logger.log("🎉 Portfolio NFT minted successfully!");
+        logger.log("   Token ID:", tokenId.toString());
       } catch (e) {
-        console.warn("⚠️ Could not get token ID from totalSupply:", e.message);
+        logger.warn("⚠️ Could not get token ID from totalSupply:", e.message);
         // Fallback: try to parse from event
         if (receipt.logs && receipt.logs.length > 0) {
           const event = receipt.logs.find(
@@ -155,28 +156,54 @@ class PortfolioNFTService {
           );
           if (event && event.topics[3]) {
             tokenId = ethers.BigNumber.from(event.topics[3]);
-            console.log("✅ Got token ID from event:", tokenId.toString());
+            logger.log("✅ Got token ID from event:", tokenId.toString());
           }
         }
         if (!tokenId) {
-          console.warn("⚠️ Could not determine token ID, using 0 as fallback");
+          logger.warn("⚠️ Could not determine token ID, using 0 as fallback");
           tokenId = ethers.BigNumber.from(0);
         }
       }
 
-      // Save mint history locally
+      // Save mint history locally and send to backend if logged in
+      const mintRecord = {
+        tokenId: tokenId ? tokenId.toString() : "unknown",
+        txHash: tx.hash,
+        transactionHash: tx.hash,
+        ipfsHash,
+        metadataURI,
+        owner: walletAddress,
+        studentName: user.name || "Student",
+        timestamp: new Date().toISOString(),
+        type: "portfolio_mint",
+      };
+
+      // Do not save mint history to localStorage anymore (persist to backend instead)
+
+      // Try send to backend if user is logged in and backend URL is configured
       try {
-        this._saveMintHistory({
-          tokenId: tokenId ? tokenId.toString() : "unknown",
-          transactionHash: tx.hash,
-          ipfsHash,
-          metadataURI,
-          owner: walletAddress,
-          studentName: user.name || "Student",
-          timestamp: new Date().toISOString(),
-        });
+        if (typeof window !== "undefined") {
+          const accessToken = localStorage.getItem("accessToken");
+          // Only attempt if accessToken present
+          if (accessToken) {
+            // Lazy import to avoid circular issues
+            const api = await import("../config/api");
+            await api.blockchainAPI.saveTransaction({
+              txHash: tx.hash,
+              type: "portfolio_mint",
+              tokenId: tokenId ? tokenId.toString() : null,
+              ipfsHash,
+              metadataURI,
+              to: walletAddress,
+              metadata: { portfolioSummary: mintRecord.portfolioSummary },
+            });
+          }
+        }
       } catch (e) {
-        console.warn("⚠️ Could not save mint history:", e.message);
+        logger.warn(
+          "⚠️ Could not persist mint record to backend:",
+          e.message || e
+        );
       }
 
       return {
@@ -334,7 +361,7 @@ class PortfolioNFTService {
         throw new Error("Contract not initialized");
       }
 
-      console.log(
+      logger.log(
         "🔍 Getting portfolio info from blockchain for token:",
         tokenId
       );
@@ -371,7 +398,7 @@ class PortfolioNFTService {
         exists: true,
       };
 
-      console.log("✅ Portfolio summary retrieved from blockchain:", summary);
+      logger.log("✅ Portfolio summary retrieved from blockchain:", summary);
       return summary;
     } catch (error) {
       console.error("❌ Error getting portfolio summary:", error);
@@ -390,19 +417,19 @@ class PortfolioNFTService {
         throw new Error("Contract not initialized");
       }
 
-      console.log("🔍 Getting portfolio tokens for owner:", ownerAddress);
+      logger.log("🔍 Getting portfolio tokens for owner:", ownerAddress);
 
       // Call getOwnerTokens to get all tokens owned by address
       const tokens = await this.contract.getOwnerTokens(ownerAddress);
 
       if (tokens.length === 0) {
-        console.log("⚠️ No portfolios found for owner:", ownerAddress);
+        logger.warn("⚠️ No portfolios found for owner:", ownerAddress);
         return null;
       }
 
       // Return first token ID
       const tokenId = tokens[0].toString();
-      console.log(
+      logger.log(
         "✅ Portfolio found for owner:",
         ownerAddress,
         "Token ID:",
@@ -422,17 +449,17 @@ class PortfolioNFTService {
    */
   async getCompletePortfolio(tokenId) {
     try {
-      console.log("📥 Getting complete portfolio for token:", tokenId);
+      logger.log("📥 Getting complete portfolio for token:", tokenId);
 
       // Get summary from blockchain (includes IPFS hash)
       const summary = await this.getPortfolioSummary(tokenId);
 
-      console.log("📦 Summary retrieved, IPFS hash:", summary.ipfsHash);
+      logger.log("📦 Summary retrieved, IPFS hash:", summary.ipfsHash);
 
       // Get detailed data from IPFS using the hash stored on blockchain
       const detailedData = await ipfsService.getPortfolioData(summary.ipfsHash);
 
-      console.log("📊 Complete portfolio data:", {
+      logger.log("📊 Complete portfolio data:", {
         tokenId,
         ipfsHash: summary.ipfsHash,
         courses: detailedData.courses?.length || 0,
@@ -483,11 +510,11 @@ class PortfolioNFTService {
         throw new Error("Contract not initialized");
       }
 
-      console.log("🔍 Getting all tokens for owner:", ownerAddress);
+      logger.log("🔍 Getting all tokens for owner:", ownerAddress);
       const tokens = await this.contract.getOwnerTokens(ownerAddress);
       const tokenIds = tokens.map((t) => t.toString());
 
-      console.log("✅ Found", tokenIds.length, "portfolio NFTs");
+      logger.log("✅ Found", tokenIds.length, "portfolio NFTs");
       return tokenIds;
     } catch (error) {
       console.error("❌ Error getting owner tokens:", error);

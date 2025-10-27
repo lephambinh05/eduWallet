@@ -1,17 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useWallet } from "../context/WalletContext";
-import {
-  FaCoins,
-  FaExchangeAlt,
-  FaWallet,
-  FaCheck,
-  FaTimes,
-  FaInfoCircle,
-} from "react-icons/fa";
+import { FaCoins, FaSyncAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 import pointService from "../services/pointService";
-import { blockchainAPI } from "../config/api";
+import { blockchainAPI, adminAPI } from "../config/api";
 
 const Container = styled.div`
   max-width: 800px;
@@ -32,8 +25,8 @@ const Card = styled.div`
 const Title = styled.h1`
   color: #333;
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-size: 2rem;
   font-weight: 700;
 `;
 
@@ -42,10 +35,10 @@ const BalanceCard = styled.div`
   color: white;
   padding: 1.5rem;
   border-radius: 15px;
-  margin-bottom: 2rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const BalanceItem = styled.div`
@@ -71,28 +64,7 @@ const BalanceItem = styled.div`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #333;
-  }
-
-  input {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid #e1e5e9;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-
-    &:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-  }
+  margin-bottom: 0.75rem;
 `;
 
 const Button = styled.button`
@@ -131,52 +103,16 @@ const Button = styled.button`
 `;
 
 const InfoBox = styled.div`
-  background: #e3f2fd;
-  border: 1px solid #2196f3;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-
-  .info-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: #1976d2;
-    margin-bottom: 0.5rem;
-  }
-
-  .info-content {
-    color: #1565c0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
+  margin-top: 0.5rem;
+  color: #333;
 `;
 
-const ExchangeRate = styled.div`
-  background: #f5f5f5;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-
-  .rate {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 0.5rem;
-  }
-
-  .description {
-    color: #666;
-    font-size: 0.9rem;
-  }
-`;
+// (exchange rate UI removed in simplified view)
 
 const LoadingSpinner = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ffffff;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
   border-top: 2px solid transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -192,32 +128,12 @@ const LoadingSpinner = styled.div`
 `;
 
 const DepositPoints = () => {
-  const { isConnected, account } = useWallet();
-  const [pzoBalance, setPzoBalance] = useState("0");
+  const { isConnected, account, chainId, currentNetwork } = useWallet();
   const [pointBalance, setPointBalance] = useState("0");
-  const [pzoAmount, setPzoAmount] = useState("");
-  const [pointAmount, setPointAmount] = useState("");
-  const [exchangeRate, setExchangeRate] = useState("100");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isExchanging, setIsExchanging] = useState(false);
-  const [needsApproval, setNeedsApproval] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [adminSettings, setAdminSettings] = useState(null);
 
-  useEffect(() => {
-    if (isConnected && account) {
-      loadBalances();
-      loadExchangeInfo();
-    }
-  }, [isConnected, account]);
-
-  useEffect(() => {
-    if (pzoAmount && exchangeRate) {
-      const points = (parseFloat(pzoAmount) * 100).toFixed(2);
-      setPointAmount(points);
-    }
-  }, [pzoAmount, exchangeRate]);
-
-  const loadBalances = async () => {
+  const loadBalances = React.useCallback(async () => {
     try {
       const connected = await pointService.connectWallet();
       if (!connected) {
@@ -225,15 +141,7 @@ const DepositPoints = () => {
         return;
       }
 
-      const [pzoResult, pointResult] = await Promise.all([
-        pointService.getPZOBalance(account),
-        pointService.getPointBalance(account),
-      ]);
-
-      if (pzoResult.success) {
-        setPzoBalance(parseFloat(pzoResult.balance).toFixed(4));
-      }
-
+      const pointResult = await pointService.getPointBalance(account);
       if (pointResult.success) {
         setPointBalance(parseFloat(pointResult.balance).toFixed(2));
       }
@@ -241,175 +149,154 @@ const DepositPoints = () => {
       console.error("Error loading balances:", error);
       toast.error("Lỗi khi tải số dư!");
     }
-  };
+  }, [account]);
 
-  const loadExchangeInfo = async () => {
-    try {
-      const result = await pointService.getExchangeInfo();
-      if (result.success) {
-        setExchangeRate(result.data.rate);
-      }
-    } catch (error) {
-      console.error("Error loading exchange info:", error);
-    }
-  };
+  // Initial load
+  React.useEffect(() => {
+    if (isConnected && account) {
+      loadBalances();
+      // Try to load admin settings (wallet + conversion settings)
+      (async () => {
+        try {
+          // Try public endpoint first (non-auth)
+          let resp = null;
+          try {
+            resp = await adminAPI.getPublicAdminWallet();
+          } catch (err) {
+            // ignore and try protected endpoint next
+          }
 
-  const checkApproval = async () => {
-    if (!pzoAmount || parseFloat(pzoAmount) <= 0) {
-      toast.error("Vui lòng nhập số lượng PZO hợp lệ!");
-      return;
-    }
+          if (!resp) {
+            // try protected admin endpoint (if client has admin token while testing)
+            try {
+              resp = await adminAPI.getAdminWallet();
+            } catch (err) {
+              resp = null;
+            }
+          }
 
-    try {
-      const result = await pointService.checkPZOApproval(account, pzoAmount);
-      if (result.success) {
-        setNeedsApproval(!result.approved);
-        if (!result.approved) {
-          toast.info("Cần approve PZO trước khi đổi!");
+          const data = resp?.data?.data || null;
+          if (data) {
+            setAdminSettings({
+              address: data.address || null,
+              eduPrice: data.eduPrice || null,
+              minConvertPZO: data.minConvertPZO || null,
+              maxConvertPZO: data.maxConvertPZO || null,
+            });
+            return;
+          }
+
+          // Fallback to env only for address
+          const envAddr = process.env.REACT_APP_ADMIN_WALLET || null;
+          if (envAddr) {
+            setAdminSettings({
+              address: envAddr,
+              eduPrice: null,
+              minConvertPZO: null,
+              maxConvertPZO: null,
+            });
+          }
+        } catch (e) {
+          // defensive fallback
+          const envAddr = process.env.REACT_APP_ADMIN_WALLET || null;
+          if (envAddr) {
+            setAdminSettings({
+              address: envAddr,
+              eduPrice: null,
+              minConvertPZO: null,
+              maxConvertPZO: null,
+            });
+          }
         }
-      }
-    } catch (error) {
-      console.error("Error checking approval:", error);
+      })();
     }
-  };
-
-  const approvePZO = async () => {
-    if (!pzoAmount || parseFloat(pzoAmount) <= 0) {
-      toast.error("Vui lòng nhập số lượng PZO hợp lệ!");
-      return;
-    }
-
-    setIsApproving(true);
-
-    try {
-      const result = await pointService.approvePZO(pzoAmount);
-      if (result.success) {
-        toast.success("✅ Approve PZO thành công!");
-        setNeedsApproval(false);
-        await checkApproval();
-      } else {
-        toast.error("❌ Lỗi: " + result.error);
-      }
-    } catch (error) {
-      console.error("Error approving PZO:", error);
-      toast.error("Có lỗi xảy ra khi approve PZO!");
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
-  const exchangePZOToPoints = async () => {
-    if (!pzoAmount || parseFloat(pzoAmount) <= 0) {
-      toast.error("Vui lòng nhập số lượng PZO hợp lệ!");
-      return;
-    }
-
-    if (parseFloat(pzoAmount) > parseFloat(pzoBalance)) {
-      toast.error("Số dư PZO không đủ!");
-      return;
-    }
-
-    setIsExchanging(true);
-
-    try {
-      const result = await pointService.exchangePZOToPoints(pzoAmount);
-      if (result.success) {
-        toast.success("✅ Đổi PZO thành Point thành công!");
-        setPzoAmount("");
-        setPointAmount("");
-        await loadBalances();
-      } else {
-        if (result.needsApproval) {
-          setNeedsApproval(true);
-          toast.error("Cần approve PZO trước!");
-        } else {
-          toast.error("❌ Lỗi: " + result.error);
-        }
-      }
-    } catch (error) {
-      console.error("Error exchanging PZO to Points:", error);
-      toast.error("Có lỗi xảy ra khi đổi PZO!");
-    } finally {
-      setIsExchanging(false);
-    }
-  };
-
-  const withdrawPointsToPZO = async () => {
-    if (!pointAmount || parseFloat(pointAmount) <= 0) {
-      toast.error("Vui lòng nhập số lượng Point hợp lệ!");
-      return;
-    }
-
-    if (parseFloat(pointAmount) > parseFloat(pointBalance)) {
-      toast.error("Số dư Point không đủ!");
-      return;
-    }
-
-    setIsExchanging(true);
-
-    try {
-      const result = await pointService.withdrawPointsToPZO(pointAmount);
-      if (result.success) {
-        toast.success("✅ Rút Point về PZO thành công!");
-        setPzoAmount("");
-        setPointAmount("");
-        await loadBalances();
-      } else {
-        toast.error("❌ Lỗi: " + result.error);
-      }
-    } catch (error) {
-      console.error("Error withdrawing Points to PZO:", error);
-      toast.error("Có lỗi xảy ra khi rút Point!");
-    } finally {
-      setIsExchanging(false);
-    }
-  };
+  }, [isConnected, account, loadBalances]);
 
   // Convert PZO to EDU token flow (transfer PZO -> platform contract, then backend issues/transfers EDU)
-  const convertPZOToEDU = async () => {
+  const convertPZOToEDU = async (pzoAmount) => {
     if (!pzoAmount || parseFloat(pzoAmount) <= 0) {
       toast.error("Vui lòng nhập số lượng PZO hợp lệ!");
       return;
     }
 
-    if (parseFloat(pzoAmount) > parseFloat(pzoBalance)) {
-      toast.error("Số dư PZO không đủ!");
-      return;
-    }
-
-    setIsExchanging(true);
+    setIsProcessing(true);
 
     try {
-      // 1) Transfer PZO from user's wallet to the pointToken contract (or platform address)
+      // Ensure PZO network if chainId is present
+      if (chainId && chainId !== 5080) {
+        toast.error(
+          `Vui lòng chuyển sang mạng Pione Zero (${currentNetwork}) trước khi thực hiện giao dịch.`
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // 0) Resolve admin wallet address: prefer loaded adminSettings.address (if available),
+      // otherwise try GET /admin/wallet (may be protected), then fall back to env var.
+      let adminAddress = adminSettings?.address || null;
+      if (!adminAddress) {
+        try {
+          const adminResp = await adminAPI.getAdminWallet();
+          adminAddress = adminResp?.data?.data?.address || null;
+        } catch (e) {
+          console.warn(
+            "adminAPI.getAdminWallet failed, will try env fallback:",
+            e?.message
+          );
+        }
+      }
+
+      // Fallback to env var if configured
+      if (!adminAddress) {
+        adminAddress = process.env.REACT_APP_ADMIN_WALLET || null;
+      }
+
+      if (!adminAddress) {
+        toast.error(
+          "Địa chỉ ví admin chưa được cấu hình trên server hoặc môi trường. Liên hệ quản trị để cấu hình."
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // 1) Transfer PZO from user's wallet to the configured admin wallet
       const transferResult = await pointService.transferPZOToContract(
-        pzoAmount
+        pzoAmount,
+        adminAddress
       );
+
       if (!transferResult.success) {
         throw new Error(transferResult.error || "Transfer failed");
       }
 
-      // 2) Calculate EDU amount. For now assume 1 PZO = 1 EDU (configurable later)
-      const eduAmount = parseFloat(pzoAmount);
-
-      // 3) Notify backend to transfer/mint EDU to the user's address
-      const apiResult = await blockchainAPI.transferEduTokens(
-        account,
-        eduAmount
-      );
-      if (apiResult.status === 200 && apiResult.data?.success) {
-        toast.success("✅ Chuyển đổi thành EDU thành công!");
-        setPzoAmount("");
-        setPointAmount("");
-        await loadBalances();
-      } else {
-        console.error("Backend transferEduTokens failed:", apiResult.data);
-        toast.error("Lỗi khi yêu cầu cấp EDU từ server");
+      // 2) Persist transaction record to backend for audit (non-blocking)
+      try {
+        await blockchainAPI.saveTransaction({
+          txHash: transferResult.txHash,
+          from: account,
+          to: adminAddress,
+          amount: pzoAmount,
+          network: currentNetwork || "pioneZero",
+          type: "deposit_points",
+        });
+      } catch (e) {
+        console.error("Failed to save transaction to backend:", e);
       }
+
+      toast.success(
+        "✅ Chuyển PZO đến ví nền tảng thành công! Vui lòng đợi hệ thống cập nhật điểm."
+      );
+
+      // Refresh point balance after a short delay to allow backend/chain to settle
+      setTimeout(loadBalances, 3000);
     } catch (error) {
       console.error("Error converting PZO to EDU:", error);
-      toast.error("Có lỗi xảy ra khi chuyển PZO thành EDU!");
+      toast.error(
+        "Có lỗi xảy ra khi chuyển PZO!" +
+          (error?.message ? ` (${error.message})` : "")
+      );
     } finally {
-      setIsExchanging(false);
+      setIsProcessing(false);
     }
   };
 
@@ -432,6 +319,54 @@ const DepositPoints = () => {
     );
   }
 
+  const promptAndConvert = async () => {
+    const input = window.prompt("Nhập số PZO muốn chuyển (vd: 0.5):");
+    if (!input) return;
+    const amount = parseFloat(input);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Số PZO không hợp lệ");
+      return;
+    }
+    // If admin settings specify min/max, enforce them
+    const min =
+      adminSettings && adminSettings.minConvertPZO
+        ? parseFloat(adminSettings.minConvertPZO)
+        : null;
+    const max =
+      adminSettings && adminSettings.maxConvertPZO
+        ? parseFloat(adminSettings.maxConvertPZO)
+        : null;
+    if (min !== null && amount < min) {
+      toast.error(`Số PZO phải >= ${min} theo cấu hình hệ thống`);
+      return;
+    }
+    if (max !== null && amount > max) {
+      toast.error(`Số PZO phải <= ${max} theo cấu hình hệ thống`);
+      return;
+    }
+
+    // Compute expected EDU based on admin-configured price (if available)
+    let expectedEdu = null;
+    if (adminSettings && adminSettings.eduPrice) {
+      const price = parseFloat(adminSettings.eduPrice);
+      if (!isNaN(price) && price > 0) {
+        expectedEdu = amount / price;
+      }
+    }
+
+    // Confirm with user showing the estimated EDU they will receive
+    const confirmMessage = expectedEdu
+      ? `Bạn sẽ nhận khoảng ${expectedEdu.toFixed(
+          4
+        )} EDU (ước tính) nếu chuyển ${amount} PZO. Xác nhận?`
+      : `Bạn sắp chuyển ${amount} PZO đến ví nền tảng. Xác nhận?`;
+
+    const ok = window.confirm(confirmMessage);
+    if (!ok) return;
+
+    await convertPZOToEDU(amount.toString());
+  };
+
   return (
     <Container>
       <Card>
@@ -441,129 +376,68 @@ const DepositPoints = () => {
 
         <BalanceCard>
           <BalanceItem>
-            <h3>PZO Balance</h3>
-            <p className="balance">
-              {pzoBalance}
-              <span className="symbol">PZO</span>
-            </p>
-          </BalanceItem>
-          <BalanceItem>
             <h3>Point Balance</h3>
             <p className="balance">
               {pointBalance}
               <span className="symbol">POINT</span>
             </p>
           </BalanceItem>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              minWidth: 180,
+            }}
+          >
+            <div style={{ textAlign: "right", fontSize: 13 }}>
+              {adminSettings?.eduPrice ? (
+                <div>Giá: 1 EDU = {adminSettings.eduPrice} PZO</div>
+              ) : (
+                <div>Giá: chưa cấu hình</div>
+              )}
+              {adminSettings?.minConvertPZO && (
+                <div>Min: {adminSettings.minConvertPZO} PZO</div>
+              )}
+              {adminSettings?.maxConvertPZO && (
+                <div>Max: {adminSettings.maxConvertPZO} PZO</div>
+              )}
+            </div>
+
+            <Button
+              variant="primary"
+              onClick={loadBalances}
+              disabled={isProcessing}
+            >
+              <FaSyncAlt /> Làm mới
+            </Button>
+          </div>
         </BalanceCard>
 
-        <ExchangeRate>
-          <div className="rate">1 PZO = 100 POINT</div>
-          <div className="description">Tỷ giá: 0.1 PZO = 10 POINT</div>
-        </ExchangeRate>
+        <FormGroup>
+          <Button
+            variant="success"
+            onClick={promptAndConvert}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <LoadingSpinner />
+                Đang xử lý...
+              </>
+            ) : (
+              "Nạp Point (Chuyển PZO → EDU)"
+            )}
+          </Button>
+        </FormGroup>
 
         <InfoBox>
-          <div className="info-header">
-            <FaInfoCircle />
-            Thông tin giao dịch
-          </div>
-          <div className="info-content">
-            • Đổi PZO thành Point để sử dụng trong hệ thống
-            <br />
-            • Tỷ giá cố định: 1 PZO = 100 POINT
-            <br />
-            • Cần approve PZO trước khi đổi
-            <br />• Giao dịch được thực hiện trên blockchain
-          </div>
+          Lưu ý: Sau khi chuyển PZO đến ví nền tảng, hệ thống backend sẽ xử lý
+          và cấp EDU/Point cho tài khoản của bạn. Nếu sau một thời gian ngắn bạn
+          không thấy điểm được cập nhật, kiểm tra trang lịch sử giao dịch hoặc
+          liên hệ quản trị.
         </InfoBox>
-
-        <FormGroup>
-          <label>Số lượng PZO muốn đổi:</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={pzoAmount}
-            onChange={(e) => setPzoAmount(e.target.value)}
-            placeholder="Nhập số lượng PZO..."
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <label>Số Point sẽ nhận được:</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={pointAmount}
-            readOnly
-            style={{ backgroundColor: "#f5f5f5" }}
-            placeholder="Số Point sẽ nhận được..."
-          />
-        </FormGroup>
-
-        {needsApproval ? (
-          <Button variant="warning" onClick={approvePZO} disabled={isApproving}>
-            {isApproving ? (
-              <>
-                <LoadingSpinner />
-                Đang approve PZO...
-              </>
-            ) : (
-              <>
-                <FaCheck />
-                Approve PZO
-              </>
-            )}
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            onClick={exchangePZOToPoints}
-            disabled={isExchanging}
-          >
-            {isExchanging ? (
-              <>
-                <LoadingSpinner />
-                Đang đổi PZO...
-              </>
-            ) : (
-              <>
-                <FaExchangeAlt />
-                Đổi PZO thành Point
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Convert PZO directly to EDU (on-chain transfer then backend mints/transfers EDU) */}
-        <Button
-          variant="success"
-          onClick={convertPZOToEDU}
-          disabled={isExchanging}
-          style={{ marginTop: 8 }}
-        >
-          {isExchanging ? (
-            <>
-              <LoadingSpinner />
-              Đang chuyển PZO → EDU...
-            </>
-          ) : (
-            <>
-              <FaCoins />
-              Chuyển PZO thành EDU
-            </>
-          )}
-        </Button>
-
-        <Button variant="success" onClick={checkApproval}>
-          <FaWallet />
-          Kiểm tra Approval
-        </Button>
-
-        <Button variant="warning" onClick={loadBalances}>
-          <FaCoins />
-          Làm mới số dư
-        </Button>
       </Card>
     </Container>
   );

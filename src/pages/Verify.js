@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-// import demoData from '../data/demoData.json'; // Removed mock data
-import { getCurrentUser } from '../utils/userUtils';
-import { useWallet } from '../context/WalletContext';
+import React, { useState } from "react";
+import styled from "styled-components";
 
 const Container = styled.div`
   max-width: 500px;
@@ -17,12 +14,12 @@ const Input = styled.input`
   border: 1px solid #667eea;
   margin-bottom: 1rem;
   font-size: 1rem;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
   color: #fff;
 `;
 
 const Card = styled.div`
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 2rem;
   color: #fff;
@@ -30,51 +27,100 @@ const Card = styled.div`
 `;
 
 const Verify = () => {
-  const [input, setInput] = useState('');
-  const [found, setFound] = useState(null);
-  // Removed mock data usage
-  const learnPass = null;
-  const user = getCurrentUser();
-  const currentUser = getCurrentUser();
-  const { account, isConnected } = useWallet();
+  const [cid, setCid] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleVerify = (e) => {
-    e.preventDefault();
-    if (input.trim() === learnPass.id) {
-      setFound({ 
-        ...learnPass, 
-        ownerName: currentUser?.name || user.name, 
-        ownerWallet: isConnected && account ? `${account.slice(0, 6)}...${account.slice(-4)}` : (currentUser?.walletAddress || user.wallet || 'Chưa liên kết ví')
-      });
-    } else {
-      setFound(false);
+  const GATEWAY = process.env.REACT_APP_IPFS_GATEWAY || "https://ipfs.io/ipfs/";
+
+  const handleVerify = async (e) => {
+    e && e.preventDefault();
+    setError(null);
+    setResult(null);
+
+    const value = cid.trim();
+    if (!value) {
+      setError("Vui lòng nhập một IPFS hash (CID)");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const url = `${GATEWAY.replace(/\/$/, "")}/${value}`;
+      const res = await fetch(url, { method: "GET" });
+      if (!res.ok) {
+        throw new Error(
+          `Không thể truy cập IPFS gateway (status: ${res.status})`
+        );
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      let data;
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        data = await res.text();
+      }
+
+      setResult({ url, contentType, data });
+    } catch (err) {
+      setError(err.message || "Lỗi khi truy vấn IPFS");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Container>
-      <h2 style={{ color: '#667eea', marginBottom: 24 }}>Xác minh LearnPass NFT</h2>
+      <h2 style={{ color: "#667eea", marginBottom: 24 }}>
+        Xác minh nội dung IPFS
+      </h2>
+
       <form onSubmit={handleVerify}>
         <Input
-          placeholder="Nhập mã NFT (ID) để xác minh..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
+          placeholder="Nhập IPFS CID (ví dụ: Qm...) hoặc IPFS path"
+          value={cid}
+          onChange={(e) => setCid(e.target.value)}
         />
-        <button className="btn btn-primary" type="submit">Xác minh</button>
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? "Đang kiểm tra..." : "Kiểm tra"}
+        </button>
       </form>
-      {found === false && (
-        <div style={{ color: 'red', marginTop: 16 }}>Không tìm thấy NFT với mã này.</div>
-      )}
-      {found && (
+
+      {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
+
+      {result && (
         <Card>
-          <div><b>ID:</b> {found.id}</div>
-          <div><b>Chủ sở hữu:</b> {found.ownerName} ({found.ownerWallet})</div>
-          <div><b>Số lượng khóa học:</b> {found.metadata.courses.length}</div>
-          <div><b>Hoạt động ngoại khoá:</b> {found.metadata.extracurricular.length}</div>
+          <div style={{ marginBottom: 8 }}>
+            <b>URL:</b>{" "}
+            <a href={result.url} target="_blank" rel="noreferrer">
+              {result.url}
+            </a>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <b>Content-Type:</b> {result.contentType}
+          </div>
+          <div>
+            <b>Nội dung:</b>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                marginTop: 8,
+                maxHeight: 400,
+                overflow: "auto",
+              }}
+            >
+              {typeof result.data === "string"
+                ? result.data
+                : JSON.stringify(result.data, null, 2)}
+            </pre>
+          </div>
         </Card>
       )}
     </Container>
   );
 };
 
-export default Verify; 
+export default Verify;

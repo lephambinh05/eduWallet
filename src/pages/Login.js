@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import styled from "styled-components";
@@ -427,7 +427,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
+  const { login, user, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -444,8 +444,13 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password);
       if (result.success) {
-        // Redirect to dashboard after successful login
-        navigate("/dashboard");
+        // Redirect after successful login based on role
+        const role = result.user?.role || user?.role;
+        if (role && ["admin", "super_admin"].includes(role)) {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -453,6 +458,18 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // If user is already authenticated, redirect away from /login
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const role = user?.role;
+      if (role && ["admin", "super_admin"].includes(role)) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  }, [authLoading, isAuthenticated, user, navigate]);
 
   return (
     <LoginContainer>

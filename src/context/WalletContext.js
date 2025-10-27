@@ -11,6 +11,7 @@ import { NetworkUtils, BLOCKCHAIN_NETWORKS } from "../config/blockchain";
 import { walletAPI } from "../config/api";
 import { useAuth } from "./AuthContext";
 import { getCurrentUser, saveUserToLocalStorage } from "../utils/userUtils";
+import logger from "../utils/logger";
 
 const WalletContext = createContext();
 
@@ -52,13 +53,13 @@ export const WalletProvider = ({ children }) => {
 
   // ✅ Kết nối ví MetaMask với logic mới
   const connectWallet = async () => {
-    console.log("🔐 Authentication status:", isAuthenticated);
+    logger.log("🔐 Authentication status:", isAuthenticated);
     const token = localStorage.getItem("accessToken");
-    console.log(
+    logger.log(
       "🔐 Access token:",
       token ? `Present (${token.substring(0, 20)}...)` : "Missing"
     );
-    console.log("🔐 User data:", getCurrentUser());
+    logger.log("🔐 User data:", getCurrentUser());
 
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập trước khi kết nối ví!");
@@ -75,7 +76,7 @@ export const WalletProvider = ({ children }) => {
     setIsLoading(true);
 
     try {
-      console.log("🔗 Starting wallet connection...");
+      logger.log("🔗 Starting wallet connection...");
 
       // Note: Cannot reset selectedAddress as it's read-only
       // MetaMask will show popup if user hasn't connected before
@@ -96,7 +97,7 @@ export const WalletProvider = ({ children }) => {
       }
 
       const address = ethers.utils.getAddress(accounts[0]);
-      console.log("✅ Selected account:", address);
+      logger.log("✅ Selected account:", address);
 
       // Get network info and validate Pione Zero network
       const network = await window.ethereum.request({ method: "eth_chainId" });
@@ -131,7 +132,7 @@ export const WalletProvider = ({ children }) => {
       }
 
       // Save to database using new API
-      console.log("💾 Saving wallet to database:", {
+      logger.log("💾 Saving wallet to database:", {
         address,
         chainId,
         network: networkConfig ? networkConfig.name : "Unknown Network",
@@ -156,7 +157,7 @@ export const WalletProvider = ({ children }) => {
         saveUserToLocalStorage(currentUser);
       }
 
-      console.log("✅ Wallet connected and saved to database:", {
+      logger.log("✅ Wallet connected and saved to database:", {
         address,
         chainId,
         network: networkConfig ? networkConfig.name : "Unknown Network",
@@ -185,7 +186,7 @@ export const WalletProvider = ({ children }) => {
     if (!account) return;
 
     try {
-      console.log("🔌 Disconnecting wallet...");
+      logger.log("🔌 Disconnecting wallet...");
 
       // Delete from database
       await walletAPI.deleteWallet(account);
@@ -221,7 +222,7 @@ export const WalletProvider = ({ children }) => {
         saveUserToLocalStorage(currentUser);
       }
 
-      console.log("✅ Wallet disconnected and removed from database");
+      logger.log("✅ Wallet disconnected and removed from database");
       toast.success("Đã ngắt kết nối ví!");
     } catch (error) {
       console.error("❌ Error disconnecting wallet:", error);
@@ -232,7 +233,7 @@ export const WalletProvider = ({ children }) => {
   // 🔄 Kiểm tra kết nối ví khi reload trang (chỉ dùng eth_accounts, không gây popup)
   const checkWalletConnection = useCallback(async () => {
     if (!window.ethereum || !isAuthenticated || userDisconnected) {
-      console.log("⚠️ Skipping wallet check:", {
+      logger.log("⚠️ Skipping wallet check:", {
         hasEthereum: !!window.ethereum,
         isAuthenticated,
         userDisconnected,
@@ -241,7 +242,7 @@ export const WalletProvider = ({ children }) => {
     }
 
     try {
-      console.log("🔍 Checking wallet connection (silent check)...");
+      logger.log("🔍 Checking wallet connection (silent check)...");
 
       // Get current accounts from MetaMask (không gây popup)
       const accounts = await window.ethereum.request({
@@ -250,14 +251,14 @@ export const WalletProvider = ({ children }) => {
 
       if (accounts.length > 0) {
         const address = ethers.utils.getAddress(accounts[0]);
-        console.log("🔍 Found account in MetaMask:", address);
+        logger.log("🔍 Found account in MetaMask:", address);
 
         // Check if wallet exists in database
         try {
           const response = await walletAPI.checkWallet(address);
 
           if (response.data.exists && response.data.wallet.connected) {
-            console.log("✅ Wallet found in database, restoring connection...");
+            logger.log("✅ Wallet found in database, restoring connection...");
 
             // Get network info
             const network = await window.ethereum.request({
@@ -293,7 +294,7 @@ export const WalletProvider = ({ children }) => {
               saveUserToLocalStorage(currentUser);
             }
 
-            console.log("✅ Wallet restored from database:", {
+            logger.log("✅ Wallet restored from database:", {
               address,
               chainId,
               network: networkConfig ? networkConfig.name : "Unknown Network",
@@ -301,13 +302,13 @@ export const WalletProvider = ({ children }) => {
 
             toast.success("Ví đã được khôi phục!");
           } else {
-            console.log("❌ Wallet not found in database or disconnected");
+            logger.log("❌ Wallet not found in database or disconnected");
           }
         } catch (apiError) {
           console.error("❌ Error checking wallet in database:", apiError);
         }
       } else {
-        console.log("❌ No accounts connected in MetaMask");
+        logger.log("❌ No accounts connected in MetaMask");
       }
     } catch (error) {
       console.error("❌ Error checking wallet connection:", error);
@@ -320,7 +321,7 @@ export const WalletProvider = ({ children }) => {
     if (!window.ethereum) return;
 
     const handleAccountsChanged = async (accounts) => {
-      console.log("🔄 Accounts changed:", accounts);
+      logger.log("🔄 Accounts changed:", accounts);
 
       if (accounts.length === 0) {
         // User disconnected in MetaMask
@@ -330,7 +331,7 @@ export const WalletProvider = ({ children }) => {
         const newAddress = ethers.utils.getAddress(accounts[0]);
 
         if (newAddress !== account) {
-          console.log("🔄 Switching to new account:", newAddress);
+          logger.log("🔄 Switching to new account:", newAddress);
 
           // Get network info
           const network = await window.ethereum.request({
@@ -373,16 +374,15 @@ export const WalletProvider = ({ children }) => {
             saveUserToLocalStorage(currentUser);
           }
 
-          console.log("✅ Switched to new wallet:", newAddress);
+          logger.log("✅ Switched to new wallet:", newAddress);
           toast.success("Đã chuyển sang ví mới!");
         }
       }
     };
 
     const handleChainChanged = (chainId) => {
-      console.log("🔄 Chain changed:", chainId);
+      logger.log("🔄 Chain changed:", chainId);
       const newChainId = parseInt(chainId, 16);
-      const networkConfig = NetworkUtils.getNetworkByChainId(newChainId);
 
       // Only allow Pione Zero network
       if (newChainId !== BLOCKCHAIN_NETWORKS.pioneZero.chainId) {
@@ -416,9 +416,9 @@ export const WalletProvider = ({ children }) => {
   // 🔄 Check MetaMask availability when page loads (không tự động connect)
   useEffect(() => {
     if (window.ethereum) {
-      console.log("✅ MetaMask detected and ready");
+      logger.log("✅ MetaMask detected and ready");
     } else {
-      console.log("⚠️ MetaMask not detected");
+      logger.log("⚠️ MetaMask not detected");
     }
   }, []);
 
@@ -496,13 +496,13 @@ export const WalletProvider = ({ children }) => {
   // Initialize PZO Token contract when signer changes
   const initializePZOToken = useCallback(async () => {
     if (!signer || !provider) {
-      console.log("❌ No signer or provider available");
+      logger.log("❌ No signer or provider available");
       return;
     }
 
     try {
       const pzoTokenAddress = process.env.REACT_APP_PZO_TOKEN_ADDRESS;
-      console.log("🔍 PZO Token address:", pzoTokenAddress);
+      logger.log("🔍 PZO Token address:", pzoTokenAddress);
 
       if (!pzoTokenAddress || pzoTokenAddress === "undefined") {
         console.error("❌ PZO Token address not found in env");
@@ -522,7 +522,7 @@ export const WalletProvider = ({ children }) => {
         signer
       );
       setPzoToken(tokenContract);
-      console.log("✅ PZO Token contract initialized");
+      logger.log("✅ PZO Token contract initialized");
     } catch (error) {
       console.error("❌ Error initializing PZO Token contract:", error);
     }

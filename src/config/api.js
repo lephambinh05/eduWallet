@@ -46,9 +46,13 @@ api.interceptors.response.use(
               refreshToken,
             }
           );
+          const {
+            accessToken: maybeAccessToken,
+            token: maybeToken,
+            refreshToken: newRefreshToken,
+          } = response.data.data || {};
 
-          const { accessToken, refreshToken: newRefreshToken } =
-            response.data.data;
+          const accessToken = maybeAccessToken || maybeToken;
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", newRefreshToken);
 
@@ -233,6 +237,20 @@ export const blockchainAPI = {
 
   // Transaction details
   getTransaction: (txHash) => api.get(`/api/blockchain/transaction/${txHash}`),
+
+  // Get authenticated user's persisted transactions (paginated)
+  // filters: { type, status }
+  getMyTransactions: (page = 1, limit = 50, filters = {}) =>
+    api.get(`/api/blockchain/transactions/me`, {
+      params: {
+        page,
+        limit,
+        ...filters,
+      },
+    }),
+
+  // Persist blockchain transaction (frontend -> backend)
+  saveTransaction: (record) => api.post("/api/blockchain/transactions", record),
 };
 
 export const adminAPI = {
@@ -257,6 +275,10 @@ export const adminAPI = {
   // System management
   getSystemLogs: (params) => api.get("/api/admin/logs", { params }),
   getSystemHealth: () => api.get("/api/admin/health"),
+  // Get configured admin wallet address (public)
+  getAdminWallet: () => api.get("/api/admin/wallet"),
+  // Public admin wallet / conversion settings (no auth required)
+  getPublicAdminWallet: () => api.get("/api/public/admin-wallet"),
 };
 
 export default api;

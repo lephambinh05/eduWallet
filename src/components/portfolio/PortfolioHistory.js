@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { getCurrentUser } from "../../utils/userUtils";
+import { useWallet } from "../../context/WalletContext";
+import portfolioNFTService from "../../services/portfolioNFTService";
+import { BLOCKCHAIN_NETWORKS } from "../../config/blockchain";
+import { ethers } from "ethers";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
@@ -13,7 +18,10 @@ import {
   FaClock,
   FaUser,
   FaShieldAlt,
+  FaCopy,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
+import logger from "../../utils/logger";
 
 const Container = styled.div`
   max-width: 1000px;
@@ -282,14 +290,26 @@ const PortfolioHistory = () => {
   const [tokenId, setTokenId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const [currentNFTs, setCurrentNFTs] = useState([]);
+  const [currentNFTsLoading, setCurrentNFTsLoading] = useState(false);
+  const [currentNFTsError, setCurrentNFTsError] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("info");
+  const { provider, signer } = useWallet();
+  // getCurrentUser imported above
 
   useEffect(() => {
     if (tokenId) {
       loadPortfolioHistory(tokenId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenId]);
+
+  // Load current NFTs on mount and when wallet/provider changes
+  useEffect(() => {
+    loadCurrentNFTs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider, signer]);
 
   const loadPortfolioHistory = async (id) => {
     setIsLoading(true);
@@ -297,52 +317,167 @@ const PortfolioHistory = () => {
     setStatusType("info");
 
     try {
-      // Load from localStorage mint history
-      const key = "portfolioMintHistory";
-      const raw = window.localStorage.getItem(key);
-      const all = raw ? JSON.parse(raw) : [];
+      // Attempt to load server-side portfolio changes (courses/certificates/badges)
+      const user = getCurrentUser();
+      let serverEntries = [];
+      if (user && user.email) {
+        try {
+          const base =
+            process.env.REACT_APP_API_BASE_URL ||
+            process.env.REACT_APP_BACKEND_URL ||
+            "http://127.0.0.1:3001";
+          const res = await fetch(
+            `${base}/api/portfolio/email/${encodeURIComponent(user.email)}`
+          );
+          const json = await res.json();
+          if (json && json.success && json.data) {
+            const { courses = [], certificates = [], badges = [] } = json.data;
 
-      // Filter by tokenId if provided
-      const filtered = id
-        ? all.filter((h) => h.tokenId?.toString() === id.toString())
-        : all;
+            // Map courses/certificates/badges to history entries
+            serverEntries = [
+              ...courses.map((c) => ({
+                type: "update",
+                timestamp:
+                  c.updatedAt || c.createdAt || new Date().toISOString(),
+                transactionHash: null,
+                changes: [
+                  {
+                    type: "add",
+                    item: c.courseName || c.title || "Course",
+                    category: "course",
+                  },
+                ],
+                stats: { courses: 1, certificates: 0, badges: 0, gpa: 0 },
+                userId: json.data.user?.id || user.id,
+                userName:
+                  `${json.data.user?.firstName || ""} ${
+                    json.data.user?.lastName || ""
+                  }`.trim() || null,
+              })),
+              ...certificates.map((c) => ({
+                type: "update",
+                timestamp:
+                  c.updatedAt || c.createdAt || new Date().toISOString(),
+                transactionHash: null,
+                changes: [
+                  {
+                    type: "add",
+                    item: c.title || c.name || "Certificate",
+                    category: "certificate",
+                  },
+                ],
+                stats: { courses: 0, certificates: 1, badges: 0, gpa: 0 },
+                userId: json.data.user?.id || user.id,
+                userName:
+                  `${json.data.user?.firstName || ""} ${
+                    json.data.user?.lastName || ""
+                  }`.trim() || null,
+              })),
+              ...badges.map((b) => ({
+                type: "update",
+                timestamp:
+                  b.updatedAt || b.createdAt || new Date().toISOString(),
+                transactionHash: null,
+                changes: [
+                  {
+                    type: "add",
+                    item: b.name || b.title || "Badge",
+                    category: "badge",
+                  },
+                ],
+                stats: { courses: 0, certificates: 0, badges: 1, gpa: 0 },
+                userId: json.data.user?.id || user.id,
+                userName:
+                  `${json.data.user?.firstName || ""} ${
+                    json.data.user?.lastName || ""
+                  }`.trim() || null,
+              })),
+            ];
+          }
+        } catch (err) {
+          console.warn("Failed to load portfolio from API:", err.message);
+        }
+      }
 
-      if (filtered.length === 0) {
+      // We no longer rely on localStorage for mint history. Persisted transactions
+      // on the backend (and on-chain queries) are used instead.
+
+      // Also attempt to load persisted blockchain transactions for the user
+      let persistedTxEntries = [];
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+          const base =
+            process.env.REACT_APP_API_BASE_URL ||
+            process.env.REACT_APP_BACKEND_URL ||
+            "http://127.0.0.1:3001";
+          const txRes = await fetch(`${base}/api/blockchain/transactions/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          });
+          const txJson = await txRes.json();
+          if (txJson && txJson.success && txJson.data && txJson.data.items) {
+            persistedTxEntries = txJson.data.items.map((t) => ({
+              type: "mint",
+              timestamp: t.createdAt || t.updatedAt || new Date().toISOString(),
+              transactionHash: t.txHash || t.txhash || null,
+              changes: [
+                {
+                  type: "add",
+                  item: `Token #${t.tokenId || "?"}`,
+                  category: "verification",
+                },
+                {
+                  type: "add",
+                  item: `IPFS: ${t.ipfsHash || t.metadataURI || "n/a"}`,
+                  category: "statistics",
+                },
+              ],
+              stats: {
+                courses: t.metadata?.totalCourses || 0,
+                certificates: t.metadata?.totalCertificates || 0,
+                badges: t.metadata?.totalBadges || 0,
+                gpa: t.metadata?.gpa || 0,
+              },
+              userId: t.userId || (user && user.id) || null,
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn(
+          "Failed to load persisted blockchain transactions:",
+          e.message || e
+        );
+      }
+
+      // Combine persisted blockchain txs and server entries. Sort by timestamp desc
+      const combined = [...persistedTxEntries, ...serverEntries].sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      );
+
+      if (combined.length === 0) {
         setHistory([]);
         setStatusMessage(
-          "ℹ️ Chưa có lịch sử nào được lưu trên trình duyệt này. Hãy mint một NFT để bắt đầu."
+          "ℹ️ Chưa có lịch sử nào được tìm thấy. Hãy mint hoặc cập nhật portfolio để tạo lịch sử."
         );
         setStatusType("info");
       } else {
         // Map to UI timeline format
-        const ui = filtered.map((r, idx) => ({
+        const ui = combined.map((r, idx) => ({
           id: idx + 1,
-          type: "mint",
-          version: 1,
-          timestamp: r.timestamp || new Date().toISOString(),
+          type: r.type,
+          version: r.version || 1,
+          timestamp: r.timestamp,
           transactionHash: r.transactionHash,
-          changes: [
-            {
-              type: "add",
-              item: `Token #${r.tokenId}`,
-              category: "verification",
-            },
-            {
-              type: "add",
-              item: `IPFS: ${r.ipfsHash}`,
-              category: "statistics",
-            },
-          ],
-          stats: {
-            courses: r.portfolioSummary?.totalCourses || 0,
-            certificates: r.portfolioSummary?.totalCertificates || 0,
-            badges: r.portfolioSummary?.totalBadges || 0,
-            gpa: r.portfolioSummary?.gpa || 0,
-          },
+          changes: r.changes || [],
+          stats: r.stats || { courses: 0, certificates: 0, badges: 0, gpa: 0 },
+          userId: r.userId || null,
         }));
 
         setHistory(ui);
-        setStatusMessage("✅ Đã tải lịch sử portfolio từ trình duyệt");
+        setStatusMessage("✅ Đã tải lịch sử portfolio");
         setStatusType("success");
       }
     } catch (error) {
@@ -351,6 +486,145 @@ const PortfolioHistory = () => {
       setStatusType("error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load current NFTs owned by the user and include in UI
+  const loadCurrentNFTs = async () => {
+    setCurrentNFTsLoading(true);
+    setCurrentNFTsError(null);
+    try {
+      const user = getCurrentUser();
+      const ownerAddress =
+        (user &&
+          (user.walletAddress || user.address || user.walletInfo?.address)) ||
+        null;
+
+      if (!ownerAddress) {
+        setCurrentNFTs([]);
+        setCurrentNFTsLoading(false);
+        return;
+      }
+
+      // Use connected provider if available; otherwise fall back to read-only RPC
+      const rpc = BLOCKCHAIN_NETWORKS.pioneZero.rpcUrl;
+      const readOnlyProvider = new ethers.providers.JsonRpcProvider(rpc);
+      const providerToUse = provider || readOnlyProvider;
+
+      // Initialize portfolioNFTService with provider (and signer if present)
+      await portfolioNFTService.initialize(
+        providerToUse,
+        signer || providerToUse
+      );
+      // Fetch persisted tokenIds first to avoid querying summaries for tokens
+      // we don't want to show. If backend returns persisted tokenIds, only
+      // fetch summaries for those IDs. Otherwise fall back to querying all
+      // on-chain tokens for the owner.
+      let summaries = [];
+      try {
+        const token = localStorage.getItem("accessToken");
+        const base =
+          process.env.REACT_APP_API_BASE_URL ||
+          process.env.REACT_APP_BACKEND_URL ||
+          "http://127.0.0.1:3001";
+
+        let persistedTokenIds = null;
+        if (token) {
+          try {
+            const txRes = await fetch(
+              `${base}/api/blockchain/transactions/me`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  Accept: "application/json",
+                },
+              }
+            );
+            const txJson = await txRes.json();
+            if (
+              txJson &&
+              txJson.success &&
+              txJson.data &&
+              Array.isArray(txJson.data.items)
+            ) {
+              persistedTokenIds = txJson.data.items
+                .map((t) =>
+                  t.tokenId !== undefined && t.tokenId !== null
+                    ? String(t.tokenId)
+                    : null
+                )
+                .filter(Boolean);
+              logger.log(
+                "portfolioHistory: persisted tokenIds from backend:",
+                persistedTokenIds
+              );
+            }
+          } catch (e) {
+            console.warn(
+              "Failed to fetch persisted txs for filtering:",
+              e.message || e
+            );
+          }
+        }
+
+        if (Array.isArray(persistedTokenIds) && persistedTokenIds.length > 0) {
+          // Only fetch summaries for the persisted tokenIds
+          summaries = await Promise.all(
+            persistedTokenIds.map(async (t) => {
+              try {
+                const s = await portfolioNFTService.getPortfolioSummary(t);
+                return { tokenId: t.toString(), summary: s };
+              } catch (e) {
+                logger.warn(
+                  "Failed to load summary for token",
+                  t,
+                  e.message || e
+                );
+                return { tokenId: t.toString(), summary: null };
+              }
+            })
+          );
+        } else {
+          // No persisted token IDs -> fallback to listing all on-chain tokens
+          const tokenIds = await portfolioNFTService.getAllOwnerTokens(
+            ownerAddress
+          );
+          if (!tokenIds || tokenIds.length === 0) {
+            setCurrentNFTs([]);
+            setCurrentNFTsLoading(false);
+            return;
+          }
+
+          summaries = await Promise.all(
+            tokenIds.map(async (t) => {
+              try {
+                const s = await portfolioNFTService.getPortfolioSummary(t);
+                return { tokenId: String(t), summary: s };
+              } catch (e) {
+                logger.warn(
+                  "Failed to load summary for token",
+                  t,
+                  e.message || e
+                );
+                return { tokenId: String(t), summary: null };
+              }
+            })
+          );
+        }
+
+        setCurrentNFTs(summaries);
+      } catch (e) {
+        console.error("Error loading current NFTs:", e);
+        setCurrentNFTs([]);
+        setCurrentNFTsError(e.message || String(e));
+      } finally {
+        setCurrentNFTsLoading(false);
+      }
+    } catch (e) {
+      console.error("Error loading current NFTs:", e);
+      setCurrentNFTs([]);
+      setCurrentNFTsError(e.message || String(e));
+      setCurrentNFTsLoading(false);
     }
   };
 
@@ -446,6 +720,165 @@ const PortfolioHistory = () => {
           <StatusMessage className={statusType}>{statusMessage}</StatusMessage>
         )}
       </SearchSection>
+
+      {/* Current NFTs owned by user (rendered regardless of history) */}
+      {currentNFTsLoading && (
+        <div
+          style={{
+            background: "white",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "20px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+            textAlign: "center",
+          }}
+        >
+          <LoadingSpinner style={{ fontSize: 36 }} />
+          <div style={{ marginTop: 12, color: "#4a5568" }}>Đang tải NFT...</div>
+        </div>
+      )}
+      {currentNFTsError && (
+        <StatusMessage className="error" style={{ marginBottom: 12 }}>
+          {currentNFTsError}
+        </StatusMessage>
+      )}
+      {currentNFTs && currentNFTs.length > 0 && (
+        <div
+          style={{
+            background: "white",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "20px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <h3 style={{ color: "#2d3748", marginBottom: "15px" }}>
+            📦 NFT hiện có ({currentNFTs.length})
+          </h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "15px",
+            }}
+          >
+            {currentNFTs
+              .filter((n) =>
+                tokenId ? n.tokenId === tokenId.toString() : true
+              )
+              .map((n) => (
+                <div
+                  key={n.tokenId}
+                  style={{
+                    border: "1px solid #e6e6e6",
+                    borderRadius: "12px",
+                    padding: "15px",
+                    background: "#fafafa",
+                  }}
+                >
+                  <div
+                    style={{ fontSize: "18px", fontWeight: 700, color: "#000" }}
+                  >
+                    Token #{n.tokenId}
+                  </div>
+                  {n.summary ? (
+                    (() => {
+                      const currentUser = getCurrentUser();
+                      // Prefer showing application username when the current user is the minter
+                      let displayName =
+                        n.summary.studentName || n.summary.studentId || "-";
+                      try {
+                        if (currentUser) {
+                          const currentWallet = (
+                            currentUser.walletAddress || ""
+                          ).toLowerCase();
+                          const owner = (n.summary.owner || "").toLowerCase();
+                          if (
+                            (n.summary.studentId &&
+                              currentUser.studentId &&
+                              n.summary.studentId === currentUser.studentId) ||
+                            (owner && currentWallet && owner === currentWallet)
+                          ) {
+                            displayName =
+                              currentUser.username ||
+                              `${currentUser.firstName || ""} ${
+                                currentUser.lastName || ""
+                              }`.trim() ||
+                              displayName;
+                          }
+                        }
+                      } catch (e) {
+                        /* ignore */
+                      }
+
+                      return (
+                        <div style={{ marginTop: "10px", color: "#4a5568" }}>
+                          <div>
+                            <strong>Người mint:</strong> {displayName}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                            }}
+                          >
+                            <strong>IPFS:</strong>
+                            <span style={{ fontFamily: "monospace" }}>
+                              {n.summary.ipfsHash
+                                ? `${n.summary.ipfsHash.slice(
+                                    0,
+                                    5
+                                  )}...${n.summary.ipfsHash.slice(-5)}`
+                                : "-"}
+                            </span>
+                            {n.summary.ipfsHash && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(
+                                      n.summary.ipfsHash
+                                    );
+                                    toast.success(
+                                      "Copied IPFS hash to clipboard"
+                                    );
+                                  } catch (err) {
+                                    toast.error("Không thể copy vào clipboard");
+                                  }
+                                }}
+                                title="Copy full IPFS hash"
+                                style={{
+                                  border: "none",
+                                  background: "transparent",
+                                  cursor: "pointer",
+                                  padding: 4,
+                                }}
+                              >
+                                <FaCopy />
+                              </button>
+                            )}
+                          </div>
+                          <div>
+                            <strong>Ngày mint:</strong>{" "}
+                            {n.summary.mintDate
+                              ? new Date(n.summary.mintDate).toLocaleString(
+                                  "vi-VN"
+                                )
+                              : "-"}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div style={{ marginTop: "10px", color: "#6c757d" }}>
+                      Không thể tải thông tin chi tiết
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {history.length > 0 && (
         <>
@@ -562,6 +995,7 @@ const PortfolioHistory = () => {
             </div>
           </div>
 
+          {/* Timeline */}
           <TimelineContainer>
             {history.map((item, index) => (
               <TimelineItem
@@ -586,6 +1020,15 @@ const PortfolioHistory = () => {
                   <p>
                     <strong>🔗 Transaction Hash:</strong> {item.transactionHash}
                   </p>
+                  {item.userName ? (
+                    <p>
+                      <strong>👤 Người dùng:</strong> {item.userName}
+                    </p>
+                  ) : item.userId ? (
+                    <p>
+                      <strong>👤 User ID:</strong> {item.userId}
+                    </p>
+                  ) : null}
 
                   <ChangeList>
                     <h4 style={{ marginBottom: "10px", color: "#2d3748" }}>

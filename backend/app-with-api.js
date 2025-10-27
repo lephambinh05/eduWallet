@@ -20,6 +20,7 @@ require("./src/models/LearnPass");
 const portfolioRoutes = require("./src/routes/portfolio");
 const walletRoutes = require("./routes/wallet");
 const adminRoutes = require("./src/routes/admin");
+const blockchainRoutes = require("./src/routes/blockchain");
 
 // Connect to MongoDB - require MONGODB_URI from environment
 if (!process.env.MONGODB_URI) {
@@ -55,6 +56,7 @@ app.get("/health", (req, res) => {
 // Routes
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/blockchain", blockchainRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Test route

@@ -1,0 +1,2 @@
+{"error":"ActivityLog validation failed: actionType: `admin_wallet_updated` is not a valid enum value for path `actionType`.","level":"error","message":"Failed to save activity log to database","service":"eduwallet-backend","timestamp":"2025-10-26 15:40:42"}
+{"error":"ActivityLog validation failed: actionType: `admin_wallet_updated` is not a valid enum value for path `actionType`.","level":"error","message":"Failed to save activity log to database","service":"eduwallet-backend","timestamp":"2025-10-26 16:40:19"}
