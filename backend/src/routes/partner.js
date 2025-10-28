@@ -5,6 +5,7 @@ const { asyncHandler } = require("../middleware/errorHandler");
 const { authenticateToken, authorize } = require("../middleware/auth");
 const Purchase = require("../models/Purchase");
 const Enrollment = require("../models/Enrollment");
+const emailService = require("../services/emailService");
 
 // Create a course (partner only)
 router.post(
@@ -228,6 +229,37 @@ router.post(
       status: "in_progress",
       metadata: {},
     });
+
+    // Send email notifications
+    try {
+      // Email to buyer
+      await emailService.sendCoursePurchaseNotification(req.user.email, {
+        name: course.name,
+        priceEdu: course.priceEdu,
+        owner: course.owner
+      }, {
+        buyer: req.user,
+        accessLink,
+        createdAt: purchase.createdAt
+      });
+
+      // Email to seller
+      if (course.owner.email) {
+        await emailService.sendNewSaleNotification(course.owner.email, {
+          name: course.name,
+          priceEdu: course.priceEdu,
+          owner: course.owner
+        }, {
+          buyer: req.user,
+          createdAt: purchase.createdAt
+        });
+      }
+
+      console.log(`✅ Course purchase emails sent for course: ${course.name}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send course purchase emails:', emailError);
+      // Don't fail purchase if email fails
+    }
 
     res.json({
       success: true,

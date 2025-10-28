@@ -7,6 +7,7 @@ const { asyncHandler, AppError } = require('../middleware/errorHandler');
 const { generateToken, generateRefreshToken, verifyRefreshToken, authenticateToken } = require('../middleware/auth');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const emailService = require('../services/emailService');
 
 /**
  * @swagger
@@ -88,6 +89,20 @@ router.post('/register',
     user.password = undefined;
 
     logger.logUserAction(user._id, 'user_registered', { email, role });
+
+    // Send welcome email
+    try {
+      await emailService.sendWelcomeEmail(email, {
+        firstName,
+        lastName,
+        username,
+        email
+      });
+      console.log(`✅ Welcome email sent to ${email}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send welcome email:', emailError);
+      // Don't fail registration if email fails
+    }
 
     res.status(201).json({
       success: true,

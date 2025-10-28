@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bạn có điểm đánh giá mới - EduWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .score-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+        .content h2 { color: #2d3748; margin-bottom: 20px; font-size: 24px; }
+        .content p { color: #4a5568; line-height: 1.6; margin-bottom: 15px; font-size: 16px; }
+        .assessment-info { background: #fef5e7; border: 2px solid #f6ad55; padding: 30px; border-radius: 12px; margin: 30px 0; }
+        .course-title { color: #d69e2e; font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+        .score-display { text-align: center; margin: 20px 0; }
+        .score-circle { display: inline-block; width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto; }
+        .score-circle.good { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
+        .score-circle.average { background: linear-gradient(135deg, #f6ad55 0%, #d69e2e 100%); }
+        .score-circle.low { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #4a5568; }
+        .value { color: #2d3748; }
+        .feedback-box { background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
+        .btn { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .improvement-tips { background: #e6fffa; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #38b2ac; }
+        .improvement-tips h3 { color: #234e52; margin-bottom: 15px; }
+        .improvement-tips ul { padding-left: 20px; }
+        .improvement-tips li { margin-bottom: 8px; color: #234e52; }
+        .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; }
+        @media (max-width: 600px) {
+            .container { margin: 0; }
+            .header, .content, .footer { padding: 20px; }
+            .info-row { flex-direction: column; }
+            .score-circle { width: 100px; height: 100px; font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Điểm đánh giá mới</h1>
+            <p>Kết quả học tập của bạn</p>
+        </div>
+        
+        <div class="content">
+            <div class="score-icon">🎯</div>
+            
+            <h2>Xin chào {{firstName}}!</h2>
+            
+            <p>Bạn vừa nhận được điểm đánh giá mới cho khóa học. Hãy xem kết quả chi tiết bên dưới:</p>
+            
+            <div class="assessment-info">
+                <div class="course-title">📚 {{courseName}}</div>
+                
+                <div class="score-display">
+                    <div class="score-circle {{#if (gt score 8)}}good{{else if (gt score 6)}}average{{else}}low{{/if}}">
+                        {{score}}/{{maxScore}}
+                    </div>
+                    <p style="margin-top: 15px; font-weight: 600; color: #2d3748;">Điểm số của bạn</p>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">📋 Loại đánh giá:</span>
+                    <span class="value">{{assessmentType}}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">📅 Ngày đánh giá:</span>
+                    <span class="value">{{assessmentDate}}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">💯 Tỷ lệ hoàn thành:</span>
+                    <span class="value">{{#divide score maxScore}}{{multiply this 100}}{{/divide}}%</span>
+                </div>
+            </div>
+            
+            {{#if feedback}}
+            <div class="feedback-box">
+                <h3 style="color: #667eea; margin-bottom: 10px;">💬 Phản hồi từ giảng viên:</h3>
+                <p style="font-style: italic; color: #4a5568;">"{{feedback}}"</p>
+            </div>
+            {{/if}}
+            
+            <center>
+                <a href="{{enrollmentUrl}}" class="btn">📖 Xem chi tiết enrollment</a>
+            </center>
+            
+            {{#if (lt score 7)}}
+            <div class="improvement-tips">
+                <h3>💡 Gợi ý cải thiện:</h3>
+                <ul>
+                    <li>📚 Xem lại các bài giảng liên quan</li>
+                    <li>📝 Làm thêm bài tập thực hành</li>
+                    <li>💬 Tham gia thảo luận với cộng đồng</li>
+                    <li>🤝 Liên hệ với giảng viên để được hỗ trợ</li>
+                    <li>🎯 Tập trung vào những điểm yếu đã được chỉ ra</li>
+                </ul>
+            </div>
+            {{else if (gt score 8)}}
+            <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 20px 0;">
+                <h3 style="color: #276749; margin-bottom: 10px;">🎉 Xuất sắc!</h3>
+                <p style="color: #276749;">Bạn đã có kết quả học tập rất tốt. Hãy tiếp tục duy trì và chia sẻ kinh nghiệm với các bạn học khác!</p>
+            </div>
+            {{else}}
+            <div style="background: #fffbf0; padding: 20px; border-radius: 8px; border-left: 4px solid #f6ad55; margin: 20px 0;">
+                <h3 style="color: #744210; margin-bottom: 10px;">👍 Kết quả tốt!</h3>
+                <p style="color: #744210;">Bạn đang trên đúng hướng. Hãy tiếp tục cố gắng để đạt kết quả cao hơn!</p>
+            </div>
+            {{/if}}
+            
+            <p><strong>🏆 Phần thưởng:</strong></p>
+            <ul style="padding-left: 20px; margin-bottom: 20px;">
+                <li>💰 Nhận EDU tokens khi đạt điểm cao</li>
+                <li>🏅 Nhận badge khi hoàn thành xuất sắc</li>
+                <li>📜 Chứng chỉ NFT khi hoàn thành khóa học</li>
+                <li>⭐ Tăng ranking trong hệ thống</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎓 EduWallet</strong></p>
+            <p>Nền tảng giáo dục blockchain tiên tiến</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                © 2025 EduWallet. All rights reserved.<br>
+                Email này được gửi tự động, vui lòng không reply.<br>
+                Cần hỗ trợ? Liên hệ: support@eduwallet.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>

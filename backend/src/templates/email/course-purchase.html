@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận mua khóa học - EduWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .success-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+        .content h2 { color: #2d3748; margin-bottom: 20px; font-size: 24px; }
+        .content p { color: #4a5568; line-height: 1.6; margin-bottom: 15px; font-size: 16px; }
+        .course-info { background: #f0fff4; border: 2px solid #48bb78; padding: 30px; border-radius: 12px; margin: 30px 0; }
+        .course-title { color: #38a169; font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #4a5568; }
+        .value { color: #2d3748; }
+        .btn { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .next-steps { background: #fafafa; padding: 25px; border-radius: 8px; margin: 25px 0; }
+        .next-steps h3 { color: #2d3748; margin-bottom: 15px; }
+        .next-steps ol { padding-left: 20px; }
+        .next-steps li { margin-bottom: 8px; color: #4a5568; }
+        .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; }
+        @media (max-width: 600px) {
+            .container { margin: 0; }
+            .header, .content, .footer { padding: 20px; }
+            .info-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Mua khóa học thành công!</h1>
+            <p>Chúc mừng bạn đã có khóa học mới</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">✅</div>
+            
+            <h2>Xin chào {{firstName}}!</h2>
+            
+            <p>Cảm ơn bạn đã mua khóa học trên EduWallet. Giao dịch của bạn đã được xử lý thành công và bạn có thể bắt đầu học ngay bây giờ!</p>
+            
+            <div class="course-info">
+                <div class="course-title">📚 {{courseName}}</div>
+                
+                <div class="info-row">
+                    <span class="label">💰 Giá khóa học:</span>
+                    <span class="value">{{coursePrice}} EDU Tokens</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">👨‍🏫 Giảng viên:</span>
+                    <span class="value">{{sellerName}}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">📅 Ngày mua:</span>
+                    <span class="value">{{purchaseDate}}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">🔗 Truy cập:</span>
+                    <span class="value">Trọn đời</span>
+                </div>
+            </div>
+            
+            <center>
+                <a href="{{accessLink}}" class="btn">🚀 Bắt đầu học ngay</a>
+                <br>
+                <a href="{{dashboardUrl}}" class="btn btn-secondary">📊 Xem dashboard</a>
+            </center>
+            
+            <div class="next-steps">
+                <h3>🎯 Các bước tiếp theo:</h3>
+                <ol>
+                    <li><strong>Truy cập khóa học:</strong> Nhấp vào nút "Bắt đầu học ngay" để vào lớp học</li>
+                    <li><strong>Tham gia cộng đồng:</strong> Kết nối với các học viên khác</li>
+                    <li><strong>Hoàn thành bài tập:</strong> Làm đầy đủ các assignment để nhận điểm</li>
+                    <li><strong>Nhận chứng chỉ:</strong> Hoàn thành khóa học để nhận NFT certificate</li>
+                    <li><strong>Đánh giá khóa học:</strong> Chia sẻ trải nghiệm của bạn</li>
+                </ol>
+            </div>
+            
+            <p><strong>💡 Mẹo học tập hiệu quả:</strong></p>
+            <ul style="padding-left: 20px; margin-bottom: 20px;">
+                <li>🕒 Lên lịch học tập cố định mỗi ngày</li>
+                <li>📝 Ghi chú và tóm tắt những điểm quan trọng</li>
+                <li>💬 Tham gia thảo luận với cộng đồng</li>
+                <li>🎯 Đặt mục tiêu hoàn thành cho từng chương</li>
+                <li>🏆 Thực hành thường xuyên để củng cố kiến thức</li>
+            </ul>
+            
+            <div style="background: #e6fffa; padding: 20px; border-radius: 8px; border-left: 4px solid #38b2ac; margin: 20px 0;">
+                <p><strong>🎁 Bonus:</strong> Bạn sẽ nhận được EDU tokens khi hoàn thành các milestone trong khóa học!</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎓 EduWallet</strong></p>
+            <p>Nền tảng giáo dục blockchain tiên tiến</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                © 2025 EduWallet. All rights reserved.<br>
+                Email này được gửi tự động, vui lòng không reply.<br>
+                Cần hỗ trợ? Liên hệ: support@eduwallet.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>

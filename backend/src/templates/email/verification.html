@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác thực tài khoản EduWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .verification-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+        .content h2 { color: #2d3748; margin-bottom: 20px; font-size: 24px; }
+        .content p { color: #4a5568; line-height: 1.6; margin-bottom: 15px; font-size: 16px; }
+        .verification-box { background: #ebf8ff; border: 2px solid #4299e1; padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; }
+        .btn { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .warning { background: #fef5e7; border-left: 4px solid #f6ad55; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .warning-icon { color: #f6ad55; margin-right: 10px; }
+        .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; }
+        .small-text { font-size: 14px; color: #6c757d; }
+        @media (max-width: 600px) {
+            .container { margin: 0; }
+            .header, .content, .footer { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Xác thực Email</h1>
+            <p>Hoàn tất đăng ký tài khoản EduWallet</p>
+        </div>
+        
+        <div class="content">
+            <div class="verification-icon">🔐</div>
+            
+            <h2>Xin chào {{firstName}}!</h2>
+            
+            <p>Để bảo mật và hoàn tất quá trình đăng ký tài khoản EduWallet, bạn cần xác thực địa chỉ email này.</p>
+            
+            <div class="verification-box">
+                <h3 style="color: #3182ce; margin-bottom: 15px;">🔒 Xác thực email của bạn</h3>
+                <p style="margin-bottom: 20px;">Nhấp vào nút bên dưới để xác thực email và kích hoạt tài khoản:</p>
+                <a href="{{verificationUrl}}" class="btn">✅ Xác thực ngay</a>
+            </div>
+            
+            <div class="warning">
+                <span class="warning-icon">⚠️</span>
+                <strong>Lưu ý quan trọng:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Link xác thực có hiệu lực trong <strong>{{expiryHours}} giờ</strong></li>
+                    <li>Nếu bạn không xác thực, tài khoản sẽ bị hạn chế một số tính năng</li>
+                    <li>Chỉ nhấp vào link nếu bạn đã đăng ký tài khoản EduWallet</li>
+                </ul>
+            </div>
+            
+            <p><strong>Tại sao cần xác thực email?</strong></p>
+            <ul style="padding-left: 20px; margin-bottom: 20px;">
+                <li>🛡️ Bảo vệ tài khoản khỏi truy cập trái phép</li>
+                <li>📬 Nhận thông báo quan trọng về học tập</li>
+                <li>🔄 Khôi phục tài khoản khi cần thiết</li>
+                <li>💎 Truy cập đầy đủ các tính năng blockchain</li>
+            </ul>
+            
+            <div class="small-text">
+                <p><strong>Không thể nhấp vào nút?</strong></p>
+                <p>Sao chép và dán URL sau vào trình duyệt:</p>
+                <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace;">
+                    {{verificationUrl}}
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎓 EduWallet</strong></p>
+            <p>Nền tảng giáo dục blockchain tiên tiến</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                © 2025 EduWallet. All rights reserved.<br>
+                Email này được gửi tự động, vui lòng không reply.<br>
+                Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

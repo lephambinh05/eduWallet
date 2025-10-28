@@ -4,6 +4,7 @@ const { asyncHandler, AppError } = require("../middleware/errorHandler");
 const { authenticateToken } = require("../middleware/auth");
 const Enrollment = require("../models/Enrollment");
 const mongoose = require("mongoose");
+const emailService = require("../services/emailService");
 
 // Get enrollment detail (only owner, seller or admin can access)
 router.get(
@@ -251,6 +252,25 @@ router.post(
 
     await enrollment.save();
     console.log('✅ Enrollment saved');
+
+    // Send email notification to student
+    try {
+      await emailService.sendNewAssessmentNotification(enrollment.user.email, {
+        type: entry.type,
+        score: entry.score,
+        maxScore: entry.maxScore,
+        feedback: entry.feedback,
+        createdAt: entry.createdAt
+      }, {
+        user: enrollment.user,
+        itemName: enrollment.courseTitle || 'Course',
+        _id: enrollment._id
+      });
+      console.log(`✅ Assessment email sent to ${enrollment.user.email}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send assessment email:', emailError);
+      // Don't fail assessment creation if email fails
+    }
 
     // Verify save worked
     const verifyEnrollment = await Enrollment.findById(id);
