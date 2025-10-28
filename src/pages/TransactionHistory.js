@@ -103,7 +103,10 @@ const TransactionHistory = () => {
   }, []);
 
   const handleFilterApply = () => {
-    load(1, { type: filterType || undefined, status: filterStatus || undefined });
+    load(1, {
+      type: filterType || undefined,
+      status: filterStatus || undefined,
+    });
   };
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
@@ -112,11 +115,30 @@ const TransactionHistory = () => {
     <Container>
       <Card>
         <Title>Lịch sử giao dịch</Title>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            marginBottom: 12,
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginBottom: 12,
+              alignItems: "center",
+            }}
+          >
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#666' }}>Loại</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <label style={{ display: "block", fontSize: 12, color: "#666" }}>
+                Loại
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+              >
                 <option value="">Tất cả</option>
                 <option value="deposit_points">Deposit Points</option>
                 <option value="mint">Mint</option>
@@ -126,8 +148,13 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#666' }}>Trạng thái</label>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <label style={{ display: "block", fontSize: 12, color: "#666" }}>
+                Trạng thái
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
                 <option value="">Tất cả</option>
                 <option value="pending">pending</option>
                 <option value="success">success</option>
@@ -136,7 +163,12 @@ const TransactionHistory = () => {
             </div>
 
             <div>
-              <button onClick={handleFilterApply} style={{ padding: '0.5rem 1rem' }}>Áp dụng</button>
+              <button
+                onClick={handleFilterApply}
+                style={{ padding: "0.5rem 1rem" }}
+              >
+                Áp dụng
+              </button>
             </div>
           </div>
         </div>
@@ -185,12 +217,43 @@ const TransactionHistory = () => {
         )}
         {/* Pagination controls */}
         {items.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 12,
+            }}
+          >
             <div>
-              <button onClick={() => { if (page > 1) { const p = page - 1; setPage(p); load(p); } }} disabled={page <= 1} style={{ padding: '0.4rem 0.75rem' }}>Prev</button>
-              <button onClick={() => { if (page < totalPages) { const p = page + 1; setPage(p); load(p); } }} disabled={page >= totalPages} style={{ padding: '0.4rem 0.75rem', marginLeft: 8 }}>Next</button>
+              <button
+                onClick={() => {
+                  if (page > 1) {
+                    const p = page - 1;
+                    setPage(p);
+                    load(p);
+                  }
+                }}
+                disabled={page <= 1}
+                style={{ padding: "0.4rem 0.75rem" }}
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => {
+                  if (page < totalPages) {
+                    const p = page + 1;
+                    setPage(p);
+                    load(p);
+                  }
+                }}
+                disabled={page >= totalPages}
+                style={{ padding: "0.4rem 0.75rem", marginLeft: 8 }}
+              >
+                Next
+              </button>
             </div>
-            <div style={{ color: '#666' }}>
+            <div style={{ color: "#666" }}>
               Trang {page} / {totalPages} — Tổng {total}
             </div>
           </div>

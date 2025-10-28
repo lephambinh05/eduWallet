@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   validate,
+  validateQuery,
   validateParams,
   schemas,
 } = require("../middleware/validation");
@@ -151,6 +152,15 @@ router.post(
   authorize("admin", "super_admin"),
   validate(schemas.adminCreateUser),
   asyncHandler(adminController.createUser)
+);
+
+// Get all users with filters (admin)
+router.get(
+  "/users",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  validateQuery(schemas.adminUsersQuery),
+  asyncHandler(adminController.getAllUsers)
 );
 
 // Bulk operations

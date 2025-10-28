@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { Toaster } from "react-hot-toast";
 
@@ -26,6 +32,14 @@ import PortfolioNFT from "./pages/PortfolioNFT";
 import MetaMaskGuide from "./pages/MetaMaskGuide";
 import DepositPoints from "./pages/DepositPoints";
 import TransactionHistory from "./pages/TransactionHistory";
+// Partner pages
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import ManageCourses from "./pages/partner/ManageCourses";
+import Learners from "./pages/partner/Learners";
+import PartnerEnrollmentDetail from "./pages/partner/EnrollmentDetail";
+import Courses from "./pages/Courses";
+import MyCourses from "./pages/MyCourses";
+import EnrollmentDetail from "./pages/EnrollmentDetail";
 
 // Admin Pages
 import AdminLogin from "./features/admin/pages/AdminLogin";
@@ -193,6 +207,29 @@ function App() {
                       </Layout>
                     }
                   />
+                  {/* Partner routes (nested under /partner) */}
+                  <Route
+                    path="/partner"
+                    element={
+                      <Layout>
+                        <ProtectedRoute>
+                          <Outlet />
+                        </ProtectedRoute>
+                      </Layout>
+                    }
+                  >
+                    <Route
+                      index
+                      element={<Navigate to="dashboard" replace />}
+                    />
+                    <Route path="dashboard" element={<PartnerDashboard />} />
+                    <Route path="courses" element={<ManageCourses />} />
+                    <Route path="learners" element={<Learners />} />
+                    <Route
+                      path="learners/:id"
+                      element={<PartnerEnrollmentDetail />}
+                    />
+                  </Route>
                   <Route
                     path="/learnpass"
                     element={
@@ -209,6 +246,36 @@ function App() {
                       <Layout>
                         <ProtectedRoute>
                           <Marketplace />
+                        </ProtectedRoute>
+                      </Layout>
+                    }
+                  />
+                  <Route
+                    path="/courses"
+                    element={
+                      <Layout>
+                        <ProtectedRoute>
+                          <Courses />
+                        </ProtectedRoute>
+                      </Layout>
+                    }
+                  />
+                  <Route
+                    path="/my-courses"
+                    element={
+                      <Layout>
+                        <ProtectedRoute>
+                          <MyCourses />
+                        </ProtectedRoute>
+                      </Layout>
+                    }
+                  />
+                  <Route
+                    path="/my-courses/:id"
+                    element={
+                      <Layout>
+                        <ProtectedRoute>
+                          <EnrollmentDetail />
                         </ProtectedRoute>
                       </Layout>
                     }

@@ -448,6 +448,8 @@ const Login = () => {
         const role = result.user?.role || user?.role;
         if (role && ["admin", "super_admin"].includes(role)) {
           navigate("/admin/dashboard");
+        } else if (role === "partner") {
+          navigate("/partner/dashboard");
         } else {
           navigate("/dashboard");
         }
@@ -465,6 +467,8 @@ const Login = () => {
       const role = user?.role;
       if (role && ["admin", "super_admin"].includes(role)) {
         navigate("/admin/dashboard");
+      } else if (role === "partner") {
+        navigate("/partner/dashboard");
       } else {
         navigate("/dashboard");
       }

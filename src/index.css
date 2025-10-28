@@ -18,10 +18,13 @@ body {
     #0f3460,
     #533483
   );
-  color: #ffffff;
+  color: #000000;
   line-height: 1.6;
   overflow-x: hidden;
 }
+
+/* Keep default body text color black; allow component styles (styled-components)
+   to override where they explicitly set color (e.g., sidebar, buttons). */
 
 @keyframes galaxy-bg {
   0% {

@@ -32,18 +32,20 @@ try {
 // Optionally start background reconciler for pending transactions
 if (process.env.RECONCILE_PENDING_TX === "true") {
   try {
-    const { reconcilePending } = require('./services/txReconciler');
+    const { reconcilePending } = require("./services/txReconciler");
     const interval = parseInt(process.env.RECONCILE_INTERVAL_MS, 10) || 30000;
     logger.info(`Starting background tx reconciler every ${interval}ms`);
     setInterval(async () => {
       try {
-        await reconcilePending({ limit: parseInt(process.env.RECONCILE_BATCH_SIZE, 10) || 50 });
+        await reconcilePending({
+          limit: parseInt(process.env.RECONCILE_BATCH_SIZE, 10) || 50,
+        });
       } catch (e) {
-        logger.error('Background reconciler error', { error: e.message });
+        logger.error("Background reconciler error", { error: e.message });
       }
     }, interval);
   } catch (e) {
-    logger.error('Failed to start background reconciler', { error: e.message });
+    logger.error("Failed to start background reconciler", { error: e.message });
   }
 }
 

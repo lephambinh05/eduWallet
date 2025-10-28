@@ -19,6 +19,7 @@ import {
   FaTrophy,
   FaShieldAlt,
   FaChartLine,
+  FaUsers,
   FaAngleLeft,
   FaAngleRight,
   FaGem,
@@ -191,6 +192,37 @@ const NavLink = styled(Link).attrs((props) => ({
     color: white;
     transform: translateX(4px);
   }
+
+  .nav-icon {
+    font-size: 1.2rem;
+    margin-right: ${(props) => (props.$isOpen ? "0.8rem" : "0")};
+    min-width: 1.2rem;
+    text-align: center;
+  }
+
+  .nav-text {
+    display: inline-block;
+    opacity: ${(props) => (props.$isOpen ? "1" : "0")};
+    transition: opacity 0.18s ease;
+    white-space: nowrap;
+    min-width: 2px; /* prevent collapse to zero width */
+  }
+`;
+
+// Non-clickable group header used for items that only serve as a container
+const NavGroupHeader = styled.div.attrs((props) => ({
+  "data-active": props.$active,
+}))`
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  color: ${(props) => (props.$active ? "white" : "rgba(255, 255, 255, 0.7)")};
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  border: 1px solid
+    ${(props) => (props.$active ? "rgba(162, 89, 255, 0.3)" : "transparent")};
 
   .nav-icon {
     font-size: 1.2rem;
@@ -382,6 +414,8 @@ function getInitials(name) {
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [copied, setCopied] = useState(false);
+  // track which nav groups (items with children) are expanded
+  const [openGroups, setOpenGroups] = useState({});
   const location = useLocation();
   const navigate = useNavigate();
   const { account, isConnected, connectWallet, disconnectWallet } = useWallet();
@@ -415,6 +449,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   const navItems = [
+    // default entries for non-partner users (students/institutions)
     { path: "/", icon: FaHome, text: "Trang chủ", section: "main" },
     {
       path: "/dashboard",
@@ -452,6 +487,18 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       protected: true,
     },
     {
+      path: "/courses",
+      icon: FaGraduationCap,
+      text: "Khóa học",
+      section: "main",
+      protected: true,
+      // dropdown children: buy courses and manage my courses
+      children: [
+        { path: "/courses", text: "Mua khóa học" },
+        { path: "/my-courses", text: "Quản lý khóa học" },
+      ],
+    },
+    {
       path: "/badges",
       icon: FaTrophy,
       text: "Badges",
@@ -476,9 +523,91 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     { path: "/about", icon: FaIdCard, text: "Giới thiệu", section: "main" },
   ];
 
+  // If current user is partner, replace navItems with partner-specific menu
+  const partnerNavItems = [
+    // Use Dashboard as primary entry for partners
+    {
+      path: "/partner/dashboard",
+      icon: FaChartLine,
+      text: "Dashboard",
+      section: "partner",
+      protected: true,
+    },
+    {
+      path: "/partner/courses",
+      icon: FaGraduationCap,
+      text: "Quản lý khóa học",
+      section: "partner",
+      protected: true,
+    },
+    {
+      path: "/partner/learners",
+      icon: FaUsers,
+      text: "Quản lý người học",
+      section: "partner",
+      protected: true,
+    },
+  ];
+
+  const effectiveNavItems =
+    user && user.role === "partner" ? partnerNavItems : navItems;
+
   const renderNavItems = (items) => {
     return items.map((item) => {
       if (item.protected && !user) return null;
+      // If item has children render a collapsible submenu
+      if (item.children && item.children.length > 0) {
+        const isActive =
+          location.pathname === item.path ||
+          item.children.some((c) => location.pathname === c.path);
+
+        const isOpenGroup = openGroups[item.path] ?? isActive;
+
+        return (
+          <NavItem key={item.path}>
+            {/* parent shown as a clickable group header to toggle children */}
+            <NavGroupHeader
+              $active={isActive}
+              $isOpen={isOpen}
+              title={item.text}
+              onClick={() => {
+                setOpenGroups((s) => ({ ...s, [item.path]: !isOpenGroup }));
+                if (window.innerWidth <= 768) setIsOpen(false);
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              <item.icon className="nav-icon" />
+              <span className="nav-text">{item.text}</span>
+            </NavGroupHeader>
+
+            {/* render children as simple links (conditionally) */}
+            <div
+              style={{
+                marginLeft: isOpen ? 36 : 0,
+                marginTop: 6,
+                display: isOpenGroup ? "block" : "none",
+              }}
+            >
+              {item.children.map((c) => (
+                <NavItem key={c.path}>
+                  <NavLink
+                    to={c.path}
+                    $active={location.pathname === c.path}
+                    $isOpen={isOpen}
+                    title={c.text}
+                    onClick={() => {
+                      if (window.innerWidth <= 768) setIsOpen(false);
+                    }}
+                    style={{ paddingLeft: isOpen ? 18 : 0, fontSize: "0.9rem" }}
+                  >
+                    <span className="nav-text">{c.text}</span>
+                  </NavLink>
+                </NavItem>
+              ))}
+            </div>
+          </NavItem>
+        );
+      }
 
       return (
         <NavItem key={item.path}>
@@ -533,7 +662,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <SidebarContent>
           <NavSection>
             <SectionTitle $isOpen={isOpen}>Điều hướng</SectionTitle>
-            {renderNavItems(navItems)}
+            {renderNavItems(effectiveNavItems)}
           </NavSection>
         </SidebarContent>
 

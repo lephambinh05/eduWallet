@@ -21,6 +21,9 @@ const portfolioRoutes = require("./src/routes/portfolio");
 const walletRoutes = require("./routes/wallet");
 const adminRoutes = require("./src/routes/admin");
 const blockchainRoutes = require("./src/routes/blockchain");
+const partnerRoutes = require("./src/routes/partner");
+const marketplaceRoutes = require("./src/routes/marketplace");
+const enrollmentsRoutes = require("./src/routes/enrollments");
 
 // Connect to MongoDB - require MONGODB_URI from environment
 if (!process.env.MONGODB_URI) {
@@ -58,6 +61,9 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/blockchain", blockchainRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/partner", partnerRoutes);
+app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/enrollments", enrollmentsRoutes);
 
 // Test route
 app.get("/api/test", (req, res) => {
@@ -190,6 +196,64 @@ app.post("/api/auth/login", async (req, res) => {
       error: error.message,
     });
   }
+});
+
+// Refresh token endpoint (compatible with frontend interceptor)
+app.post("/api/auth/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Refresh token required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    } catch (err) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid refresh token" });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.isActive) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found or inactive" });
+    }
+
+    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
+    const newRefreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      message: "Token refreshed successfully",
+      data: { token: newToken, refreshToken: newRefreshToken },
+    });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Logout endpoint (frontend expects this)
+app.post("/api/auth/logout", async (req, res) => {
+  // For stateless JWT auth, logout is a client-side operation (delete tokens).
+  // We still respond 200 so frontend flows that call /api/auth/logout succeed.
+  res.json({ success: true, message: "Logout successful" });
 });
 
 app.get("/api/auth/me", async (req, res) => {

@@ -110,6 +110,21 @@ export const userAPI = {
   getWalletInfo: (walletAddress) =>
     api.get("/api/users/wallet", { params: { walletAddress } }),
   getCurrentUserWallet: () => api.get("/api/users/me/wallet"),
+  // Get authenticated user's enrollments (purchased courses / access links)
+  getMyEnrollments: (params) =>
+    api.get("/api/partner/my-enrollments", { params }),
+  // Get enrollment detail
+  getEnrollment: (id) => api.get(`/api/enrollments/${id}`),
+  // Update enrollment status (partner)
+  updateEnrollmentStatus: (id, data) =>
+    api.patch(`/api/enrollments/${id}/status`, data),
+  // Add assessment (partner/seller) to an enrollment
+  addEnrollmentAssessment: (id, data) =>
+    api.post(`/api/enrollments/${id}/assessments`, data),
+  updateEnrollmentAssessment: (id, aid, data) =>
+    api.put(`/api/enrollments/${id}/assessments/${aid}`, data),
+  deleteEnrollmentAssessment: (id, aid) =>
+    api.delete(`/api/enrollments/${id}/assessments/${aid}`),
 };
 
 // New wallet API endpoints
@@ -279,6 +294,21 @@ export const adminAPI = {
   getAdminWallet: () => api.get("/api/admin/wallet"),
   // Public admin wallet / conversion settings (no auth required)
   getPublicAdminWallet: () => api.get("/api/public/admin-wallet"),
+};
+
+export const partnerAPI = {
+  // Partner course management
+  createCourse: (data) => api.post("/api/partner/courses", data),
+  getMyCourses: () => api.get("/api/partner/courses"),
+  getMySales: (params) => api.get("/api/partner/sales", { params }),
+  getMyLearners: (params) => api.get("/api/partner/learners", { params }),
+  // Public partner courses
+  getPublicCourses: (params) =>
+    api.get("/api/partner/public-courses", { params }),
+  purchaseCourse: (id, data) =>
+    api.post(`/api/partner/courses/${id}/purchase`, data || {}),
+  publishCourse: (id, publish = true) =>
+    api.patch(`/api/partner/courses/${id}/publish`, { publish }),
 };
 
 export default api;
