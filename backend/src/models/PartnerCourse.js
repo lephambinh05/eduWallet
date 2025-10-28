@@ -13,7 +13,7 @@ const partnerCourseSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     link: { type: String, required: true },
     priceEdu: { type: Number, required: true },
-    isPublished: { type: Boolean, default: false },
+    isPublished: { type: Boolean, default: true },
   },
   { timestamps: true, collection: "partner_courses" }
 );

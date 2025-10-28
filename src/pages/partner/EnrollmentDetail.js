@@ -125,6 +125,11 @@ export default function EnrollmentDetailPartner() {
       ? enrollment.metadata.assessments
       : [];
 
+  // Debug log để kiểm tra assessments
+  console.log('🔍 Current assessments in component:', assessments);
+  console.log('📊 Assessments count:', assessments.length);
+  console.log('📄 Full enrollment:', enrollment);
+
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!title.trim()) return toast.error("Nhập tiêu đề mục điểm");
@@ -133,13 +138,41 @@ export default function EnrollmentDetailPartner() {
       return toast.error("Điểm phải từ 0 đến 10");
     try {
       setSubmitting(true);
+      console.log('📤 Making API call to add assessment...');
+      console.log('📍 Endpoint:', `/api/enrollments/${id}/assessments`);
+      console.log('📦 Data:', { title: title.trim(), score: n });
+      
       // create assessment
-      await userAPI.addEnrollmentAssessment(id, {
+      const response = await userAPI.addEnrollmentAssessment(id, {
         title: title.trim(),
         score: n,
       });
+      
+      console.log('✅ API Response:', response);
+      console.log('� Response status:', response.status);
+      console.log('🔍 Response success:', response.data?.success);
+      console.log('🔍 Response message:', response.data?.message);
+      console.log('�📊 Response assessments count:', response.data?.data?.enrollment?.metadata?.assessments?.length || 0);
+      
+      if (response.data?.data?.enrollment?.metadata?.assessments) {
+        console.log('📋 Assessments in API response:');
+        response.data.data.enrollment.metadata.assessments.forEach((a, i) => {
+          console.log(`  ${i+1}. ${a.title} - ${a.score} (ID: ${a._id})`);
+        });
+      }
+      
       // defensive: reload enrollment to ensure we have the latest data
       const fresh = await userAPI.getEnrollment(id);
+      console.log('🔍 Fresh enrollment data after adding assessment:', fresh.data.data.enrollment);
+      console.log('📊 Fresh assessments count:', fresh.data.data.enrollment?.metadata?.assessments?.length || 0);
+      
+      if (fresh.data.data.enrollment?.metadata?.assessments) {
+        console.log('📋 All assessments after API call:');
+        fresh.data.data.enrollment.metadata.assessments.forEach((a, i) => {
+          console.log(`  ${i+1}. ${a.title} - ${a.score} (ID: ${a._id})`);
+        });
+      }
+      
       setEnrollment(fresh.data.data.enrollment);
       setTitle("");
       setScore(0);

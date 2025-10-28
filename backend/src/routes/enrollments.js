@@ -116,16 +116,22 @@ router.post(
   "/:id/assessments",
   authenticateToken,
   asyncHandler(async (req, res) => {
+    console.log('🔍 POST /assessments called');
+    console.log('📦 Request body:', req.body);
+    console.log('👤 User:', req.user?.username, req.user?.role);
+    
     const id = req.params.id;
     const { title, score } = req.body;
 
     if (!title || typeof title !== "string") {
+      console.log('❌ Title validation failed');
       return res
         .status(400)
         .json({ success: false, message: "Title is required" });
     }
     const nScore = Number(score);
     if (Number.isNaN(nScore) || nScore < 0 || nScore > 10) {
+      console.log('❌ Score validation failed');
       return res.status(400).json({
         success: false,
         message: "Score must be a number between 0 and 10",
@@ -133,10 +139,15 @@ router.post(
     }
 
     const enrollment = await Enrollment.findById(id);
-    if (!enrollment)
+    if (!enrollment) {
+      console.log('❌ Enrollment not found');
       return res
         .status(404)
         .json({ success: false, message: "Enrollment not found" });
+    }
+
+    console.log('📄 Found enrollment:', enrollment._id);
+    console.log('📊 Current assessments count:', enrollment.metadata?.assessments?.length || 0);
 
     // Do not allow deleting assessments when enrollment is completed
     if (String(enrollment.status) === "completed") {
@@ -158,11 +169,17 @@ router.post(
     // only seller (owner of course) or admin can add assessments
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       if (userId !== sellerId) {
+        console.log('❌ Access denied - not seller or admin');
+        console.log('🔍 User ID:', userId);
+        console.log('🔍 Seller ID:', sellerId);
+        console.log('🔍 User role:', req.user.role);
         return res
           .status(403)
           .json({ success: false, message: "Access denied" });
       }
     }
+
+    console.log('✅ Access granted');
 
     // Do not allow editing assessments when enrollment is completed
     if (String(enrollment.status) === "completed") {
@@ -199,13 +216,24 @@ router.post(
 
     enrollment.metadata.assessments.push(entry);
 
-    // compute totalPoints as sum of scores and progressPercent as average (score/10 -> percent)
+    console.log('🎯 Assessment added to array');
+    console.log('📊 New assessments count:', enrollment.metadata.assessments.length);
+
+    // Tính điểm theo yêu cầu:
+    // - totalPoints: tổng tất cả điểm số  
+    // - progressPercent: điểm trung bình (không phải %)
     const scores = enrollment.metadata.assessments.map(
       (a) => Number(a.score) || 0
     );
     const totalPoints = scores.reduce((s, v) => s + v, 0);
-    const avg = scores.length ? totalPoints / scores.length : 0;
-    const progressPercent = Math.round((avg / 10) * 100);
+    const avgScore = scores.length ? totalPoints / scores.length : 0;
+    const progressPercent = Math.round(avgScore * 10) / 10; // Làm tròn 1 chữ số thập phân
+
+    console.log('🧮 Calculation details:');
+    console.log('  Scores:', scores);
+    console.log('  Total points:', totalPoints);
+    console.log('  Average score:', avgScore.toFixed(2));
+    console.log('  Progress (avg score):', progressPercent);
 
     enrollment.totalPoints = totalPoints;
     enrollment.progressPercent = progressPercent;
@@ -213,18 +241,40 @@ router.post(
 
     enrollment.lastAccessed = new Date();
 
+    // Đảm bảo mongoose biết metadata đã thay đổi
+    enrollment.markModified('metadata');
+    enrollment.markModified('metadata.assessments');
+
+    console.log('💾 Saving enrollment...');
+    console.log('📊 Total points:', totalPoints);
+    console.log('📈 Progress:', progressPercent + '%');
+
     await enrollment.save();
+    console.log('✅ Enrollment saved');
+
+    // Verify save worked
+    const verifyEnrollment = await Enrollment.findById(id);
+    console.log('🔍 Verify assessments count after save:', verifyEnrollment.metadata?.assessments?.length || 0);
 
     const populated = await Enrollment.findById(id)
       .populate("user", "username email firstName lastName")
       .populate("itemId", "title link")
       .populate("seller", "username email firstName lastName");
 
+    console.log('📊 Final assessments count in response:', populated.metadata?.assessments?.length || 0);
+
+    // Debug: Compare original vs populated
+    if ((enrollment.metadata?.assessments?.length || 0) !== (populated.metadata?.assessments?.length || 0)) {
+      console.log('⚠️  WARNING: assessments count mismatch!');
+      console.log('🔍 Original count:', enrollment.metadata?.assessments?.length || 0);
+      console.log('🔍 Populated count:', populated.metadata?.assessments?.length || 0);
+    }
+
     res.json({ success: true, data: { enrollment: populated } });
   })
 );
 
-// Update an assessment (by assessment _id) - seller or admin only
+// Update existing assessment (by assessment _id) - seller or admin only
 router.put(
   "/:id/assessments/:aid",
   authenticateToken,
@@ -254,17 +304,14 @@ router.put(
 
     const userId = req.user._id.toString();
     const sellerId = String(
-      enrollment.seller && enrollment.seller._id
-        ? enrollment.seller._id
-        : enrollment.seller
+      enrollment.seller || enrollment.itemId?.owner || ""
     );
-
-    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
-      if (userId !== sellerId) {
-        return res
-          .status(403)
-          .json({ success: false, message: "Access denied" });
-      }
+    const isAdmin = ["admin", "super_admin"].includes(req.user.role);
+    if (!isAdmin && userId !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Only seller or admin can update assessments",
+      });
     }
 
     enrollment.metadata = enrollment.metadata || {};
@@ -277,11 +324,12 @@ router.put(
         .status(404)
         .json({ success: false, message: "Assessment not found" });
 
+    // Sửa assessment cũ
     assessments[idx].title = title.trim();
     assessments[idx].score = nScore;
     assessments[idx].updatedAt = new Date();
 
-    // recompute totals (status is not auto-managed)
+    // recompute totals
     const scores = assessments.map((a) => Number(a.score) || 0);
     const totalPoints = scores.reduce((s, v) => s + v, 0);
     const avg = scores.length ? totalPoints / scores.length : 0;
@@ -299,7 +347,11 @@ router.put(
       .populate("itemId", "title link")
       .populate("seller", "username email firstName lastName");
 
-    res.json({ success: true, data: { enrollment: populated } });
+    res.json({ 
+      success: true, 
+      message: "Assessment updated successfully",
+      data: { enrollment: populated } 
+    });
   })
 );
 

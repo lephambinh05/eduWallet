@@ -65,6 +65,7 @@ const blockchainRoutes = require("./routes/blockchain");
 const eduWalletDataStoreRoutes = require("./routes/eduWalletDataStore");
 const pointRoutes = require("./routes/point");
 const adminRoutes = require("./routes/admin");
+const partnerRoutes = require("./routes/partner");
 const publicRoutes = require("./routes/public");
 
 // Import middleware
@@ -199,6 +200,7 @@ app.use("/api/blockchain", blockchainRoutes);
 app.use("/api/eduwallet", eduWalletDataStoreRoutes);
 app.use("/api/point", pointRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/partner", partnerRoutes);
 // Public endpoints (no auth)
 app.use("/api/public", publicRoutes);
 
