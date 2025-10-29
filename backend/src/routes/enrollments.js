@@ -5,6 +5,8 @@ const { authenticateToken } = require("../middleware/auth");
 const Enrollment = require("../models/Enrollment");
 const mongoose = require("mongoose");
 const emailService = require("../services/emailService");
+const Partner = require("../models/Partner");
+const partnerApiService = require("../services/partnerApiService");
 
 // Get enrollment detail (only owner, seller or admin can access)
 router.get(
@@ -84,12 +86,10 @@ router.patch(
 
     // Once completed, status is final and cannot be changed
     if (String(enrollment.status) === "completed") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Status is final and cannot be changed",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Status is final and cannot be changed",
+      });
     }
 
     enrollment.status = status;
@@ -117,22 +117,22 @@ router.post(
   "/:id/assessments",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    console.log('🔍 POST /assessments called');
-    console.log('📦 Request body:', req.body);
-    console.log('👤 User:', req.user?.username, req.user?.role);
-    
+    console.log("🔍 POST /assessments called");
+    console.log("📦 Request body:", req.body);
+    console.log("👤 User:", req.user?.username, req.user?.role);
+
     const id = req.params.id;
     const { title, score } = req.body;
 
     if (!title || typeof title !== "string") {
-      console.log('❌ Title validation failed');
+      console.log("❌ Title validation failed");
       return res
         .status(400)
         .json({ success: false, message: "Title is required" });
     }
     const nScore = Number(score);
     if (Number.isNaN(nScore) || nScore < 0 || nScore > 10) {
-      console.log('❌ Score validation failed');
+      console.log("❌ Score validation failed");
       return res.status(400).json({
         success: false,
         message: "Score must be a number between 0 and 10",
@@ -141,23 +141,24 @@ router.post(
 
     const enrollment = await Enrollment.findById(id);
     if (!enrollment) {
-      console.log('❌ Enrollment not found');
+      console.log("❌ Enrollment not found");
       return res
         .status(404)
         .json({ success: false, message: "Enrollment not found" });
     }
 
-    console.log('📄 Found enrollment:', enrollment._id);
-    console.log('📊 Current assessments count:', enrollment.metadata?.assessments?.length || 0);
+    console.log("📄 Found enrollment:", enrollment._id);
+    console.log(
+      "📊 Current assessments count:",
+      enrollment.metadata?.assessments?.length || 0
+    );
 
     // Do not allow deleting assessments when enrollment is completed
     if (String(enrollment.status) === "completed") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Cannot delete assessments when enrollment is completed",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Cannot delete assessments when enrollment is completed",
+      });
     }
 
     const userId = req.user._id.toString();
@@ -170,26 +171,24 @@ router.post(
     // only seller (owner of course) or admin can add assessments
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       if (userId !== sellerId) {
-        console.log('❌ Access denied - not seller or admin');
-        console.log('🔍 User ID:', userId);
-        console.log('🔍 Seller ID:', sellerId);
-        console.log('🔍 User role:', req.user.role);
+        console.log("❌ Access denied - not seller or admin");
+        console.log("🔍 User ID:", userId);
+        console.log("🔍 Seller ID:", sellerId);
+        console.log("🔍 User role:", req.user.role);
         return res
           .status(403)
           .json({ success: false, message: "Access denied" });
       }
     }
 
-    console.log('✅ Access granted');
+    console.log("✅ Access granted");
 
     // Do not allow editing assessments when enrollment is completed
     if (String(enrollment.status) === "completed") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Cannot update assessments when enrollment is completed",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Cannot update assessments when enrollment is completed",
+      });
     }
 
     // ensure metadata.assessments array
@@ -199,12 +198,10 @@ router.post(
 
     // Do not allow adding assessments when enrollment is completed
     if (String(enrollment.status) === "completed") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Cannot add assessment when enrollment is completed",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Cannot add assessment when enrollment is completed",
+      });
     }
 
     const entry = {
@@ -217,11 +214,14 @@ router.post(
 
     enrollment.metadata.assessments.push(entry);
 
-    console.log('🎯 Assessment added to array');
-    console.log('📊 New assessments count:', enrollment.metadata.assessments.length);
+    console.log("🎯 Assessment added to array");
+    console.log(
+      "📊 New assessments count:",
+      enrollment.metadata.assessments.length
+    );
 
     // Tính điểm theo yêu cầu:
-    // - totalPoints: tổng tất cả điểm số  
+    // - totalPoints: tổng tất cả điểm số
     // - progressPercent: điểm trung bình (không phải %)
     const scores = enrollment.metadata.assessments.map(
       (a) => Number(a.score) || 0
@@ -230,11 +230,11 @@ router.post(
     const avgScore = scores.length ? totalPoints / scores.length : 0;
     const progressPercent = Math.round(avgScore * 10) / 10; // Làm tròn 1 chữ số thập phân
 
-    console.log('🧮 Calculation details:');
-    console.log('  Scores:', scores);
-    console.log('  Total points:', totalPoints);
-    console.log('  Average score:', avgScore.toFixed(2));
-    console.log('  Progress (avg score):', progressPercent);
+    console.log("🧮 Calculation details:");
+    console.log("  Scores:", scores);
+    console.log("  Total points:", totalPoints);
+    console.log("  Average score:", avgScore.toFixed(2));
+    console.log("  Progress (avg score):", progressPercent);
 
     enrollment.totalPoints = totalPoints;
     enrollment.progressPercent = progressPercent;
@@ -243,51 +243,70 @@ router.post(
     enrollment.lastAccessed = new Date();
 
     // Đảm bảo mongoose biết metadata đã thay đổi
-    enrollment.markModified('metadata');
-    enrollment.markModified('metadata.assessments');
+    enrollment.markModified("metadata");
+    enrollment.markModified("metadata.assessments");
 
-    console.log('💾 Saving enrollment...');
-    console.log('📊 Total points:', totalPoints);
-    console.log('📈 Progress:', progressPercent + '%');
+    console.log("💾 Saving enrollment...");
+    console.log("📊 Total points:", totalPoints);
+    console.log("📈 Progress:", progressPercent + "%");
 
     await enrollment.save();
-    console.log('✅ Enrollment saved');
+    console.log("✅ Enrollment saved");
 
     // Send email notification to student
     try {
-      await emailService.sendNewAssessmentNotification(enrollment.user.email, {
-        type: entry.type,
-        score: entry.score,
-        maxScore: entry.maxScore,
-        feedback: entry.feedback,
-        createdAt: entry.createdAt
-      }, {
-        user: enrollment.user,
-        itemName: enrollment.courseTitle || 'Course',
-        _id: enrollment._id
-      });
+      await emailService.sendNewAssessmentNotification(
+        enrollment.user.email,
+        {
+          type: entry.type,
+          score: entry.score,
+          maxScore: entry.maxScore,
+          feedback: entry.feedback,
+          createdAt: entry.createdAt,
+        },
+        {
+          user: enrollment.user,
+          itemName: enrollment.courseTitle || "Course",
+          _id: enrollment._id,
+        }
+      );
       console.log(`✅ Assessment email sent to ${enrollment.user.email}`);
     } catch (emailError) {
-      console.error('❌ Failed to send assessment email:', emailError);
+      console.error("❌ Failed to send assessment email:", emailError);
       // Don't fail assessment creation if email fails
     }
 
     // Verify save worked
     const verifyEnrollment = await Enrollment.findById(id);
-    console.log('🔍 Verify assessments count after save:', verifyEnrollment.metadata?.assessments?.length || 0);
+    console.log(
+      "🔍 Verify assessments count after save:",
+      verifyEnrollment.metadata?.assessments?.length || 0
+    );
 
     const populated = await Enrollment.findById(id)
       .populate("user", "username email firstName lastName")
       .populate("itemId", "title link")
       .populate("seller", "username email firstName lastName");
 
-    console.log('📊 Final assessments count in response:', populated.metadata?.assessments?.length || 0);
+    console.log(
+      "📊 Final assessments count in response:",
+      populated.metadata?.assessments?.length || 0
+    );
 
     // Debug: Compare original vs populated
-    if ((enrollment.metadata?.assessments?.length || 0) !== (populated.metadata?.assessments?.length || 0)) {
-      console.log('⚠️  WARNING: assessments count mismatch!');
-      console.log('🔍 Original count:', enrollment.metadata?.assessments?.length || 0);
-      console.log('🔍 Populated count:', populated.metadata?.assessments?.length || 0);
+    if (
+      (enrollment.metadata?.assessments?.length || 0) !==
+      (populated.metadata?.assessments?.length || 0)
+    ) {
+      console.log("⚠️  WARNING: assessments count mismatch!");
+      console.log(
+        "🔍 Original count:",
+        enrollment.metadata?.assessments?.length || 0
+      );
+      console.log(
+        "🔍 Populated count:",
+        populated.metadata?.assessments?.length || 0
+      );
     }
 
     res.json({ success: true, data: { enrollment: populated } });
@@ -367,10 +386,10 @@ router.put(
       .populate("itemId", "title link")
       .populate("seller", "username email firstName lastName");
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Assessment updated successfully",
-      data: { enrollment: populated } 
+      data: { enrollment: populated },
     });
   })
 );
@@ -439,3 +458,164 @@ router.delete(
 );
 
 module.exports = router;
+
+// Sync learning progress from partner
+router.post(
+  "/:id/sync-progress",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const enrollment = await Enrollment.findById(req.params.id)
+      .populate("user")
+      .populate("itemId");
+
+    if (!enrollment) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Enrollment not found" });
+    }
+
+    const partner = await Partner.findById(enrollment.seller);
+    if (
+      !partner ||
+      !partner.apiEndpoints ||
+      !partner.apiEndpoints.learningProgress
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Partner API not configured" });
+    }
+
+    try {
+      const progressData = await partnerApiService.getLearningProgress(
+        partner,
+        String(enrollment.user._id),
+        String(enrollment.itemId._id)
+      );
+
+      if (progressData && progressData.success) {
+        const data = progressData.data;
+
+        enrollment.progressPercent =
+          data.progress?.completionPercentage || enrollment.progressPercent;
+        enrollment.timeSpentSeconds =
+          data.progress?.totalTimeSpent || enrollment.timeSpentSeconds;
+        enrollment.lastAccessed = data.progress?.lastAccessed
+          ? new Date(data.progress.lastAccessed)
+          : enrollment.lastAccessed;
+
+        if (data.scores?.assessments) {
+          enrollment.metadata = enrollment.metadata || {};
+          enrollment.metadata.assessments = data.scores.assessments.map(
+            (a) => ({
+              type: a.type,
+              score: a.score,
+              maxScore: a.maxScore,
+              feedback: a.name,
+              createdAt: new Date(a.completedAt),
+            })
+          );
+        }
+
+        enrollment.totalPoints =
+          data.scores?.totalPoints || enrollment.totalPoints;
+
+        if (data.certificate?.issued) {
+          enrollment.metadata = enrollment.metadata || {};
+          enrollment.metadata.certificate = {
+            issued: true,
+            issuedAt: data.certificate.issuedAt
+              ? new Date(data.certificate.issuedAt)
+              : new Date(),
+            certificateUrl: data.certificate.certificateUrl,
+            grade: data.certificate.grade,
+            creditsEarned: data.certificate.creditsEarned,
+          };
+          if (data.progress && data.progress.completionPercentage >= 100) {
+            enrollment.status = "completed";
+          }
+        }
+
+        enrollment.markModified("metadata");
+        await enrollment.save();
+
+        if (data.certificate?.issued) {
+          await emailService.sendCertificateNotification(
+            enrollment.user.email,
+            data.certificate,
+            enrollment
+          );
+        }
+
+        return res.json({
+          success: true,
+          message: "Progress synced successfully",
+          data: { enrollment },
+        });
+      }
+
+      return res
+        .status(500)
+        .json({ success: false, message: "Partner API returned error" });
+    } catch (error) {
+      console.error("Partner API sync failed:", error.message || error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to sync with partner API" });
+    }
+  })
+);
+
+// Bulk sync all active enrollments
+router.post(
+  "/sync-all-progress",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    // only admin
+    if (
+      !(
+        req.user &&
+        (req.user.role === "admin" || req.user.role === "super_admin")
+      )
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const activeEnrollments = await Enrollment.find({
+      status: "in_progress",
+      seller: { $exists: true },
+    }).populate("seller user itemId");
+
+    const results = [];
+    for (const enrollment of activeEnrollments) {
+      try {
+        const result = await (async () => {
+          const partner = await Partner.findById(enrollment.seller);
+          if (
+            !partner ||
+            !partner.apiEndpoints ||
+            !partner.apiEndpoints.learningProgress
+          )
+            throw new Error("Partner API not configured");
+          return await partnerApiService.getLearningProgress(
+            partner,
+            String(enrollment.user._id),
+            String(enrollment.itemId._id)
+          );
+        })();
+        results.push({ enrollmentId: enrollment._id, success: true, result });
+      } catch (error) {
+        results.push({
+          enrollmentId: enrollment._id,
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Synced ${results.length} enrollments`,
+      data: { results },
+    });
+  })
+);
