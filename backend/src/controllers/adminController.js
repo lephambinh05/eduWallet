@@ -509,6 +509,79 @@ exports.getUserActivities = async (req, res) => {
 };
 
 /**
+ * @desc    Update user EDU tokens
+ * @route   PATCH /api/admin/users/:id/edu-tokens
+ * @access  Admin
+ */
+exports.updateUserEduTokens = async (req, res) => {
+  const { id } = req.params;
+  const { action, amount, reason } = req.body;
+
+  // Validate input
+  if (!action || !['add', 'subtract'].includes(action)) {
+    throw new AppError('Invalid action. Must be "add" or "subtract"', 400);
+  }
+
+  if (!amount || amount <= 0) {
+    throw new AppError('Amount must be greater than 0', 400);
+  }
+
+  if (!reason || !reason.trim()) {
+    throw new AppError('Reason is required', 400);
+  }
+
+  // Find user
+  const user = await User.findById(id);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Calculate new balance
+  const currentBalance = user.eduTokenBalance || 0;
+  let newBalance;
+
+  if (action === 'add') {
+    newBalance = currentBalance + amount;
+  } else {
+    newBalance = currentBalance - amount;
+    if (newBalance < 0) {
+      throw new AppError('Insufficient EDU token balance', 400);
+    }
+  }
+
+  // Update balance
+  user.eduTokenBalance = newBalance;
+  await user.save();
+
+  // Log activity
+  await logger.log({
+    action: action === 'add' ? 'admin_add_edu_tokens' : 'admin_deduct_edu_tokens',
+    userId: req.user._id,
+    targetId: id,
+    details: `${action === 'add' ? 'Added' : 'Deducted'} ${amount} EDU tokens. Reason: ${reason}. New balance: ${newBalance}`,
+    metadata: {
+      targetUser: user.username,
+      previousBalance: currentBalance,
+      newBalance: newBalance,
+      amount: amount,
+      reason: reason
+    }
+  });
+
+  res.json({
+    success: true,
+    message: `Successfully ${action === 'add' ? 'added' : 'deducted'} ${amount} EDU tokens`,
+    data: {
+      user: {
+        _id: user._id,
+        username: user.username,
+        eduTokenBalance: newBalance
+      }
+    }
+  });
+};
+
+/**
  * @desc    Get system activities
  * @route   GET /api/admin/activities
  * @access  Admin

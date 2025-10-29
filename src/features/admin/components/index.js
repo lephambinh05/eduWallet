@@ -6,3 +6,4 @@ export { default as UserDetailModal } from './UserDetailModal';
 export { default as CreateUserModal } from './CreateUserModal';
 export { default as CertificateDetailModal } from './CertificateDetailModal';
 export { default as LearnPassDetailModal } from './LearnPassDetailModal';
+export { default as InstitutionDetailModal } from './InstitutionDetailModal';

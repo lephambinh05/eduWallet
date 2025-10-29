@@ -254,6 +254,15 @@ router.get(
   asyncHandler(adminController.getUserActivities)
 );
 
+// Update user EDU tokens
+router.patch(
+  "/users/:id/edu-tokens",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  validateParams(schemas.objectId),
+  asyncHandler(adminController.updateUserEduTokens)
+);
+
 // ==================== Activity Logs ====================
 router.get(
   "/activities",

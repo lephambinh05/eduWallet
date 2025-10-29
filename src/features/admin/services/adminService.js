@@ -179,6 +179,15 @@ export const AdminService = {
     return response.data;
   },
 
+  updateUserEduTokens: async (userId, { action, amount, reason }) => {
+    const response = await adminAPI.patch(`/admin/users/${userId}/edu-tokens`, {
+      action,
+      amount,
+      reason,
+    });
+    return response.data;
+  },
+
   // ==================== Bulk Operations ====================
   bulkDeleteUsers: async (userIds) => {
     const response = await adminAPI.post("/admin/users/bulk-delete", {
@@ -301,6 +310,27 @@ export const AdminService = {
       `/admin/learnpasses/${learnPassId}/activities`,
       { params }
     );
+    return response.data;
+  },
+
+  // ==================== Institution Management ====================
+  getInstitutions: async (params) => {
+    const response = await adminAPI.get("/admin/institutions", { params });
+    return response.data;
+  },
+
+  getInstitutionById: async (institutionId) => {
+    const response = await adminAPI.get(`/admin/institutions/${institutionId}`);
+    return response.data;
+  },
+
+  approveInstitution: async (institutionId) => {
+    const response = await adminAPI.post(`/admin/institutions/${institutionId}/approve`);
+    return response.data;
+  },
+
+  rejectInstitution: async (institutionId) => {
+    const response = await adminAPI.post(`/admin/institutions/${institutionId}/reject`);
     return response.data;
   },
 

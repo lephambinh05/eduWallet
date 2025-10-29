@@ -118,6 +118,13 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // EDU Token Balance (Virtual Currency)
+    eduTokenBalance: {
+      type: Number,
+      default: 0,
+      min: [0, 'EDU Token balance cannot be negative']
+    },
+
     // Academic Information
     academicInfo: {
       gpa: {

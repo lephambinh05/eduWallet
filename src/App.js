@@ -48,6 +48,7 @@ import AdminUsers from "./features/admin/pages/AdminUsers";
 import AdminActivities from "./features/admin/pages/AdminActivities";
 import AdminCertificates from "./features/admin/pages/AdminCertificates";
 import AdminLearnPasses from "./features/admin/pages/AdminLearnPasses";
+import AdminInstitutions from "./features/admin/pages/AdminInstitutions";
 import AdminNFTPortfolio from "./features/admin/pages/AdminNFTPortfolio";
 import AdminPortfolioChanges from "./features/admin/pages/AdminPortfolioChanges";
 import AdminSettings from "./features/admin/pages/AdminSettings";
@@ -153,6 +154,7 @@ function App() {
                       element={<AdminCertificates />}
                     />
                     <Route path="learnpasses" element={<AdminLearnPasses />} />
+                    <Route path="institutions" element={<AdminInstitutions />} />
                     <Route
                       path="nft-portfolio"
                       element={<AdminNFTPortfolio />}

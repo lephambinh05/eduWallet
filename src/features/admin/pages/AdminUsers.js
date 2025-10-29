@@ -137,9 +137,12 @@ const AdminUsers = () => {
   };
 
   const handleUserUpdated = (updatedUser) => {
-    setUsers(prev => prev.map(u => u._id === updatedUser._id ? updatedUser : u));
+    // If updatedUser is provided, update the local state
+    if (updatedUser && updatedUser._id) {
+      setUsers(prev => prev.map(u => u._id === updatedUser._id ? updatedUser : u));
+    }
     setShowUserModal(false);
-    fetchUsers(); // Refresh to get latest data
+    fetchUsers(); // Always refresh to get latest data
   };
 
   const handleUserCreated = (newUser) => {

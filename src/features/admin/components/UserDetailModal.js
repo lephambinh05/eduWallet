@@ -3,7 +3,8 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaTimes, FaSave, FaUser, FaEnvelope, FaPhone, FaCalendar, 
-  FaUserShield, FaBan, FaCheck, FaHistory, FaEdit 
+  FaUserShield, FaBan, FaCheck, FaHistory, FaEdit, FaCoins,
+  FaWallet, FaPlus, FaMinus, FaExchangeAlt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import AdminService from '../services/adminService';
@@ -13,6 +14,12 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [eduTokenBalance, setEduTokenBalance] = useState('0');
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenAction, setTokenAction] = useState('add'); // 'add' or 'subtract'
+  const [tokenAmount, setTokenAmount] = useState('');
+  const [tokenReason, setTokenReason] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -39,6 +46,9 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
       setIsEditing(false);
       setActiveTab('details');
       
+      // Fetch EDU token balance for all users
+      fetchEduTokenBalance();
+      
       // Fetch activities if on activities tab
       if (activeTab === 'activities') {
         fetchUserActivities();
@@ -61,6 +71,83 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
     } catch (error) {
       console.error('Error fetching activities:', error);
       toast.error('Failed to load user activities');
+    }
+  };
+
+  const fetchEduTokenBalance = async () => {
+    if (!user?._id) {
+      setEduTokenBalance('No user found');
+      return;
+    }
+
+    setLoadingBalance(true);
+    try {
+      // Call admin service to get EDU token balance from database
+      const response = await AdminService.getUserById(user._id);
+      
+      if (response.success) {
+        setEduTokenBalance(response.data.user.eduTokenBalance || '0');
+      } else {
+        setEduTokenBalance('Error loading');
+      }
+    } catch (error) {
+      console.error('Error fetching EDU token balance:', error);
+      setEduTokenBalance('0');
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
+  const handleTokenManagement = async () => {
+    if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (!tokenReason.trim()) {
+      toast.error('Please provide a reason');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await AdminService.updateUserEduTokens(user._id, {
+        action: tokenAction, // 'add' or 'subtract'
+        amount: parseFloat(tokenAmount),
+        reason: tokenReason
+      });
+
+      if (response.success) {
+        toast.success(`Successfully ${tokenAction === 'add' ? 'added' : 'deducted'} ${tokenAmount} EDU tokens`);
+        setShowTokenModal(false);
+        setTokenAmount('');
+        setTokenReason('');
+        
+        // Fetch updated user data
+        const updatedUserResponse = await AdminService.getUserById(user._id);
+        if (updatedUserResponse.success) {
+          const updatedUser = updatedUserResponse.data.user;
+          setEduTokenBalance(updatedUser.eduTokenBalance || '0');
+          
+          // Update parent component with full user data
+          if (onUserUpdated) {
+            onUserUpdated(updatedUser);
+          }
+        } else {
+          // Fallback: just refresh balance
+          fetchEduTokenBalance();
+          if (onUserUpdated) {
+            onUserUpdated();
+          }
+        }
+      } else {
+        toast.error(response.message || 'Failed to manage tokens');
+      }
+    } catch (error) {
+      console.error('Error managing tokens:', error);
+      toast.error(error.response?.data?.message || 'Failed to manage EDU tokens');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -230,6 +317,9 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
             <Tab $active={activeTab === 'details'} onClick={() => setActiveTab('details')}>
               <FaUser /> Details
             </Tab>
+            <Tab $active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')}>
+              <FaWallet /> EDU Wallet
+            </Tab>
             <Tab $active={activeTab === 'activities'} onClick={() => setActiveTab('activities')}>
               <FaHistory /> Activities
             </Tab>
@@ -237,7 +327,7 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
 
           <ModalBody>
             {activeTab === 'details' && (
-              <DetailsTab>
+              <DetailsTab key="details-tab">
                 <ActionButtons>
                   {!isEditing ? (
                     <>
@@ -416,8 +506,73 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
               </DetailsTab>
             )}
 
+            {activeTab === 'wallet' && (
+              <WalletTab key="wallet-tab">
+                <WalletHeader>
+                  <WalletTitle>
+                    <FaCoins /> EDU Token Balance
+                  </WalletTitle>
+                  <RefreshButton onClick={fetchEduTokenBalance} disabled={loadingBalance}>
+                    <FaExchangeAlt /> Refresh
+                  </RefreshButton>
+                </WalletHeader>
+
+                <BalanceCard>
+                  <BalanceLabel>Current Balance</BalanceLabel>
+                  <BalanceAmount>
+                    {loadingBalance ? (
+                      <LoadingSpinner>Loading...</LoadingSpinner>
+                    ) : (
+                      <>
+                        <FaCoins /> {eduTokenBalance} EDU
+                      </>
+                    )}
+                  </BalanceAmount>
+                  <WalletAddress>
+                    <strong>User ID:</strong> {user._id}
+                  </WalletAddress>
+                  {user.walletAddress && (
+                    <WalletAddress>
+                      <strong>Blockchain Wallet:</strong> {user.walletAddress}
+                    </WalletAddress>
+                  )}
+                </BalanceCard>
+
+                <TokenActions>
+                  <TokenActionButton 
+                    $variant="success" 
+                    onClick={() => {
+                      setTokenAction('add');
+                      setShowTokenModal(true);
+                    }}
+                  >
+                    <FaPlus /> Add Tokens
+                  </TokenActionButton>
+                  <TokenActionButton 
+                    $variant="danger" 
+                    onClick={() => {
+                      setTokenAction('subtract');
+                      setShowTokenModal(true);
+                    }}
+                  >
+                    <FaMinus /> Deduct Tokens
+                  </TokenActionButton>
+                </TokenActions>
+
+                <TokenInfo>
+                  <InfoTitle>Token Management</InfoTitle>
+                  <InfoDescription>
+                    • Add tokens to reward user achievements<br/>
+                    • Deduct tokens for penalties or corrections<br/>
+                    • All transactions are recorded in database<br/>
+                    • Changes are reflected immediately
+                  </InfoDescription>
+                </TokenInfo>
+              </WalletTab>
+            )}
+
             {activeTab === 'activities' && (
-              <ActivitiesTab>
+              <ActivitiesTab key="activities-tab">
                 {activities.length > 0 ? (
                   <ActivityList>
                     {activities.map((activity, index) => (
@@ -442,6 +597,95 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
           </ModalBody>
         </ModalContainer>
       </Overlay>
+
+      {/* Token Management Modal */}
+      <AnimatePresence>
+        {showTokenModal && (
+          <Overlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTokenModal(false)}
+          >
+            <TokenModal
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TokenModalHeader $variant={tokenAction}>
+                <h2>
+                  {tokenAction === 'add' ? <FaPlus /> : <FaMinus />}
+                  {tokenAction === 'add' ? ' Add EDU Tokens' : ' Deduct EDU Tokens'}
+                </h2>
+                <CloseButton onClick={() => setShowTokenModal(false)}>
+                  <FaTimes />
+                </CloseButton>
+              </TokenModalHeader>
+
+              <TokenModalBody>
+                <FormGroup>
+                  <Label>Amount (EDU)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={tokenAmount}
+                    onChange={(e) => setTokenAmount(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>Reason</Label>
+                  <TextArea
+                    placeholder="Enter reason for this transaction..."
+                    value={tokenReason}
+                    onChange={(e) => setTokenReason(e.target.value)}
+                    rows={4}
+                  />
+                </FormGroup>
+
+                <TransactionSummary>
+                  <SummaryRow>
+                    <span>Current Balance:</span>
+                    <strong>{eduTokenBalance} EDU</strong>
+                  </SummaryRow>
+                  <SummaryRow>
+                    <span>{tokenAction === 'add' ? 'Adding:' : 'Deducting:'}</span>
+                    <strong $variant={tokenAction}>
+                      {tokenAction === 'add' ? '+' : '-'}{tokenAmount || '0'} EDU
+                    </strong>
+                  </SummaryRow>
+                  <Divider />
+                  <SummaryRow $total>
+                    <span>New Balance:</span>
+                    <strong>
+                      {tokenAction === 'add' 
+                        ? (parseFloat(eduTokenBalance || 0) + parseFloat(tokenAmount || 0)).toFixed(2)
+                        : (parseFloat(eduTokenBalance || 0) - parseFloat(tokenAmount || 0)).toFixed(2)
+                      } EDU
+                    </strong>
+                  </SummaryRow>
+                </TransactionSummary>
+              </TokenModalBody>
+
+              <TokenModalFooter>
+                <ActionButton $variant="secondary" onClick={() => setShowTokenModal(false)}>
+                  Cancel
+                </ActionButton>
+                <ActionButton 
+                  $variant={tokenAction === 'add' ? 'success' : 'danger'}
+                  onClick={handleTokenManagement}
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : `${tokenAction === 'add' ? 'Add' : 'Deduct'} Tokens`}
+                </ActionButton>
+              </TokenModalFooter>
+            </TokenModal>
+          </Overlay>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   );
 };
@@ -620,6 +864,188 @@ const DetailsTab = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+`;
+
+const WalletTab = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
+const WalletHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+`;
+
+const WalletTitle = styled.h3`
+  margin: 0;
+  font-size: 20px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  svg {
+    color: #f39c12;
+  }
+`;
+
+const RefreshButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const BalanceCard = styled.div`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+`;
+
+const BalanceLabel = styled.div`
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+`;
+
+const BalanceAmount = styled.div`
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  svg {
+    color: #f39c12;
+  }
+`;
+
+const WalletAddress = styled.div`
+  font-size: 13px;
+  opacity: 0.8;
+  font-family: monospace;
+  word-break: break-all;
+`;
+
+const LoadingSpinner = styled.div`
+  font-size: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+
+const TokenActions = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+`;
+
+const TokenActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: ${props => {
+    switch (props.$variant) {
+      case 'success': return '#2ecc71';
+      case 'danger': return '#e74c3c';
+      default: return '#3498db';
+    }
+  }};
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const TokenInfo = styled.div`
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #667eea;
+`;
+
+const InfoTitle = styled.h4`
+  margin: 0 0 12px 0;
+  color: #2c3e50;
+  font-size: 16px;
+`;
+
+const InfoDescription = styled.div`
+  color: #666;
+  font-size: 14px;
+  line-height: 1.8;
+`;
+
+const NoWalletMessage = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #999;
+  text-align: center;
+
+  svg {
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  h3 {
+    margin: 0 0 8px 0;
+    color: #666;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
 `;
 
 const ActionButtons = styled.div`
@@ -865,6 +1291,94 @@ const EmptyState = styled.div`
     font-size: 16px;
     margin: 0;
   }
+`;
+
+// Token Management Modal Styles
+const TokenModal = styled(motion.div)`
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+`;
+
+const TokenModalHeader = styled.div`
+  padding: 24px;
+  background: ${props => props.$variant === 'add' 
+    ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)'
+    : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'
+  };
+  color: white;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+`;
+
+const TokenModalBody = styled.div`
+  padding: 24px;
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+`;
+
+const TransactionSummary = styled.div`
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+`;
+
+const SummaryRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: ${props => props.$total ? '18px' : '14px'};
+  font-weight: ${props => props.$total ? '700' : '500'};
+  color: ${props => props.$total ? '#2c3e50' : '#666'};
+
+  strong {
+    color: ${props => {
+      if (props.$variant === 'add') return '#2ecc71';
+      if (props.$variant === 'subtract') return '#e74c3c';
+      return '#2c3e50';
+    }};
+  }
+`;
+
+const Divider = styled.div`
+  height: 2px;
+  background: #e0e0e0;
+  margin: 8px 0;
+`;
+
+const TokenModalFooter = styled.div`
+  padding: 20px 24px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e0e0e0;
 `;
 
 export default UserDetailModal;

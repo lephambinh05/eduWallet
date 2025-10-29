@@ -14,6 +14,7 @@ import {
   FaCertificate,
   FaGraduationCap,
   FaGem,
+  FaUniversity,
 } from "react-icons/fa";
 import { useAdmin } from "../context/AdminContext";
 import toast from "react-hot-toast";
@@ -251,9 +252,9 @@ const AdminLayout = () => {
             <span className="label">Certificates</span>
           </NavItem>
 
-          <NavItem to="/admin/learnpasses" $isOpen={sidebarOpen}>
-            <FaGraduationCap className="icon" />
-            <span className="label">LearnPasses</span>
+          <NavItem to="/admin/institutions" $isOpen={sidebarOpen}>
+            <FaUniversity className="icon" />
+            <span className="label">Institutions</span>
           </NavItem>
 
           <NavItem to="/admin/nft-portfolio" $isOpen={sidebarOpen}>
