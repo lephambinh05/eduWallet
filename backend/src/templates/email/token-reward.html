@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bạn nhận được EDU Tokens - EduWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .token-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+        .content h2 { color: #2d3748; margin-bottom: 20px; font-size: 24px; }
+        .content p { color: #4a5568; line-height: 1.6; margin-bottom: 15px; font-size: 16px; }
+        .token-info { background: #f0fff4; border: 2px solid #48bb78; padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center; }
+        .token-amount { font-size: 48px; font-weight: bold; color: #38a169; margin: 20px 0; }
+        .transaction-box { background: #e6fffa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #38b2ac; }
+        .btn { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 10px 5px; font-weight: 600; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .uses-list { background: #fef5e7; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f6ad55; }
+        .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; }
+        @media (max-width: 600px) {
+            .container { margin: 0; }
+            .header, .content, .footer { padding: 20px; }
+            .btn { margin: 5px 0; display: block; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 EDU Tokens nhận thành công!</h1>
+            <p>Phần thưởng cho hoạt động học tập</p>
+        </div>
+        
+        <div class="content">
+            <div class="token-icon">🪙</div>
+            
+            <h2>Chúc mừng {{firstName}}!</h2>
+            
+            <p>Bạn vừa nhận được EDU Tokens từ EduWallet! Đây là phần thưởng cho những nỗ lực học tập và đóng góp của bạn trên nền tảng.</p>
+            
+            <div class="token-info">
+                <div style="color: #38a169; font-size: 18px; margin-bottom: 10px;">💎 Số lượng nhận được</div>
+                <div class="token-amount">{{amount}} EDU</div>
+                <div style="color: #4a5568; margin-top: 15px;">
+                    <strong>Lý do:</strong> {{reason}}
+                </div>
+            </div>
+            
+            <div class="transaction-box">
+                <h3 style="color: #38b2ac; margin-bottom: 10px;">⛓️ Chi tiết giao dịch</h3>
+                <p><strong>Transaction Hash:</strong></p>
+                <p style="word-break: break-all; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                    {{transactionHash}}
+                </p>
+                <a href="{{explorerUrl}}" target="_blank" style="color: #38b2ac; text-decoration: none; font-weight: 600;">
+                    🔍 Xem trên Blockchain Explorer →
+                </a>
+            </div>
+            
+            <center>
+                <a href="{{walletUrl}}" class="btn">👛 Kiểm tra ví</a>
+                <a href="{{explorerUrl}}" class="btn btn-secondary" target="_blank">🔍 Xem giao dịch</a>
+            </center>
+            
+            <div class="uses-list">
+                <h3 style="color: #744210; margin-bottom: 15px;">🎯 Bạn có thể sử dụng EDU Tokens để:</h3>
+                <ul style="padding-left: 20px; color: #744210;">
+                    <li><strong>🎓 Mua khóa học:</strong> Truy cập các khóa học premium</li>
+                    <li><strong>🏅 Mint NFT:</strong> Tạo chứng chỉ và portfolio NFT</li>
+                    <li><strong>🎁 Đổi phần thưởng:</strong> Nhận badge và certificate đặc biệt</li>
+                    <li><strong>💱 Giao dịch:</strong> Trao đổi với người dùng khác</li>
+                    <li><strong>🗳️ Tham gia quản trị:</strong> Vote cho các đề xuất cộng đồng</li>
+                </ul>
+            </div>
+            
+            <p><strong>💡 Cách kiếm thêm EDU Tokens:</strong></p>
+            <ul style="padding-left: 20px; margin-bottom: 20px;">
+                <li>🏆 Hoàn thành khóa học với điểm cao</li>
+                <li>📝 Viết review và đánh giá khóa học</li>
+                <li>👥 Giới thiệu bạn bè tham gia</li>
+                <li>🏅 Đạt được các achievement</li>
+                <li>📚 Tham gia các challenge hàng tuần</li>
+                <li>🎯 Duy trì streak học tập liên tục</li>
+            </ul>
+            
+            <div style="background: #e6fffa; padding: 20px; border-radius: 8px; border-left: 4px solid #38b2ac; margin: 20px 0;">
+                <p><strong>🔐 Bảo mật token:</strong> EDU Tokens được lưu trữ an toàn trên blockchain và chỉ bạn mới có quyền kiểm soát. Hãy bảo vệ private key của ví một cách cẩn thận!</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎓 EduWallet</strong></p>
+            <p>Nền tảng giáo dục blockchain tiên tiến</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                © 2025 EduWallet. All rights reserved.<br>
+                Email này được gửi tự động, vui lòng không reply.<br>
+                Cần hỗ trợ? Liên hệ: support@eduwallet.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>
