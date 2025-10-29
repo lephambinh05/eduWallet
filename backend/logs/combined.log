@@ -78,13 +78,5 @@
 {"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 02:31:48"}
 {"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 02:37:07"}
 {"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 02:46:51"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 12:07:12"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 12:10:08"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 16:39:32"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 16:40:48"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 17:12:51"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 22:26:21"}
-{"action":"user_updated","level":"info","message":"User action","metadata":{"targetUserEmail":"student8@demo.com","targetUserId":"6901a0bf668d9eaad9a6cd5a","updates":["username","email","firstName","lastName","phone","dateOfBirth","role","isActive"]},"service":"eduwallet-backend","timestamp":"2025-10-29 22:30:16","userId":"68ee204b7bdf0252dad34962"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 22:45:15"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 22:46:35"}
-{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 23:00:27"}
+{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 03:24:19"}
+{"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-29 22:09:53"}

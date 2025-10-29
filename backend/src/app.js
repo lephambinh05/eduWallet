@@ -66,6 +66,7 @@ const eduWalletDataStoreRoutes = require("./routes/eduWalletDataStore");
 const pointRoutes = require("./routes/point");
 const adminRoutes = require("./routes/admin");
 const partnerRoutes = require("./routes/partner");
+const webhooksRoutes = require("./routes/webhooks");
 const publicRoutes = require("./routes/public");
 
 // Import middleware
@@ -201,6 +202,7 @@ app.use("/api/eduwallet", eduWalletDataStoreRoutes);
 app.use("/api/point", pointRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/partner", partnerRoutes);
+app.use("/api/webhooks", webhooksRoutes);
 // Public endpoints (no auth)
 app.use("/api/public", publicRoutes);
 
@@ -312,6 +314,15 @@ server.listen(PORT, HOST, () => {
   );
   logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
   logger.info(`🔗 CORS Origin: ${process.env.CORS_ORIGIN}`);
+  // Start partner sync job if configured
+  try {
+    const PartnerSyncJob = require("./jobs/partnerSyncJob");
+    const job = new PartnerSyncJob();
+    job.start();
+    logger.info("Partner sync job started");
+  } catch (e) {
+    logger.warn("Partner sync job not started:", e.message);
+  }
 });
 
 module.exports = app;
