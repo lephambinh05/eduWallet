@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khóa học Video</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Xem video khóa học</h1>
+
+    <div class="video-wrapper">
+      <video id="courseVideo" width="100%" controls>
+        <source src="assets/sample.mp4" type="video/mp4" />
+        Trình duyệt của bạn không hỗ trợ video.
+      </video>
+    </div>
+
+    <div class="progress-container">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    <p id="statusText">Đang tải video...</p>
+  </div>
+
+  <script src="video.js"></script>
+</body>
+</html>
