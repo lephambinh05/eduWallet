@@ -131,3 +131,5 @@
 {"actionType":"deposit_points","level":"info","message":"Logging blockchain transaction","meta":{"amount":"0.1","to":"0x892bbe86273480372c68b0c1fdec642efbc61ce8","userId":"68ecef57f2d3ddc8fd99e5be"},"service":"eduwallet-backend","timestamp":"2025-10-30 12:24:03","txHash":"0x0e3b641183e696535ced6e74bf18e28fed1bbe6b16ada8b05aa52f6670df1908"}
 {"id":"6902f6733701fb3d385c2399","level":"info","message":"Blockchain transaction persisted","service":"eduwallet-backend","timestamp":"2025-10-30 12:24:03"}
 {"level":"info","message":"Blockchain service initialized","service":"eduwallet-backend","timestamp":"2025-10-30 12:25:17"}
+{"actionType":"deposit_points","level":"info","message":"Logging blockchain transaction","meta":{"amount":"0.1","to":"0x892bbe86273480372c68b0c1fdec642efbc61ce8","userId":"68ecef57f2d3ddc8fd99e5be"},"service":"eduwallet-backend","timestamp":"2025-10-30 12:26:01","txHash":"0xe69eba0695cfadab793d605363a2fe834bfb5121ea3e64eba8a2e94723f84b88"}
+{"id":"6902f6e96c0794917388520b","level":"info","message":"Blockchain transaction persisted","service":"eduwallet-backend","timestamp":"2025-10-30 12:26:01"}

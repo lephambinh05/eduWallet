@@ -220,7 +220,9 @@ class PortfolioNFTService {
           email: user.email,
           institution: user.institution || "Unknown",
           gpa: gpaValue / 100,
-          totalCourses: portfolioData.courses?.length || 0,
+          totalCourses: 
+            (portfolioData.courses?.length || 0) + 
+            (portfolioData.completedCourses?.length || 0),
           totalCertificates: portfolioData.certificates?.length || 0,
           totalBadges: portfolioData.badges?.length || 0,
         },
