@@ -1,0 +1,60 @@
+3 website sử dụng NodeJS + React
+Yêu cầu:
+Đơn giản chỉ là website Demo của đối tác thực hiện chức năng cho người dùng làm bài và ghi lại kết quả rồi chuyển qua api
+
+NỘI DUNG:
+WEBSITE 1:
++ Xem video Youtube
++ Tính tiến trình
++ Tính điểm
+
+WEBSITE 2
++ Làm câu hỏi quiz
++ 2 task mỗi task 5 câu hỏi
++ Tính tiến trình
++ Tính điểm
+
+Website 3
++ 2 task
++ Task 1 xem video Youtube
++ Task 2 làm 5 quiz câu hỏi
++ Tính tiến trình
++ Tính điểm
+
+Kết quả khi hệ thống EduWallet tự động get thông tin kết quả khóa học qua api
+
+courses": [
+    {
+      "_id": "68eceff2fc4d8abe6135da87",
+      "name": "Cơ sở dữ liệu",
+      "description": "Khóa học về thiết kế và quản lý cơ sở dữ liệu",
+      "issuer": "Đại học Công nghệ Thông tin",
+      "issueDate": "2024-01-15T00:00:00.000Z",
+      "expiryDate": null,
+      "category": "Programming",
+      "level": "Intermediate",
+      "userId": "68ecef57f2d3ddc8fd99e5be",
+      "credits": 3,
+      "grade": "A+",
+      "score": 98,
+      "status": "Completed",
+      "progress": 100,
+      "modulesCompleted": 0,
+      "totalModules": 0,
+      "skills": [
+        "SQL",
+        "Database Design",
+        "MySQL",
+        "PostgreSQL"
+      ],
+      "verificationUrl": null,
+      "certificateUrl": null,
+      "imageUrl": null,
+      "createdAt": "2025-10-13T12:26:26.785Z",
+      "updatedAt": "2025-10-13T12:26:26.785Z",
+      "__v": 0,
+      "issueDateFormatted": "15/1/2024",
+      "expiryDateFormatted": null,
+      "scoreDisplay": "98%",
+      "id": "68eceff2fc4d8abe6135da87"
+    }

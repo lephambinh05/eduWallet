@@ -6,8 +6,6 @@ import { useWallet } from "../context/WalletContext";
 import {
   FaGraduationCap,
   FaWallet,
-  FaBars,
-  FaTimes,
   FaSignOutAlt,
   FaSignInAlt,
   FaUserPlus,
@@ -28,6 +26,7 @@ import {
 import { getCurrentUser } from "../utils/userUtils";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 const SidebarContainer = styled(motion.div).attrs((props) => ({
   "data-is-open": props.$isOpen,
@@ -422,6 +421,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const { logout } = useAuth();
   const user = getCurrentUser();
 
+  // close sidebar on route change for small screens
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      setIsOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // close on ESC key for accessibility
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setIsOpen]);
+
   const handleWalletAction = () => {
     if (isConnected && account) {
       disconnectWallet();
@@ -547,6 +563,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       section: "partner",
       protected: true,
     },
+    // Partner documentation (internal link)
+    {
+      path: "/partner/docs",
+      icon: FaIdCard,
+      text: "Tài liệu tích hợp",
+      section: "partner",
+      protected: true,
+    },
   ];
 
   const effectiveNavItems =
@@ -644,12 +668,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       />
 
       <SidebarContainer
+        role="navigation"
+        aria-label="Main navigation"
         $isOpen={isOpen}
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <ToggleButton $isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
+        <ToggleButton
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+          $isOpen={isOpen}
+          onClick={() => setIsOpen(!isOpen)}
+        >
           {isOpen ? <FaAngleLeft /> : <FaAngleRight />}
         </ToggleButton>
         <SidebarHeader $isOpen={isOpen}>

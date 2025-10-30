@@ -39,8 +39,7 @@ const importCertificates = async (userId) => {
         level: "Professional",
         score: 95,
         verificationUrl: "https://www.credential.net/abc123google",
-        imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Google_Cloud_logo.svg/1200px-Google_Cloud_logo.svg.png",
+        // imageUrl removed
       },
       {
         title: "Machine Learning Specialization Certificate",
@@ -52,8 +51,7 @@ const importCertificates = async (userId) => {
         level: "Advanced",
         score: 92,
         verificationUrl: "https://www.coursera.org/verify/xyz456stanford",
-        imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Coursera-Logo_600x600.svg/1200px-Coursera-Logo_600x600.svg.png",
+        // imageUrl removed
       },
       {
         title: "Web Development Bootcamp Certificate",
@@ -64,8 +62,7 @@ const importCertificates = async (userId) => {
         level: "Intermediate",
         score: 98,
         verificationUrl: "https://www.udemy.com/certificate/def789udemy",
-        imageUrl:
-          "https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg",
+        // imageUrl removed
       },
       {
         title: "IELTS Academic Certificate",
@@ -76,8 +73,7 @@ const importCertificates = async (userId) => {
         level: "Advanced",
         score: 8.5,
         verificationUrl: "https://ielts.org/verify/ghi012ielts",
-        imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/IELTS_logo.svg/1200px-IELTS_logo.svg.png",
+        // imageUrl removed
       },
       {
         title: "Blockchain Development Certificate",
@@ -89,8 +85,7 @@ const importCertificates = async (userId) => {
         level: "Intermediate",
         score: 89,
         verificationUrl: "https://www.udemy.com/certificate/jkl345blockchain",
-        imageUrl:
-          "https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg",
+        // imageUrl removed
       },
     ];
 
@@ -155,7 +150,7 @@ const importBadges = async (userId) => {
         level: "Beginner",
         points: 50,
         rarity: "Common",
-        iconUrl: "https://via.placeholder.com/50x50/FFD700/ffffff?text=EB",
+        // iconUrl removed
       },
       {
         title: "Top Coder",
@@ -166,7 +161,7 @@ const importBadges = async (userId) => {
         level: "Intermediate",
         points: 75,
         rarity: "Uncommon",
-        iconUrl: "https://via.placeholder.com/50x50/C0C0C0/ffffff?text=TC",
+        // iconUrl removed
       },
       {
         title: "Cloud Master",
@@ -177,7 +172,7 @@ const importBadges = async (userId) => {
         level: "Advanced",
         points: 100,
         rarity: "Rare",
-        iconUrl: "https://via.placeholder.com/50x50/4CAF50/ffffff?text=CM",
+        // iconUrl removed
       },
       {
         title: "Language Expert",
@@ -188,7 +183,7 @@ const importBadges = async (userId) => {
         level: "Expert",
         points: 150,
         rarity: "Epic",
-        iconUrl: "https://via.placeholder.com/50x50/2196F3/ffffff?text=LE",
+        // iconUrl removed
       },
       {
         title: "Blockchain Pioneer",
@@ -199,7 +194,7 @@ const importBadges = async (userId) => {
         level: "Intermediate",
         points: 80,
         rarity: "Uncommon",
-        iconUrl: "https://via.placeholder.com/50x50/9C27B0/ffffff?text=BP",
+        // iconUrl removed
       },
       {
         title: "Perfect Score",
@@ -210,7 +205,7 @@ const importBadges = async (userId) => {
         level: "Advanced",
         points: 200,
         rarity: "Legendary",
-        iconUrl: "https://via.placeholder.com/50x50/FF5722/ffffff?text=PS",
+        // iconUrl removed
       },
     ];
 

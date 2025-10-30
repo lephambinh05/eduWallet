@@ -10,6 +10,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Simple request logger to help debugging in development
+app.use((req, res, next) => {
+  try {
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - from ${
+        req.ip
+      }`
+    );
+  } catch (e) {
+    // ignore logging errors
+  }
+  next();
+});
+
 // Import models (must be loaded before routes that use them)
 const User = require("./src/models/User");
 require("./src/models/Institution");
@@ -64,6 +78,45 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/partner", partnerRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
+
+// Print a list of registered routes to the console to aid debugging
+function listRoutes(app) {
+  console.log("\n=== Registered Express routes ===");
+  const routes = [];
+  if (app && app._router && app._router.stack) {
+    app._router.stack.forEach((layer) => {
+      if (layer.route && layer.route.path) {
+        const methods = Object.keys(layer.route.methods || {})
+          .map((m) => m.toUpperCase())
+          .join(",");
+        routes.push(`${methods} ${layer.route.path}`);
+      } else if (
+        layer.name === "router" &&
+        layer.handle &&
+        layer.handle.stack
+      ) {
+        // nested router
+        layer.handle.stack.forEach((handler) => {
+          if (handler.route && handler.route.path) {
+            const methods = Object.keys(handler.route.methods || {})
+              .map((m) => m.toUpperCase())
+              .join(",");
+            routes.push(`${methods} ${handler.route.path}`);
+          }
+        });
+      }
+    });
+  }
+  routes.sort().forEach((r) => console.log(r));
+  console.log("=== End routes ===\n");
+}
+
+// Print routes at startup (helpful to verify /api/partner/apikey/generate is registered)
+try {
+  listRoutes(app);
+} catch (err) {
+  console.error("Failed to list routes:", err);
+}
 
 // Test route
 app.get("/api/test", (req, res) => {

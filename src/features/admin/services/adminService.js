@@ -264,6 +264,11 @@ export const AdminService = {
     return response.data;
   },
 
+  getNFTPreview: async (txId) => {
+    const response = await adminAPI.get(`/admin/nft-portfolio/${txId}/preview`);
+    return response.data;
+  },
+
   // ==================== Portfolio Change Logs ====================
   getPortfolioChanges: async (params) => {
     const response = await adminAPI.get("/admin/portfolio-changes", { params });
@@ -325,12 +330,16 @@ export const AdminService = {
   },
 
   approveInstitution: async (institutionId) => {
-    const response = await adminAPI.post(`/admin/institutions/${institutionId}/approve`);
+    const response = await adminAPI.post(
+      `/admin/institutions/${institutionId}/approve`
+    );
     return response.data;
   },
 
   rejectInstitution: async (institutionId) => {
-    const response = await adminAPI.post(`/admin/institutions/${institutionId}/reject`);
+    const response = await adminAPI.post(
+      `/admin/institutions/${institutionId}/reject`
+    );
     return response.data;
   },
 

@@ -53,6 +53,176 @@ router.get(
   })
 );
 
+// Admin: preview IPFS metadata for a given blockchain transaction (mint)
+router.get(
+  "/nft-portfolio/:id/preview",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  asyncHandler(async (req, res) => {
+    const BlockchainTransaction = require("../models/BlockchainTransaction");
+    const axios = require("axios");
+
+    const tx = await BlockchainTransaction.findById(req.params.id).lean();
+    if (!tx)
+      return res.status(404).json({ success: false, message: "Not found" });
+
+    // Use only Pinata gateway for IPFS fetches
+    const gateways = [
+      process.env.IPFS_PINATA_GATEWAY || "https://gateway.pinata.cloud/ipfs/",
+    ];
+
+    // determine ipfs path or direct URL
+    let ipfsPath = null;
+    let directUrl = null;
+    if (tx.ipfsHash) {
+      ipfsPath = String(tx.ipfsHash).replace(/^\/+/, "");
+    } else if (tx.metadataURI) {
+      const uri = String(tx.metadataURI);
+      if (uri.startsWith("ipfs://")) {
+        ipfsPath = uri.replace(/^ipfs:\/\//, "");
+      } else if (/^https?:\/\//i.test(uri)) {
+        directUrl = uri;
+      } else if (uri.includes("/ipfs/")) {
+        // extract path after /ipfs/
+        const m = uri.match(/\/ipfs\/(.+)$/);
+        if (m) ipfsPath = m[1];
+      }
+    }
+
+    if (!ipfsPath && !directUrl)
+      return res
+        .status(400)
+        .json({ success: false, message: "No IPFS metadata available" });
+
+    // try direct URL first (if present), then try Pinata gateway only for ipfs paths
+    const tryUrls = [];
+    if (directUrl) tryUrls.push({ url: directUrl, gatewayUsed: null });
+    if (ipfsPath) {
+      for (const g of gateways)
+        tryUrls.push({ url: g + ipfsPath, gatewayUsed: g });
+    }
+
+    let lastError = null;
+    for (const attempt of tryUrls) {
+      try {
+        // try to fetch as JSON first
+        const resp = await axios.get(attempt.url, {
+          timeout: 10000,
+          responseType: "json",
+          validateStatus: null,
+        });
+        if (resp.status === 200 && resp.data) {
+          const data = resp.data;
+
+          const fixIpfs = (u) => {
+            if (!u) return null;
+            if (String(u).startsWith("ipfs://"))
+              return (
+                (attempt.gatewayUsed || gateways[0]) +
+                String(u).replace(/^ipfs:\/\//, "")
+              );
+            return u;
+          };
+
+          // normalize ipfs links inside metadata but do NOT return previewImage
+          if (typeof data === "object" && data.image) {
+            data.image = fixIpfs(data.image);
+          }
+
+          return res.json({
+            success: true,
+            data: {
+              metadata: data,
+              sourceUrl: attempt.url,
+              gateway: attempt.gatewayUsed,
+            },
+          });
+        }
+
+        // If response is HTML or image or text, handle accordingly
+        if (
+          resp.status === 200 &&
+          resp.headers &&
+          resp.headers["content-type"]
+        ) {
+          const ct = resp.headers["content-type"];
+          if (ct.includes("application/json") || ct.includes("text/plain")) {
+            // try to parse as text then JSON
+            const textResp = await axios.get(attempt.url, {
+              timeout: 10000,
+              responseType: "text",
+              validateStatus: null,
+            });
+            try {
+              const parsed = JSON.parse(textResp.data);
+              const fixIpfs = (u) =>
+                u && String(u).startsWith("ipfs://")
+                  ? (attempt.gatewayUsed || gateways[0]) +
+                    String(u).replace(/^ipfs:\/\//, "")
+                  : u;
+              if (parsed && parsed.image) parsed.image = fixIpfs(parsed.image);
+              return res.json({
+                success: true,
+                data: {
+                  metadata: parsed,
+                  sourceUrl: attempt.url,
+                  gateway: attempt.gatewayUsed,
+                },
+              });
+            } catch (e) {
+              // not JSON
+              return res.json({
+                success: true,
+                data: {
+                  metadata: null,
+                  sourceUrl: attempt.url,
+                  gateway: attempt.gatewayUsed,
+                },
+              });
+            }
+          }
+
+          if (ct.startsWith("image/")) {
+            // the URL itself is an image; return success but no previewImage
+            return res.json({
+              success: true,
+              data: {
+                metadata: null,
+                sourceUrl: attempt.url,
+                gateway: attempt.gatewayUsed,
+              },
+            });
+          }
+        }
+
+        // non-200 or not useful content-type -> treat as failure and try next
+        lastError = new Error(
+          `Unexpected status ${resp.status} from ${attempt.url}`
+        );
+        // continue to next gateway
+      } catch (err) {
+        lastError = err;
+        // If gateway returned 502 Bad Gateway, try next gateway
+        if (err.response && err.response.status === 502) {
+          continue;
+        }
+        // For other errors, also continue to try next
+        continue;
+      }
+    }
+
+    console.error(
+      "Failed to fetch IPFS metadata (all gateways tried):",
+      lastError && (lastError.message || lastError)
+    );
+    return res.status(502).json({
+      success: false,
+      message: "Failed to fetch metadata from IPFS gateways",
+      error: lastError && (lastError.message || String(lastError)),
+    });
+  })
+);
+
 // Public read-only endpoint for admin wallet and conversion settings
 // This allows client apps (non-admin users) to read the current price/min/max
 // without needing an admin token. It intentionally returns only public fields.
@@ -659,15 +829,34 @@ router.get(
     const BlockchainTransaction = require("../models/BlockchainTransaction");
     const { page = 1, limit = 20, search } = req.query;
 
-    const query = { type: "mint" };
+    const { collection } = req.query;
 
+    // By default show all mint-like transactions (includes "mint", "portfolio_mint", etc.)
+    const query = { type: { $regex: "mint", $options: "i" } };
+
+    // allow explicit type override via query param
+    if (req.query.type) {
+      query.type = req.query.type;
+    }
+
+    // search across common fields
     if (search) {
       query.$or = [
         { tokenId: { $regex: search, $options: "i" } },
         { txHash: { $regex: search, $options: "i" } },
         { ipfsHash: { $regex: search, $options: "i" } },
         { metadataURI: { $regex: search, $options: "i" } },
+        { "metadata.name": { $regex: search, $options: "i" } },
       ];
+    }
+
+    // allow filtering by collection or contract address
+    if (collection) {
+      // match explicit contractAddress field, or metadata.collection / metadata.contract
+      query.$or = query.$or || [];
+      query.$or.push({ contractAddress: collection });
+      query.$or.push({ "metadata.collection": collection });
+      query.$or.push({ "metadata.contract": collection });
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -677,14 +866,32 @@ router.get(
         .populate("userId", "firstName lastName email walletAddress")
         .sort({ createdAt: -1 })
         .limit(parseInt(limit))
-        .skip(skip),
+        .skip(skip)
+        .lean(),
       BlockchainTransaction.countDocuments(query),
     ]);
+
+    // shape response: ensure key fields present and surface metadata.collection/contract
+    const shaped = items.map((it) => ({
+      _id: it._id,
+      user: it.userId || null,
+      txHash: it.txHash,
+      tokenId: it.tokenId,
+      ipfsHash: it.ipfsHash,
+      metadataURI: it.metadataURI,
+      contractAddress: it.contractAddress || it.metadata?.contract || null,
+      collection: it.metadata?.collection || null,
+      // quick preview endpoint (admin-only) to fetch IPFS metadata
+      previewUrl: `/api/admin/nft-portfolio/${it._id}/preview`,
+      metadata: it.metadata || {},
+      status: it.status,
+      createdAt: it.createdAt,
+    }));
 
     res.json({
       success: true,
       data: {
-        items,
+        items: shaped,
         pagination: {
           currentPage: parseInt(page),
           totalPages: Math.ceil(total / parseInt(limit)),

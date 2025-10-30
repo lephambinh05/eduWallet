@@ -11,7 +11,6 @@ import {
 } from "react-icons/fa";
 import { useWallet } from "../../context/WalletContext";
 import portfolioNFTService from "../../services/portfolioNFTService";
-import ipfsService from "../../services/ipfsService";
 import { getCurrentUser } from "../../utils/userUtils";
 // import portfolioDataFromDB from '../../data/portfolioData.json'; // Removed to fix webpack warning
 import toast from "react-hot-toast";
@@ -155,47 +154,6 @@ const PreviewLabel = styled.div`
   font-weight: 500;
 `;
 
-const UploadSection = styled.div`
-  border: 2px dashed #cbd5e0;
-  border-radius: 12px;
-  padding: 30px;
-  text-align: center;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    border-color: #667eea;
-    background: #f7fafc;
-  }
-
-  &.dragover {
-    border-color: #667eea;
-    background: #edf2f7;
-  }
-`;
-
-const UploadIcon = styled.div`
-  font-size: 48px;
-  color: #a0aec0;
-  margin-bottom: 15px;
-`;
-
-const UploadText = styled.div`
-  color: #4a5568;
-  font-size: 16px;
-  margin-bottom: 10px;
-`;
-
-const UploadSubtext = styled.div`
-  color: #718096;
-  font-size: 14px;
-`;
-
-const FileInput = styled.input`
-  display: none;
-`;
-
 const Button = styled.button`
   background: ${(props) =>
     props.variant === "primary"
@@ -292,8 +250,7 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
   const [statusMessage, setStatusMessage] = useState("");
   const [statusType, setStatusType] = useState("info");
   const [portfolioData, setPortfolioData] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
+  // image preview and upload removed per request
   const [mintResult, setMintResult] = useState(null);
 
   useEffect(() => {
@@ -365,49 +322,7 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast.error("File size must be less than 5MB");
-        return;
-      }
-
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
-        return;
-      }
-
-      setImageFile(file);
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.currentTarget.classList.add("dragover");
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.currentTarget.classList.remove("dragover");
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.currentTarget.classList.remove("dragover");
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleImageUpload({ target: { files } });
-    }
-  };
+  // image upload handlers removed
 
   const mintPortfolioNFT = async () => {
     if (!isConnected || !portfolioData) {
@@ -421,23 +336,12 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
     setStatusType("info");
 
     try {
-      // Step 1: Upload preview image
+      // Skip image upload step (images are not used)
       setProgress(20);
-      setStatusMessage("📤 Uploading preview image to IPFS...");
-
-      let imageIpfsHash = null;
-      if (imageFile) {
-        imageIpfsHash = await ipfsService.uploadPortfolioImage(imageFile);
-        setProgress(40);
-      }
-
-      // Step 2: Mint NFT
-      setProgress(60);
       setStatusMessage("🚀 Minting Portfolio NFT on blockchain...");
 
       const result = await portfolioNFTService.mintPortfolio(portfolioData, {
         version: 1,
-        imageIpfsHash,
         transactionOptions: {
           gasLimit: 500000, // Adjust based on network
         },
@@ -511,46 +415,13 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
     <StepContainer>
       <StepTitle>
         <FaUpload />
-        Upload Preview Image (Optional)
+        Preview Image (not used)
       </StepTitle>
       <StepContent>
-        <UploadSection
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById("image-upload").click()}
-        >
-          <UploadIcon>
-            <FaUpload />
-          </UploadIcon>
-          <UploadText>
-            {previewImage
-              ? "Click to change image"
-              : "Click to upload or drag & drop"}
-          </UploadText>
-          <UploadSubtext>PNG, JPG, GIF up to 5MB</UploadSubtext>
-          <FileInput
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
-        </UploadSection>
-
-        {previewImage && (
-          <div style={{ textAlign: "center", marginTop: "15px" }}>
-            <img
-              src={previewImage}
-              alt="Preview"
-              style={{
-                maxWidth: "200px",
-                maxHeight: "200px",
-                borderRadius: "8px",
-                border: "2px solid #e2e8f0",
-              }}
-            />
-          </div>
-        )}
+        <div style={{ color: "#666" }}>
+          Portfolio images are not used in the minting flow. The minted metadata
+          will not include an image.
+        </div>
       </StepContent>
     </StepContainer>
   );

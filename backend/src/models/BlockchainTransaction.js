@@ -11,6 +11,7 @@ const blockchainTransactionSchema = new mongoose.Schema(
     txHash: { type: String, required: true, index: true },
     type: { type: String, required: true }, // e.g., 'mint', 'transfer', 'issueCertificate'
     tokenId: { type: String, default: null },
+    contractAddress: { type: String, default: null, index: true },
     ipfsHash: { type: String, default: null },
     metadataURI: { type: String, default: null },
     to: { type: String, default: null },

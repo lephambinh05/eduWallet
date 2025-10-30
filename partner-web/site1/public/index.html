@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Partner Demo - Site 1 (Video)</title>
+    <style>
+      body {
+        font-family: Inter, system-ui, Arial;
+        background: #f5f7fb;
+        color: #0b2545;
+        margin: 0;
+        padding: 20px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px;
+        box-shadow: 0 6px 18px rgba(15, 37, 69, 0.06);
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      button {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(15, 37, 69, 0.06);
+        cursor: pointer;
+      }
+      .status {
+        margin-top: 12px;
+        color: #37517e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Demo Site 1 — Watch Video</h2>
+      <p>
+        Watch the video, track progress and submit result to EduWallet (demo
+        endpoint).
+      </p>
+
+      <div style="position: relative; padding-top: 56.25%">
+        <iframe
+          id="yt"
+          src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0"
+          frameborder="0"
+          allowfullscreen
+          style="position: absolute; left: 0; top: 0; width: 100%; height: 100%"
+        ></iframe>
+      </div>
+
+      <div class="controls">
+        <button id="mark-watched">Mark as Watched</button>
+        <button id="submit">Submit Result</button>
+      </div>
+
+      <div class="status" id="status">Progress: 0% — Score: 0</div>
+
+      <pre
+        id="response"
+        style="
+          margin-top: 12px;
+          color: #233;
+          display: none;
+          background: #f0f6ff;
+          padding: 10px;
+          border-radius: 8px;
+        "
+      ></pre>
+    </div>
+
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+    <script>
+      (function () {
+        let progress = 0;
+        let score = 0;
+        const status = document.getElementById("status");
+        const resp = document.getElementById("response");
+
+        document
+          .getElementById("mark-watched")
+          .addEventListener("click", () => {
+            progress = 100;
+            score = 100;
+            update();
+          });
+
+        document
+          .getElementById("submit")
+          .addEventListener("click", async () => {
+            const payload = {
+              partnerId: "demo_site1",
+              eventType: "course_result",
+              studentId: "demo-student-1",
+              courseId: "video-course-1",
+              results: {
+                progress,
+                score,
+                status: progress === 100 ? "Completed" : "In Progress",
+                issuedAt: new Date().toISOString(),
+              },
+            };
+
+            try {
+              const r = await fetch("/api/result", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              const j = await r.json();
+              resp.style.display = "block";
+              resp.textContent = JSON.stringify(j, null, 2);
+            } catch (e) {
+              resp.style.display = "block";
+              resp.textContent = "Error: " + e.message;
+            }
+          });
+
+        function update() {
+          status.textContent = `Progress: ${progress}% — Score: ${score}`;
+        }
+        update();
+      })();
+    </script>
+  </body>
+</html>

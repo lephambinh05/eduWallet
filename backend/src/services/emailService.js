@@ -12,7 +12,8 @@ class EmailService {
   async init() {
     try {
       // Cấu hình SMTP transporter
-      this.transporter = nodemailer.createTransporter({
+      // nodemailer API: use createTransport (not createTransporter)
+      this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || "smtp.gmail.com",
         port: parseInt(process.env.EMAIL_PORT) || 587,
         secure: false, // true for 465, false for other ports

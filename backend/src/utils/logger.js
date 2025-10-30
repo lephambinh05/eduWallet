@@ -205,6 +205,8 @@ logger.logBlockchainTransaction = async (txHash, actionType, meta = {}) => {
       txHash,
       type: actionType,
       tokenId: meta.tokenId || null,
+      contractAddress:
+        meta.contractAddress || meta.contract || meta.collection || null,
       ipfsHash: meta.ipfsHash || null,
       metadataURI: meta.metadataURI || null,
       to: meta.to || null,

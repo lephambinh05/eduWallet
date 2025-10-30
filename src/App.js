@@ -37,6 +37,7 @@ import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import ManageCourses from "./pages/partner/ManageCourses";
 import Learners from "./pages/partner/Learners";
 import PartnerEnrollmentDetail from "./pages/partner/EnrollmentDetail";
+import PartnerAPIDocs from "./pages/partner/PartnerAPIDocs";
 import Courses from "./pages/Courses";
 import MyCourses from "./pages/MyCourses";
 import EnrollmentDetail from "./pages/EnrollmentDetail";
@@ -154,7 +155,10 @@ function App() {
                       element={<AdminCertificates />}
                     />
                     <Route path="learnpasses" element={<AdminLearnPasses />} />
-                    <Route path="institutions" element={<AdminInstitutions />} />
+                    <Route
+                      path="institutions"
+                      element={<AdminInstitutions />}
+                    />
                     <Route
                       path="nft-portfolio"
                       element={<AdminNFTPortfolio />}
@@ -210,6 +214,16 @@ function App() {
                     }
                   />
                   {/* Partner routes (nested under /partner) */}
+                  {/* Public partner docs (no login required) */}
+                  <Route
+                    path="/partner/docs"
+                    element={
+                      <Layout>
+                        <PartnerAPIDocs />
+                      </Layout>
+                    }
+                  />
+
                   <Route
                     path="/partner"
                     element={
@@ -231,6 +245,7 @@ function App() {
                       path="learners/:id"
                       element={<PartnerEnrollmentDetail />}
                     />
+                    <Route path="docs" element={<PartnerAPIDocs />} />
                   </Route>
                   <Route
                     path="/learnpass"

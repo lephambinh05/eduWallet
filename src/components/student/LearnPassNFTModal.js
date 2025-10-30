@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaGraduationCap, FaSpinner, FaCheck, FaExclamationTriangle, FaClock, FaCheckCircle, FaExternalLinkAlt } from 'react-icons/fa';
-import { useWallet } from '../../context/WalletContext';
-import { getCurrentUser } from '../../utils/userUtils';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaTimes,
+  FaGraduationCap,
+  FaSpinner,
+  FaCheck,
+  FaExclamationTriangle,
+  FaClock,
+  FaCheckCircle,
+  FaExternalLinkAlt,
+} from "react-icons/fa";
+import { useWallet } from "../../context/WalletContext";
+import { getCurrentUser } from "../../utils/userUtils";
 // import learnPassData from '../../data/learnPassData.json'; // Removed mock data
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
@@ -77,7 +86,7 @@ const LearnPassCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 1.5rem;
-  border: 2px solid ${props => props.selected ? '#667eea' : 'transparent'};
+  border: 2px solid ${(props) => (props.selected ? "#667eea" : "transparent")};
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -88,7 +97,7 @@ const LearnPassCard = styled.div`
   }
 
   &.completed {
-    border-color: #4CAF50;
+    border-color: #4caf50;
   }
 
   &.in-progress {
@@ -152,7 +161,7 @@ const ProgressBar = styled.div`
 const ProgressFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, #667eea, #764ba2);
-  width: ${props => props.progress}%;
+  width: ${(props) => props.progress}%;
   transition: width 0.3s ease;
 `;
 
@@ -191,7 +200,7 @@ const StatusBadge = styled.div`
 
   &.completed {
     background: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
+    color: #4caf50;
   }
 
   &.in-progress {
@@ -270,7 +279,7 @@ const SuccessMessage = styled.div`
   border: 1px solid rgba(76, 175, 80, 0.3);
   border-radius: 8px;
   padding: 1rem;
-  color: #4CAF50;
+  color: #4caf50;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -282,14 +291,14 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
   const [learnPasses, setLearnPasses] = useState([]);
   const [selectedLearnPass, setSelectedLearnPass] = useState(null);
   const [isMinting, setIsMinting] = useState(false);
-  const [mintStep, setMintStep] = useState('select'); // select, minting, success, error
-  const [error, setError] = useState('');
-  const [transactionHash, setTransactionHash] = useState('');
+  const [mintStep, setMintStep] = useState("select"); // select, minting, success, error
+  const [error, setError] = useState("");
+  const [transactionHash, setTransactionHash] = useState("");
 
   // Load LearnPass data
   useEffect(() => {
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.email === 'lephambinh05@gmail.com') {
+    if (currentUser && currentUser.email === "lephambinh05@gmail.com") {
       // Load real data for specific user
       // Removed mock data usage - load from API instead
       setLearnPasses([]);
@@ -297,133 +306,131 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
       // Mock data for other users
       const mockLearnPasses = [
         {
-          id: 'lp001',
-          name: 'Blockchain Fundamentals',
-          description: 'Learn the basics of blockchain technology',
-          level: 'Beginner',
+          id: "lp001",
+          name: "Blockchain Fundamentals",
+          description: "Learn the basics of blockchain technology",
+          level: "Beginner",
           progress: 100,
           modulesCompleted: 10,
           totalModules: 10,
-          deadline: '2024-12-31',
-          status: 'Completed',
-          skills: ['Blockchain', 'Cryptocurrency', 'Smart Contracts'],
-          imageUrl: 'https://via.placeholder.com/100x100/667eea/ffffff?text=BF',
-          isActive: true
+          deadline: "2024-12-31",
+          status: "Completed",
+          skills: ["Blockchain", "Cryptocurrency", "Smart Contracts"],
+          isActive: true,
         },
         {
-          id: 'lp002',
-          name: 'React Development',
-          description: 'Master React.js for modern web development',
-          level: 'Intermediate',
+          id: "lp002",
+          name: "React Development",
+          description: "Master React.js for modern web development",
+          level: "Intermediate",
           progress: 75,
           modulesCompleted: 15,
           totalModules: 20,
-          deadline: '2024-12-31',
-          status: 'In Progress',
-          skills: ['React', 'JavaScript', 'Frontend'],
-          imageUrl: 'https://via.placeholder.com/100x100/4CAF50/ffffff?text=RD',
-          isActive: true
-        }
+          deadline: "2024-12-31",
+          status: "In Progress",
+          skills: ["React", "JavaScript", "Frontend"],
+          isActive: true,
+        },
       ];
       setLearnPasses(mockLearnPasses);
     }
   }, []);
 
   const canMintLearnPass = (learnPass) => {
-    return learnPass.status === 'Completed' && learnPass.progress === 100;
+    return learnPass.status === "Completed" && learnPass.progress === 100;
   };
 
   const createLearnPassMetadata = (learnPass) => {
     return {
       name: `LearnPass NFT - ${learnPass.name}`,
       description: learnPass.description,
-      image: learnPass.imageUrl,
       attributes: [
         {
           trait_type: "Course Name",
-          value: learnPass.name
+          value: learnPass.name,
         },
         {
           trait_type: "Level",
-          value: learnPass.level
+          value: learnPass.level,
         },
         {
           trait_type: "Progress",
-          value: `${learnPass.progress}%`
+          value: `${learnPass.progress}%`,
         },
         {
           trait_type: "Modules Completed",
-          value: `${learnPass.modulesCompleted}/${learnPass.totalModules}`
+          value: `${learnPass.modulesCompleted}/${learnPass.totalModules}`,
         },
         {
           trait_type: "Status",
-          value: learnPass.status
+          value: learnPass.status,
         },
         {
           trait_type: "Skills",
-          value: learnPass.skillTags.join(', ')
+          value: learnPass.skillTags.join(", "),
         },
         {
           trait_type: "Completion Date",
-          value: new Date().toLocaleDateString('vi-VN')
+          value: new Date().toLocaleDateString("vi-VN"),
         },
         {
           trait_type: "Student Wallet",
-          value: account
-        }
-      ]
+          value: account,
+        },
+      ],
     };
   };
 
   const handleMintLearnPass = async (learnPass) => {
     if (!isConnected) {
-      toast.error('Vui lòng kết nối ví trước!');
+      toast.error("Vui lòng kết nối ví trước!");
       return;
     }
 
     if (!canMintLearnPass(learnPass)) {
-      toast.error('Chỉ có thể mint LearnPass đã hoàn thành!');
+      toast.error("Chỉ có thể mint LearnPass đã hoàn thành!");
       return;
     }
 
     setSelectedLearnPass(learnPass);
     setIsMinting(true);
-    setMintStep('minting');
-    setError('');
+    setMintStep("minting");
+    setError("");
 
     try {
       // Step 1: Create metadata
       const metadata = createLearnPassMetadata(learnPass);
-      console.log('LearnPass metadata created:', metadata);
+      console.log("LearnPass metadata created:", metadata);
 
       // Step 2: Upload metadata to IPFS (mock for now)
       const metadataURI = `https://api.eduwallet.com/learnpass-metadata/${learnPass.id}`;
-      console.log('Metadata URI:', metadataURI);
+      console.log("Metadata URI:", metadataURI);
 
       // Step 3: Call smart contract to mint LearnPass NFT
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate blockchain call
-      
-      const mockTransactionHash = `0x${Math.random().toString(16).substring(2, 66)}`;
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // Simulate blockchain call
+
+      const mockTransactionHash = `0x${Math.random()
+        .toString(16)
+        .substring(2, 66)}`;
       setTransactionHash(mockTransactionHash);
 
       // Step 4: Success
-      setMintStep('success');
-      toast.success('LearnPass NFT đã được tạo thành công!');
-      
+      setMintStep("success");
+      toast.success("LearnPass NFT đã được tạo thành công!");
+
       if (onSuccess) {
         onSuccess({
           tokenId: Math.floor(Math.random() * 10000) + 1,
           transactionHash: mockTransactionHash,
           metadata: metadata,
-          learnPass: learnPass
+          learnPass: learnPass,
         });
       }
-
     } catch (error) {
-      console.error('Error minting LearnPass NFT:', error);
-      setError(error.message || 'Có lỗi xảy ra khi tạo LearnPass NFT');
-      setMintStep('error');
-      toast.error('Có lỗi xảy ra khi tạo LearnPass NFT');
+      console.error("Error minting LearnPass NFT:", error);
+      setError(error.message || "Có lỗi xảy ra khi tạo LearnPass NFT");
+      setMintStep("error");
+      toast.error("Có lỗi xảy ra khi tạo LearnPass NFT");
     } finally {
       setIsMinting(false);
     }
@@ -432,9 +439,9 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
   const handleClose = () => {
     if (!isMinting) {
       setSelectedLearnPass(null);
-      setMintStep('select');
-      setError('');
-      setTransactionHash('');
+      setMintStep("select");
+      setError("");
+      setTransactionHash("");
       onClose();
     }
   };
@@ -472,11 +479,15 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
             </ErrorMessage>
           )}
 
-          {mintStep === 'select' && (
+          {mintStep === "select" && (
             <>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Chọn LearnPass để tạo NFT</h3>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ color: "#fff", marginBottom: "1rem" }}>
+                  Chọn LearnPass để tạo NFT
+                </h3>
+                <p
+                  style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" }}
+                >
                   Chỉ có thể tạo NFT cho các LearnPass đã hoàn thành 100%
                 </p>
               </div>
@@ -485,14 +496,27 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
                 {learnPasses.map((learnPass) => (
                   <LearnPassCard
                     key={learnPass.id}
-                    className={learnPass.status.toLowerCase().replace(' ', '-')}
-                    onClick={() => canMintLearnPass(learnPass) && handleMintLearnPass(learnPass)}
-                    style={{ cursor: canMintLearnPass(learnPass) ? 'pointer' : 'not-allowed' }}
+                    className={learnPass.status.toLowerCase().replace(" ", "-")}
+                    onClick={() =>
+                      canMintLearnPass(learnPass) &&
+                      handleMintLearnPass(learnPass)
+                    }
+                    style={{
+                      cursor: canMintLearnPass(learnPass)
+                        ? "pointer"
+                        : "not-allowed",
+                    }}
                   >
-                    <StatusBadge className={learnPass.status.toLowerCase().replace(' ', '-')}>
-                      {learnPass.status === 'Completed' && <FaCheckCircle />}
-                      {learnPass.status === 'In Progress' && <FaClock />}
-                      {learnPass.status === 'Not Started' && <FaExclamationTriangle />}
+                    <StatusBadge
+                      className={learnPass.status
+                        .toLowerCase()
+                        .replace(" ", "-")}
+                    >
+                      {learnPass.status === "Completed" && <FaCheckCircle />}
+                      {learnPass.status === "In Progress" && <FaClock />}
+                      {learnPass.status === "Not Started" && (
+                        <FaExclamationTriangle />
+                      )}
                       {learnPass.status}
                     </StatusBadge>
 
@@ -514,41 +538,69 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
                       <ProgressFill progress={learnPass.progress} />
                     </ProgressBar>
 
-                    <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
-                      {learnPass.modulesCompleted}/{learnPass.totalModules} modules hoàn thành
+                    <div
+                      style={{
+                        fontSize: "0.9rem",
+                        color: "rgba(255,255,255,0.7)",
+                        marginBottom: "1rem",
+                      }}
+                    >
+                      {learnPass.modulesCompleted}/{learnPass.totalModules}{" "}
+                      modules hoàn thành
                     </div>
 
                     {learnPass.issuer && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "rgba(255,255,255,0.6)",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
                         <strong>Issuer:</strong> {learnPass.issuer}
                       </div>
                     )}
 
                     {learnPass.issueDate && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>
-                        <strong>Issue Date:</strong> {new Date(learnPass.issueDate).toLocaleDateString('vi-VN')}
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "rgba(255,255,255,0.6)",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        <strong>Issue Date:</strong>{" "}
+                        {new Date(learnPass.issueDate).toLocaleDateString(
+                          "vi-VN"
+                        )}
                       </div>
                     )}
 
                     {learnPass.score && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>
+                      <div
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "rgba(255,255,255,0.6)",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
                         <strong>Score:</strong> {learnPass.score}%
                       </div>
                     )}
 
                     {learnPass.verificationUrl && (
-                      <div style={{ marginTop: '0.5rem' }}>
-                        <a 
-                          href={learnPass.verificationUrl} 
-                          target="_blank" 
+                      <div style={{ marginTop: "0.5rem" }}>
+                        <a
+                          href={learnPass.verificationUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
-                          style={{ 
-                            color: '#667eea', 
-                            textDecoration: 'none', 
-                            fontSize: '0.8rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem'
+                          style={{
+                            color: "#667eea",
+                            textDecoration: "none",
+                            fontSize: "0.8rem",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
                           }}
                         >
                           <FaExternalLinkAlt />
@@ -564,15 +616,19 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
                     </SkillTags>
 
                     {!canMintLearnPass(learnPass) && (
-                      <div style={{ 
-                        color: '#ff6b6b', 
-                        fontSize: '0.9rem', 
-                        textAlign: 'center',
-                        padding: '0.5rem',
-                        background: 'rgba(255, 107, 107, 0.1)',
-                        borderRadius: '4px'
-                      }}>
-                        {learnPass.status === 'In Progress' ? 'Chưa hoàn thành' : 'Chưa bắt đầu'}
+                      <div
+                        style={{
+                          color: "#ff6b6b",
+                          fontSize: "0.9rem",
+                          textAlign: "center",
+                          padding: "0.5rem",
+                          background: "rgba(255, 107, 107, 0.1)",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {learnPass.status === "In Progress"
+                          ? "Chưa hoàn thành"
+                          : "Chưa bắt đầu"}
                       </div>
                     )}
                   </LearnPassCard>
@@ -587,58 +643,138 @@ const LearnPassNFTModal = ({ isOpen, onClose, onSuccess }) => {
             </>
           )}
 
-          {mintStep === 'minting' && (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <FaSpinner style={{ fontSize: '3rem', color: '#667eea', animation: 'spin 1s linear infinite' }} />
-              <h3 style={{ color: '#fff', marginTop: '1rem' }}>Đang tạo LearnPass NFT...</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '0.5rem' }}>
+          {mintStep === "minting" && (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <FaSpinner
+                style={{
+                  fontSize: "3rem",
+                  color: "#667eea",
+                  animation: "spin 1s linear infinite",
+                }}
+              />
+              <h3 style={{ color: "#fff", marginTop: "1rem" }}>
+                Đang tạo LearnPass NFT...
+              </h3>
+              <p
+                style={{ color: "rgba(255,255,255,0.7)", marginTop: "0.5rem" }}
+              >
                 Vui lòng chờ trong khi chúng tôi xử lý giao dịch trên blockchain
               </p>
               {selectedLearnPass && (
-                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                  <p style={{ color: '#fff', fontWeight: '600' }}>{selectedLearnPass.name}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>{selectedLearnPass.level}</p>
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    padding: "1rem",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <p style={{ color: "#fff", fontWeight: "600" }}>
+                    {selectedLearnPass.name}
+                  </p>
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,0.7)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {selectedLearnPass.level}
+                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {mintStep === 'success' && (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <FaCheck style={{ fontSize: '3rem', color: '#4CAF50' }} />
-              <h3 style={{ color: '#fff', marginTop: '1rem' }}>Tạo LearnPass NFT thành công!</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '0.5rem' }}>
+          {mintStep === "success" && (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <FaCheck style={{ fontSize: "3rem", color: "#4CAF50" }} />
+              <h3 style={{ color: "#fff", marginTop: "1rem" }}>
+                Tạo LearnPass NFT thành công!
+              </h3>
+              <p
+                style={{ color: "rgba(255,255,255,0.7)", marginTop: "0.5rem" }}
+              >
                 LearnPass NFT đã được tạo và lưu trữ trên blockchain
               </p>
               {selectedLearnPass && (
-                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                  <p style={{ color: '#fff', fontWeight: '600' }}>{selectedLearnPass.name}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>{selectedLearnPass.level}</p>
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    padding: "1rem",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <p style={{ color: "#fff", fontWeight: "600" }}>
+                    {selectedLearnPass.name}
+                  </p>
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,0.7)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {selectedLearnPass.level}
+                  </p>
                 </div>
               )}
               {transactionHash && (
-                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Transaction Hash:</p>
-                  <p style={{ color: '#fff', fontFamily: 'monospace', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    padding: "1rem",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,0.7)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Transaction Hash:
+                  </p>
+                  <p
+                    style={{
+                      color: "#fff",
+                      fontFamily: "monospace",
+                      fontSize: "0.8rem",
+                      wordBreak: "break-all",
+                    }}
+                  >
                     {transactionHash}
                   </p>
                 </div>
               )}
-              <Button className="primary" onClick={handleClose} style={{ marginTop: '1rem' }}>
+              <Button
+                className="primary"
+                onClick={handleClose}
+                style={{ marginTop: "1rem" }}
+              >
                 Đóng
               </Button>
             </div>
           )}
 
-          {mintStep === 'error' && (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <FaExclamationTriangle style={{ fontSize: '3rem', color: '#ff6b6b' }} />
-              <h3 style={{ color: '#fff', marginTop: '1rem' }}>Có lỗi xảy ra</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '0.5rem' }}>
+          {mintStep === "error" && (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <FaExclamationTriangle
+                style={{ fontSize: "3rem", color: "#ff6b6b" }}
+              />
+              <h3 style={{ color: "#fff", marginTop: "1rem" }}>
+                Có lỗi xảy ra
+              </h3>
+              <p
+                style={{ color: "rgba(255,255,255,0.7)", marginTop: "0.5rem" }}
+              >
                 {error}
               </p>
-              <ButtonGroup style={{ marginTop: '1rem' }}>
-                <Button className="secondary" onClick={() => setMintStep('select')}>
+              <ButtonGroup style={{ marginTop: "1rem" }}>
+                <Button
+                  className="secondary"
+                  onClick={() => setMintStep("select")}
+                >
                   Thử lại
                 </Button>
                 <Button className="primary" onClick={handleClose}>

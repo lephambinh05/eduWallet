@@ -13,6 +13,9 @@ const partnerSchema = new mongoose.Schema(
     },
     webhookUrl: String,
     apiKey: String,
+    apiKeyCreatedAt: Date,
+    apiKeyLastRotatedAt: Date,
+    apiKeyLastUsedAt: Date,
     apiSecretKey: String,
     supportedFeatures: [String],
     rateLimiting: {

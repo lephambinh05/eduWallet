@@ -32,7 +32,8 @@ const Verify = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const GATEWAY = process.env.REACT_APP_IPFS_GATEWAY || "https://ipfs.io/ipfs/";
+  const GATEWAY =
+    process.env.REACT_APP_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
 
   const handleVerify = async (e) => {
     e && e.preventDefault();
