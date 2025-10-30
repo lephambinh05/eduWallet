@@ -866,6 +866,50 @@ const PortfolioHistory = () => {
                                 )
                               : "-"}
                           </div>
+
+                          {/* Quick View Button */}
+                          <button
+                            onClick={() => {
+                              // Open IPFS gateway to view metadata
+                              if (n.summary.ipfsHash) {
+                                const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${n.summary.ipfsHash}`;
+                                window.open(ipfsUrl, "_blank");
+                                toast.success("Đang mở metadata trên IPFS...");
+                              } else {
+                                toast.error("Không có IPFS hash");
+                              }
+                            }}
+                            style={{
+                              marginTop: "12px",
+                              width: "100%",
+                              padding: "10px 15px",
+                              background:
+                                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "8px",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "6px",
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 4px 12px rgba(102, 126, 234, 0.4)";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                          >
+                            👁️ Xem nhanh
+                          </button>
                         </div>
                       );
                     })()

@@ -874,11 +874,12 @@ router.get(
     // shape response: ensure key fields present and surface metadata.collection/contract
     const shaped = items.map((it) => ({
       _id: it._id,
-      user: it.userId || null,
+      userId: it.userId || null, // Keep as userId for frontend compatibility
       txHash: it.txHash,
       tokenId: it.tokenId,
       ipfsHash: it.ipfsHash,
       metadataURI: it.metadataURI,
+      to: it.to || null,
       contractAddress: it.contractAddress || it.metadata?.contract || null,
       collection: it.metadata?.collection || null,
       // quick preview endpoint (admin-only) to fetch IPFS metadata

@@ -4,7 +4,7 @@ import { useWallet } from "../context/WalletContext";
 import { FaCoins, FaSyncAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 import pointService from "../services/pointService";
-import { blockchainAPI, adminAPI } from "../config/api";
+import { blockchainAPI, adminAPI, authAPI } from "../config/api";
 
 const Container = styled.div`
   max-width: 800px;
@@ -135,21 +135,42 @@ const DepositPoints = () => {
 
   const loadBalances = React.useCallback(async () => {
     try {
-      const connected = await pointService.connectWallet();
-      if (!connected) {
-        toast.error("Không thể kết nối với smart contract!");
-        return;
-      }
+      console.log("🔍 Loading EDU balance from backend...");
 
-      const pointResult = await pointService.getPointBalance(account);
-      if (pointResult.success) {
-        setPointBalance(parseFloat(pointResult.balance).toFixed(2));
+      // Load EDU token balance from backend (database) instead of blockchain
+      const profileResponse = await authAPI.getProfile();
+
+      console.log("📦 Profile response:", profileResponse);
+      console.log("✅ Profile data:", profileResponse.data);
+
+      if (profileResponse.data.success) {
+        // API returns { success: true, data: { user } }
+        const userData =
+          profileResponse.data.data.user || profileResponse.data.data;
+        const eduBalance = userData.eduTokenBalance || 0;
+
+        console.log("👤 User data FULL:", JSON.stringify(userData, null, 2));
+        console.log(
+          "💰 EDU Balance from userData.eduTokenBalance:",
+          userData.eduTokenBalance
+        );
+        console.log("💰 Final EDU Balance:", eduBalance);
+
+        setPointBalance(parseFloat(eduBalance).toFixed(2));
+
+        if (eduBalance > 0) {
+          toast.success(`Đã tải số dư: ${eduBalance} EDU`);
+        }
+      } else {
+        console.error("❌ Profile response not successful");
+        toast.error("Không thể tải số dư từ server");
       }
     } catch (error) {
-      console.error("Error loading balances:", error);
-      toast.error("Lỗi khi tải số dư!");
+      console.error("❌ Error loading balances:", error);
+      console.error("Error response:", error.response);
+      toast.error("Lỗi khi tải số dư! Vui lòng đăng nhập lại.");
     }
-  }, [account]);
+  }, []);
 
   // Initial load
   React.useEffect(() => {
@@ -259,7 +280,22 @@ const DepositPoints = () => {
         return;
       }
 
+      // 0.5) Ensure pointService is connected
+      console.log("🔌 Connecting to PZO contract...");
+      const connected = await pointService.connectWallet();
+      if (!connected) {
+        toast.error(
+          "Không thể kết nối với smart contract PZO! Vui lòng kiểm tra MetaMask."
+        );
+        setIsProcessing(false);
+        return;
+      }
+      console.log("✅ Connected to PZO contract");
+
       // 1) Transfer PZO from user's wallet to the configured admin wallet
+      console.log(
+        `💸 Transferring ${pzoAmount} PZO to admin wallet: ${adminAddress}`
+      );
       const transferResult = await pointService.transferPZOToContract(
         pzoAmount,
         adminAddress
@@ -283,12 +319,61 @@ const DepositPoints = () => {
         console.error("Failed to save transaction to backend:", e);
       }
 
+      // 3) Call backend to process deposit and credit EDU tokens
+      try {
+        console.log("Processing deposit with public endpoint:", {
+          txHash: transferResult.txHash,
+          pzoAmount: pzoAmount,
+          walletAddress: account,
+        });
+
+        const depositResponse = await blockchainAPI.processPointDepositPublic({
+          txHash: transferResult.txHash,
+          pzoAmount: pzoAmount,
+          walletAddress: account,
+        });
+
+        console.log("Deposit response:", depositResponse);
+
+        if (depositResponse.data.success) {
+          const { eduCredited, newBalance } = depositResponse.data.data;
+          toast.success(
+            `✅ Nạp thành công! Bạn nhận được ${eduCredited.toFixed(
+              2
+            )} EDU. Số dư mới: ${newBalance.toFixed(2)} EDU`,
+            { duration: 5000 }
+          );
+        } else {
+          throw new Error(
+            depositResponse.data.error || "Failed to credit EDU tokens"
+          );
+        }
+      } catch (e) {
+        console.error("Failed to process deposit - Full error:", e);
+        console.error("Error response:", e.response?.data);
+        console.error("Error status:", e.response?.status);
+
+        // Show detailed error message
+        let errorMsg = "⚠️ PZO đã được chuyển nhưng có lỗi khi cộng điểm.";
+        if (e.response?.status === 401) {
+          errorMsg += " Lỗi xác thực - Vui lòng đăng nhập lại.";
+        } else if (e.response?.data?.error) {
+          errorMsg += ` Chi tiết: ${e.response.data.error}`;
+        }
+        errorMsg += ` Mã giao dịch: ${transferResult.txHash}`;
+
+        toast.error(errorMsg, { duration: 8000 });
+        setIsProcessing(false);
+        return;
+      }
+
       toast.success(
-        "✅ Chuyển PZO đến ví nền tảng thành công! Vui lòng đợi hệ thống cập nhật điểm."
+        "✅ Hoàn tất! PZO đã được chuyển và điểm đã được cộng vào tài khoản.",
+        { duration: 5000 }
       );
 
-      // Refresh point balance after a short delay to allow backend/chain to settle
-      setTimeout(loadBalances, 3000);
+      // Refresh point balance after a short delay
+      setTimeout(loadBalances, 2000);
     } catch (error) {
       console.error("Error converting PZO to EDU:", error);
       toast.error(
@@ -376,10 +461,10 @@ const DepositPoints = () => {
 
         <BalanceCard>
           <BalanceItem>
-            <h3>Point Balance</h3>
+            <h3>EDU Token Balance</h3>
             <p className="balance">
               {pointBalance}
-              <span className="symbol">POINT</span>
+              <span className="symbol">EDU</span>
             </p>
           </BalanceItem>
 

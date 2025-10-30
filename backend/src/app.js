@@ -17,8 +17,7 @@ const { Server } = require("socket.io");
 require("dotenv").config();
 const connectDB = require("./config/database");
 const logger = require("./utils/logger");
-const errorHandler = require("./middleware/errorHandler");
-const notFound = require("./middleware/notFound");
+const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 // Initialize blockchain service (optional)
 let blockchainService;
