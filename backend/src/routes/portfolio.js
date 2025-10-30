@@ -8,6 +8,7 @@ const SimpleCertificate = require("../models/SimpleCertificate");
 const SimpleBadge = require("../models/SimpleBadge");
 const LearnPass = require("../models/LearnPass");
 const PortfolioChange = require("../models/PortfolioChange");
+const CompletedCourse = require("../models/CompletedCourse");
 
 // Create a portfolio change record (audit log)
 router.post("/changes", async (req, res) => {
@@ -93,6 +94,12 @@ router.get("/:userId", async (req, res) => {
     // Get Courses
     const courses = await Course.find({ userId }).catch(() => []);
 
+    // Get Completed Courses (from partner courses)
+    const completedCourses = await CompletedCourse.find({ userId })
+      .populate("courseId", "title description price")
+      .populate("seller", "name username email")
+      .catch(() => []);
+
     // Get Certificates
     const certificates = await Certificate.find({ userId }).catch(() => []);
 
@@ -100,21 +107,24 @@ router.get("/:userId", async (req, res) => {
     const badges = await Badge.find({ userId }).catch(() => []);
 
     // Calculate statistics
+    const totalCoursesCount = courses.length + completedCourses.length;
+    
     const courseStats = {
-      totalCourses: courses.length,
+      totalCourses: totalCoursesCount,
+      completedCourses: completedCourses.length,
+      inProgressCourses: courses.length,
       averageScore:
-        courses.length > 0
+        totalCoursesCount > 0
           ? Math.round(
-              courses.reduce((sum, course) => sum + (course.score || 0), 0) /
-                courses.length
+              (courses.reduce((sum, course) => sum + (course.score || 0), 0) +
+                completedCourses.reduce((sum, cc) => sum + (cc.score || 0), 0)) /
+                totalCoursesCount
             )
           : 0,
       completionRate:
-        courses.length > 0
+        totalCoursesCount > 0
           ? Math.round(
-              (courses.filter((c) => c.status === "Completed").length /
-                courses.length) *
-                100
+              (completedCourses.length / totalCoursesCount) * 100
             )
           : 0,
     };
@@ -171,6 +181,7 @@ router.get("/:userId", async (req, res) => {
           academicInfo: user.academicInfo,
         },
         courses,
+        completedCourses, // Include completed courses from partner purchases
         certificates,
         badges,
         statistics,

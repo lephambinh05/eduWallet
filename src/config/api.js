@@ -266,6 +266,13 @@ export const blockchainAPI = {
 
   // Persist blockchain transaction (frontend -> backend)
   saveTransaction: (record) => api.post("/api/blockchain/transactions", record),
+
+  // Process point deposit (credit EDU tokens after PZO transfer)
+  processPointDeposit: (data) => api.post("/api/point/deposit", data),
+
+  // Public point deposit endpoint (no auth required, verified by wallet address)
+  processPointDepositPublic: (data) =>
+    api.post("/api/point/deposit-public", data),
 };
 
 export const adminAPI = {

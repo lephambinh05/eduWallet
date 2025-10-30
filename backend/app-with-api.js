@@ -38,6 +38,7 @@ const blockchainRoutes = require("./src/routes/blockchain");
 const partnerRoutes = require("./src/routes/partner");
 const marketplaceRoutes = require("./src/routes/marketplace");
 const enrollmentsRoutes = require("./src/routes/enrollments");
+const pointRoutes = require("./src/routes/point");
 
 // Connect to MongoDB - require MONGODB_URI from environment
 if (!process.env.MONGODB_URI) {
@@ -78,6 +79,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/partner", partnerRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
+app.use("/api/point", pointRoutes);
 
 // Print a list of registered routes to the console to aid debugging
 function listRoutes(app) {

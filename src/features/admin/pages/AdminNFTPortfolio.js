@@ -120,6 +120,11 @@ const AdminNFTPortfolio = () => {
     try {
       const res = await AdminService.getNFTPortfolio({ page, limit, search });
       const payload = res?.data || {};
+      console.log("🔍 NFT Portfolio Response:", res); // Debug log
+      console.log("📦 Items:", payload.items); // Debug log
+      if (payload.items && payload.items.length > 0) {
+        console.log("👤 First item userId:", payload.items[0].userId); // Debug log
+      }
       setItems(payload.items || []);
       setTotalPages(payload.pagination?.totalPages || 1);
     } catch (err) {
@@ -332,7 +337,7 @@ const AdminNFTPortfolio = () => {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 2000,
-            padding: 20
+            padding: 20,
           }}
           onClick={closePreview}
         >
@@ -348,32 +353,36 @@ const AdminNFTPortfolio = () => {
               boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
               border: "1px solid rgba(154,230,255,0.1)",
               display: "flex",
-              flexDirection: "column"
+              flexDirection: "column",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-              paddingBottom: 16,
-              borderBottom: "1px solid rgba(255,255,255,0.1)"
-            }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+                paddingBottom: 16,
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
               <h4 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
                 NFT Preview
                 {previewData?.item?.tokenId && (
-                  <span style={{ 
-                    color: "#9ae6ff", 
-                    fontSize: 16,
-                    marginLeft: 8,
-                    fontWeight: 600
-                  }}>
+                  <span
+                    style={{
+                      color: "#9ae6ff",
+                      fontSize: 16,
+                      marginLeft: 8,
+                      fontWeight: 600,
+                    }}
+                  >
                     #{previewData.item.tokenId}
                   </span>
                 )}
               </h4>
-              <button 
+              <button
                 style={{
                   background: "rgba(255,255,255,0.1)",
                   border: "none",
@@ -383,11 +392,15 @@ const AdminNFTPortfolio = () => {
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: 600,
-                  transition: "all 0.2s"
+                  transition: "all 0.2s",
                 }}
                 onClick={closePreview}
-                onMouseOver={(e) => e.target.style.background = "rgba(255,255,255,0.15)"}
-                onMouseOut={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
+                onMouseOver={(e) =>
+                  (e.target.style.background = "rgba(255,255,255,0.15)")
+                }
+                onMouseOut={(e) =>
+                  (e.target.style.background = "rgba(255,255,255,0.1)")
+                }
               >
                 ✕ Close
               </button>
@@ -422,34 +435,44 @@ const AdminNFTPortfolio = () => {
                   if (!attrs) return null;
                   if (Array.isArray(attrs)) {
                     return (
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                        gap: 12,
-                        marginTop: 12
-                      }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(200px, 1fr))",
+                          gap: 12,
+                          marginTop: 12,
+                        }}
+                      >
                         {attrs.map((a, i) => (
-                          <div key={i} style={{ 
-                            background: "rgba(255,255,255,0.05)",
-                            padding: 12,
-                            borderRadius: 8,
-                            border: "1px solid rgba(255,255,255,0.1)"
-                          }}>
-                            <div style={{ 
-                              color: "#9ae6ff", 
-                              fontSize: 11,
-                              fontWeight: 600,
-                              marginBottom: 4,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px"
-                            }}>
+                          <div
+                            key={i}
+                            style={{
+                              background: "rgba(255,255,255,0.05)",
+                              padding: 12,
+                              borderRadius: 8,
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                color: "#9ae6ff",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                marginBottom: 4,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
                               {a.trait_type || a.name || "Attribute"}
                             </div>
-                            <div style={{ 
-                              color: "#fff",
-                              fontSize: 14,
-                              fontWeight: 700
-                            }}>
+                            <div
+                              style={{
+                                color: "#fff",
+                                fontSize: 14,
+                                fontWeight: 700,
+                              }}
+                            >
                               {String(a.value ?? a.display_value ?? a)}
                             </div>
                           </div>
@@ -459,34 +482,44 @@ const AdminNFTPortfolio = () => {
                   }
                   if (typeof attrs === "object") {
                     return (
-                      <div style={{ 
-                        display: "grid", 
-                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                        gap: 12,
-                        marginTop: 12
-                      }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(200px, 1fr))",
+                          gap: 12,
+                          marginTop: 12,
+                        }}
+                      >
                         {Object.keys(attrs).map((k) => (
-                          <div key={k} style={{ 
-                            background: "rgba(255,255,255,0.05)",
-                            padding: 12,
-                            borderRadius: 8,
-                            border: "1px solid rgba(255,255,255,0.1)"
-                          }}>
-                            <div style={{ 
-                              color: "#9ae6ff", 
-                              fontSize: 11,
-                              fontWeight: 600,
-                              marginBottom: 4,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px"
-                            }}>
+                          <div
+                            key={k}
+                            style={{
+                              background: "rgba(255,255,255,0.05)",
+                              padding: 12,
+                              borderRadius: 8,
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                color: "#9ae6ff",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                marginBottom: 4,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
                               {k}
                             </div>
-                            <div style={{ 
-                              color: "#fff",
-                              fontSize: 14,
-                              fontWeight: 700
-                            }}>
+                            <div
+                              style={{
+                                color: "#fff",
+                                fontSize: 14,
+                                fontWeight: 700,
+                              }}
+                            >
                               {String(attrs[k])}
                             </div>
                           </div>
@@ -499,146 +532,221 @@ const AdminNFTPortfolio = () => {
 
                 const renderPretty = (m) => {
                   const attrs = m.attributes || m.traits || m.properties;
-                  
+
                   return (
-                    <div style={{ 
-                      display: "flex", 
-                      flexDirection: "column",
-                      gap: 16,
-                      maxHeight: 520,
-                      overflowY: "auto",
-                      paddingRight: 8
-                    }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 16,
+                        maxHeight: 520,
+                        overflowY: "auto",
+                        paddingRight: 8,
+                      }}
+                    >
                       {/* Main Info Card */}
-                      <div style={{
-                        background: "linear-gradient(135deg, rgba(11,116,255,0.1) 0%, rgba(154,230,255,0.05) 100%)",
-                        border: "1px solid rgba(154,230,255,0.2)",
-                        borderRadius: 12,
-                        padding: 20,
-                      }}>
-                        <div style={{ 
-                          fontSize: 24,
-                          fontWeight: 700,
-                          color: "#fff",
-                          marginBottom: 8
-                        }}>
+                      <div
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(11,116,255,0.1) 0%, rgba(154,230,255,0.05) 100%)",
+                          border: "1px solid rgba(154,230,255,0.2)",
+                          borderRadius: 12,
+                          padding: 20,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 24,
+                            fontWeight: 700,
+                            color: "#fff",
+                            marginBottom: 8,
+                          }}
+                        >
                           {m.name || "Untitled NFT"}
                         </div>
-                        <div style={{ 
-                          color: "rgba(255,255,255,0.7)",
-                          fontSize: 14,
-                          lineHeight: 1.6
-                        }}>
+                        <div
+                          style={{
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: 14,
+                            lineHeight: 1.6,
+                          }}
+                        >
                           {m.description || "No description available"}
                         </div>
                       </div>
 
                       {/* Token Info Card */}
-                      <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 12,
-                        padding: 16,
-                      }}>
-                        <div style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#9ae6ff",
-                          marginBottom: 12,
-                          textTransform: "uppercase",
-                          letterSpacing: "1px"
-                        }}>
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 12,
+                          padding: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#9ae6ff",
+                            marginBottom: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
                           🔗 Token Information
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Token ID</span>
-                            <span style={{ 
-                              color: "#fff", 
-                              fontWeight: 700,
-                              fontSize: 14,
-                              background: "rgba(154,230,255,0.1)",
-                              padding: "4px 12px",
-                              borderRadius: 6
-                            }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: "rgba(255,255,255,0.6)",
+                                fontSize: 13,
+                              }}
+                            >
+                              Token ID
+                            </span>
+                            <span
+                              style={{
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: 14,
+                                background: "rgba(154,230,255,0.1)",
+                                padding: "4px 12px",
+                                borderRadius: 6,
+                              }}
+                            >
                               #{previewData.item?.tokenId ?? "-"}
                             </span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>TX Hash</span>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: "rgba(255,255,255,0.6)",
+                                fontSize: 13,
+                              }}
+                            >
+                              TX Hash
+                            </span>
                             {previewData.item?.txHash ? (
                               <a
                                 href={`https://etherscan.io/tx/${previewData.item.txHash}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                style={{ 
+                                style={{
                                   color: "#9ae6ff",
                                   fontSize: 13,
                                   fontFamily: "monospace",
-                                  textDecoration: "none"
+                                  textDecoration: "none",
                                 }}
                               >
                                 {String(previewData.item.txHash).slice(0, 8)}...
                                 {String(previewData.item.txHash).slice(-6)}
                               </a>
                             ) : (
-                              <span style={{ color: "rgba(255,255,255,0.4)" }}>-</span>
+                              <span style={{ color: "rgba(255,255,255,0.4)" }}>
+                                -
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
 
                       {/* Owner Card */}
-                      <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 12,
-                        padding: 16,
-                      }}>
-                        <div style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#9ae6ff",
-                          marginBottom: 12,
-                          textTransform: "uppercase",
-                          letterSpacing: "1px"
-                        }}>
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 12,
+                          padding: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#9ae6ff",
+                            marginBottom: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
                           👤 Owner
                         </div>
                         <div style={{ color: "#fff", fontSize: 14 }}>
-                          {previewData.item?.userId
-                            ? `${previewData.item.userId.firstName || ""} ${
-                                previewData.item.userId.lastName || ""
-                              } (${previewData.item.userId.email || ""})`
-                            : previewData.item?.to || "Unknown"}
+                          {(() => {
+                            const item = previewData.item;
+                            if (item?.userId) {
+                              const firstName = item.userId.firstName || "";
+                              const lastName = item.userId.lastName || "";
+                              const email = item.userId.email || "";
+                              const fullName =
+                                `${firstName} ${lastName}`.trim();
+
+                              if (fullName && email) {
+                                return `${fullName} (${email})`;
+                              } else if (email) {
+                                return email;
+                              } else if (fullName) {
+                                return fullName;
+                              }
+                            }
+                            return item?.to || "Unknown";
+                          })()}
                         </div>
                       </div>
 
                       {/* IPFS Card */}
-                      <div style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 12,
-                        padding: 16,
-                      }}>
-                        <div style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#9ae6ff",
-                          marginBottom: 12,
-                          textTransform: "uppercase",
-                          letterSpacing: "1px"
-                        }}>
+                      <div
+                        style={{
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 12,
+                          padding: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#9ae6ff",
+                            marginBottom: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
                           📦 IPFS & Metadata
                         </div>
-                        <div style={{ 
-                          color: "rgba(255,255,255,0.7)",
-                          fontSize: 12,
-                          fontFamily: "monospace",
-                          wordBreak: "break-all",
-                          lineHeight: 1.6
-                        }}>
-                          {previewData.item?.metadataURI || previewData.item?.ipfsHash || "No IPFS data"}
+                        <div
+                          style={{
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: 12,
+                            fontFamily: "monospace",
+                            wordBreak: "break-all",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {previewData.item?.metadataURI ||
+                            previewData.item?.ipfsHash ||
+                            "No IPFS data"}
                         </div>
                         {sourceUrl && (
                           <div style={{ marginTop: 12 }}>
@@ -657,7 +765,7 @@ const AdminNFTPortfolio = () => {
                                 textDecoration: "none",
                                 fontSize: 13,
                                 fontWeight: 600,
-                                transition: "all 0.2s"
+                                transition: "all 0.2s",
                               }}
                             >
                               🔗 Open IPFS Gateway
@@ -668,20 +776,24 @@ const AdminNFTPortfolio = () => {
 
                       {/* Attributes/Traits Cards */}
                       {attrs && (
-                        <div style={{
-                          background: "rgba(255,255,255,0.03)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: 12,
-                          padding: 16,
-                        }}>
-                          <div style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#9ae6ff",
-                            marginBottom: 4,
-                            textTransform: "uppercase",
-                            letterSpacing: "1px"
-                          }}>
+                        <div
+                          style={{
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 12,
+                            padding: 16,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: "#9ae6ff",
+                              marginBottom: 4,
+                              textTransform: "uppercase",
+                              letterSpacing: "1px",
+                            }}
+                          >
                             ✨ Attributes & Traits
                           </div>
                           {renderAttributes(attrs)}
@@ -691,13 +803,55 @@ const AdminNFTPortfolio = () => {
                   );
                 };
 
+                const renderRaw = (m) => {
+                  return (
+                    <div
+                      style={{
+                        flex: 1,
+                        overflow: "auto",
+                        background: "#000",
+                        padding: 16,
+                        borderRadius: 12,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    >
+                      <pre
+                        style={{
+                          whiteSpace: "pre",
+                          color: "#0f0",
+                          margin: 0,
+                          fontSize: 12,
+                          lineHeight: 1.4,
+                          fontFamily:
+                            "Consolas, Monaco, 'Courier New', monospace",
+                        }}
+                      >
+                        {JSON.stringify(m)}
+                      </pre>
+                    </div>
+                  );
+                };
+
                 return (
-                  <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
                     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                       <button
                         style={{
-                          background: previewView === "pretty" ? "#0b74ff" : "rgba(255,255,255,0.05)",
-                          border: previewView === "pretty" ? "1px solid #0b74ff" : "1px solid rgba(255,255,255,0.1)",
+                          background:
+                            previewView === "pretty"
+                              ? "#0b74ff"
+                              : "rgba(255,255,255,0.05)",
+                          border:
+                            previewView === "pretty"
+                              ? "1px solid #0b74ff"
+                              : "1px solid rgba(255,255,255,0.1)",
                           color: "#fff",
                           padding: "10px 20px",
                           borderRadius: 8,
@@ -707,7 +861,7 @@ const AdminNFTPortfolio = () => {
                           transition: "all 0.2s",
                           display: "flex",
                           alignItems: "center",
-                          gap: 6
+                          gap: 6,
                         }}
                         onClick={() => setPreviewView("pretty")}
                       >
@@ -715,8 +869,14 @@ const AdminNFTPortfolio = () => {
                       </button>
                       <button
                         style={{
-                          background: previewView === "raw" ? "#0b74ff" : "rgba(255,255,255,0.05)",
-                          border: previewView === "raw" ? "1px solid #0b74ff" : "1px solid rgba(255,255,255,0.1)",
+                          background:
+                            previewView === "raw"
+                              ? "#0b74ff"
+                              : "rgba(255,255,255,0.05)",
+                          border:
+                            previewView === "raw"
+                              ? "1px solid #0b74ff"
+                              : "1px solid rgba(255,255,255,0.1)",
                           color: "#fff",
                           padding: "10px 20px",
                           borderRadius: 8,
@@ -726,40 +886,16 @@ const AdminNFTPortfolio = () => {
                           transition: "all 0.2s",
                           display: "flex",
                           alignItems: "center",
-                          gap: 6
+                          gap: 6,
                         }}
                         onClick={() => setPreviewView("raw")}
                       >
                         📄 Raw JSON
                       </button>
                     </div>
-                    {previewView === "pretty" ? (
-                      renderPretty(meta)
-                    ) : (
-                      <div
-                        style={{
-                          flex: 1,
-                          overflow: "auto",
-                          background: "#071127",
-                          padding: 16,
-                          borderRadius: 12,
-                          border: "1px solid rgba(255,255,255,0.1)"
-                        }}
-                      >
-                        <pre
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                            color: "#dfe6ff",
-                            margin: 0,
-                            fontSize: 13,
-                            lineHeight: 1.6
-                          }}
-                        >
-                          {JSON.stringify(meta, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {previewView === "pretty"
+                      ? renderPretty(meta)
+                      : renderRaw(meta)}
                   </div>
                 );
               })()}

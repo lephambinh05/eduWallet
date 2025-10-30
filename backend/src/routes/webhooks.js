@@ -4,6 +4,8 @@ const crypto = require("crypto");
 const { asyncHandler } = require("../middleware/errorHandler");
 const Partner = require("../models/Partner");
 const Enrollment = require("../models/Enrollment");
+const CompletedCourse = require("../models/CompletedCourse");
+const User = require("../models/User");
 const emailService = require("../services/emailService");
 
 // Partner webhook endpoint
@@ -79,17 +81,80 @@ async function handleProgressUpdate(data) {
 }
 
 async function handleCourseCompletion(data) {
-  const enrollment = await Enrollment.findOne({
-    user: data.studentId,
-    itemId: data.courseId,
-  }).populate("user");
-  if (!enrollment) return;
-  enrollment.status = "completed";
-  enrollment.progressPercent = 100;
-  enrollment.lastAccessed = new Date();
-  enrollment.markModified("metadata");
-  await enrollment.save();
-  // optionally notify
+  try {
+    // Tìm hoặc tạo user từ studentId
+    let user = await User.findById(data.studentId);
+    
+    // Nếu có enrollmentId, tìm enrollment và lấy user từ đó
+    let enrollment = null;
+    if (data.enrollmentId) {
+      enrollment = await Enrollment.findById(data.enrollmentId).populate("user");
+      if (enrollment) {
+        user = enrollment.user;
+      }
+    } else if (data.courseId && user) {
+      // Thử tìm enrollment từ studentId và courseId
+      enrollment = await Enrollment.findOne({
+        user: data.studentId,
+        itemId: data.courseId,
+      }).populate("user");
+    }
+    
+    if (!user) {
+      console.log(`User not found for studentId: ${data.studentId}`);
+      return;
+    }
+    
+    // Cập nhật enrollment nếu có
+    if (enrollment) {
+      enrollment.status = "completed";
+      enrollment.progressPercent = 100;
+      enrollment.completedAt = new Date();
+      enrollment.lastAccessed = new Date();
+      
+      // Cập nhật score nếu có trong completedCourse
+      if (data.completedCourse?.score !== undefined) {
+        enrollment.totalPoints = data.completedCourse.score;
+      }
+      
+      enrollment.markModified("metadata");
+      await enrollment.save();
+    }
+    
+    // Tạo CompletedCourse record
+    if (data.completedCourse) {
+      const completedCourseData = {
+        ...data.completedCourse,
+        userId: user._id,
+        enrollmentId: enrollment?._id || null,
+      };
+      
+      // Kiểm tra xem đã có CompletedCourse này chưa
+      const existingCourse = await CompletedCourse.findOne({
+        userId: user._id,
+        name: data.completedCourse.name,
+        issuer: data.completedCourse.issuer,
+      });
+      
+      if (existingCourse) {
+        // Cập nhật thông tin
+        Object.assign(existingCourse, completedCourseData);
+        await existingCourse.save();
+        console.log(`CompletedCourse updated for user ${user._id}: ${data.completedCourse.name}`);
+      } else {
+        // Tạo mới
+        const completedCourse = new CompletedCourse(completedCourseData);
+        await completedCourse.save();
+        console.log(`CompletedCourse created for user ${user._id}: ${data.completedCourse.name}`);
+      }
+    }
+    
+    // Gửi email thông báo (optional)
+    // await emailService.sendCourseCompletionNotification(user.email, data.completedCourse);
+    
+  } catch (error) {
+    console.error("Error handling course completion:", error);
+  }
 }
 
 async function handleCertificateIssued(data) {

@@ -115,6 +115,47 @@ router.get(
   })
 );
 
+// Update a course (partner only)
+router.put(
+  "/courses/:id",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const course = await PartnerCourse.findById(req.params.id);
+    
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify ownership
+    if (!course.owner.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this course",
+      });
+    }
+
+    const { title, description, link, priceEdu } = req.body;
+
+    // Update fields if provided
+    if (title !== undefined) course.title = title;
+    if (description !== undefined) course.description = description;
+    if (link !== undefined) course.link = link;
+    if (priceEdu !== undefined) course.priceEdu = Number(priceEdu);
+
+    await course.save();
+
+    return res.json({
+      success: true,
+      message: "Course updated",
+      data: { course },
+    });
+  })
+);
+
 // Get sales (purchases) for authenticated partner (seller)
 router.get(
   "/sales",
@@ -843,7 +884,7 @@ router.post(
     // Verify this partner owns the course
     const sellerId =
       enrollment.seller?._id?.toString() || enrollment.seller?.toString();
-    const partnerId = req.partner.ownerUserId.toString();
+    const partnerId = req.user._id.toString();
 
     if (sellerId !== partnerId) {
       return res.status(403).json({
@@ -918,6 +959,13 @@ router.patch(
     const { courseId } = req.params;
     const updates = req.body;
 
+    if (!courseId || courseId === 'null' || courseId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: "Valid courseId is required",
+      });
+    }
+
     const course = await CompletedCourse.findById(courseId);
 
     if (!course) {
@@ -929,7 +977,7 @@ router.patch(
 
     // Verify this partner owns the course
     const courseIssuerId = course.issuerId?.toString();
-    const partnerId = req.partner._id.toString();
+    const partnerId = req.user._id.toString();
 
     if (courseIssuerId !== partnerId) {
       return res.status(403).json({
@@ -973,6 +1021,152 @@ router.patch(
       message: "Completed course updated",
       data: { course },
     });
+  })
+);
+
+// POST /api/partner/courses/:courseId/progress - Update course progress
+router.post(
+  "/courses/:courseId/progress",
+  asyncHandler(async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const { studentId, progressPercent, timeSpentSeconds, completed, quizScore } = req.body;
+
+      console.log('Progress request:', { courseId, studentId, progressPercent, completed, quizScore });
+
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: "Student ID is required"
+        });
+      }
+
+      // Find or create enrollment
+      let enrollment = await Enrollment.findOne({
+        itemId: courseId,
+        user: studentId
+      });
+
+      if (!enrollment) {
+        // Create new enrollment if not exists
+        const course = await PartnerCourse.findById(courseId);
+        if (!course) {
+          return res.status(404).json({
+            success: false,
+            message: "Course not found"
+          });
+        }
+
+        console.log('Creating new enrollment for course:', course.title);
+
+        // For partner courses accessed directly, we'll create a Purchase record first
+        const Purchase = require('../models/Purchase');
+        
+        const priceValue = course.priceEdu || 0;
+        const sellerId = course.owner; // PartnerCourse uses 'owner' not 'partner'
+        
+        console.log('Creating purchase with seller:', sellerId);
+        
+        const purchase = await Purchase.create({
+          itemId: courseId,
+          buyer: studentId,
+          seller: sellerId,
+          price: priceValue,
+          quantity: 1,
+          total: priceValue
+        });
+
+        console.log('Purchase created:', purchase._id);
+
+        enrollment = await Enrollment.create({
+          user: studentId,
+          itemId: courseId,
+          purchase: purchase._id,
+          seller: sellerId,
+          courseTitle: course.title,
+          progressPercent: progressPercent || 0,
+          timeSpentSeconds: timeSpentSeconds || 0,
+          status: completed ? "completed" : "in_progress",
+          lastAccessed: new Date()
+        });
+
+        console.log('Enrollment created:', enrollment._id);
+      } else {
+        console.log('Updating existing enrollment:', enrollment._id);
+        // Update existing enrollment
+        if (progressPercent !== undefined) {
+          enrollment.progressPercent = progressPercent;
+        }
+        if (timeSpentSeconds !== undefined) {
+          enrollment.timeSpentSeconds = timeSpentSeconds;
+        }
+        if (completed) {
+          enrollment.status = "completed";
+          enrollment.completedAt = new Date();
+        }
+        enrollment.lastAccessed = new Date();
+        await enrollment.save();
+      }
+
+      // If completed and quiz score provided, create CompletedCourse
+      if (completed && !await CompletedCourse.findOne({ enrollmentId: enrollment._id })) {
+        const course = await PartnerCourse.findById(courseId).populate('owner', 'name username email');
+
+        if (course) {
+          console.log('Creating completed course record');
+          
+          // Get issuer name from owner
+          const issuerName = course.owner?.name || course.owner?.username || 'Partner';
+          
+          // Map course owner ID to correct Partner ID
+          // These Partner records were created without ownerUserId, so we use manual mapping
+          const ownerToPartnerMap = {
+            '6902fb27137fbb370d9a8642': '690312ac7814790e3335d7ec', // partner.video@demo.com → Web1 Video
+            '6902fb28137fbb370d9a8646': '690312ac7814790e3335d7ef', // partner.quiz@demo.com → Web2 Quiz
+            '6902fb28137fbb370d9a864a': '690312ac7814790e3335d7f2'  // partner.hybrid@demo.com → Web3 Hybrid
+          };
+          
+          const ownerIdStr = course.owner._id.toString();
+          const issuerId = ownerToPartnerMap[ownerIdStr] || course.owner._id;
+          
+          console.log('Owner ID:', ownerIdStr);
+          console.log('Mapped to Partner ID:', issuerId);
+          console.log('Using issuer ID:', issuerId);
+          
+          const completedCourse = await CompletedCourse.create({
+            enrollmentId: enrollment._id,
+            userId: studentId,
+            name: course.title,
+            description: course.description || '',
+            issuer: issuerName,
+            issuerId: issuerId,
+            category: course.category || "General",
+            level: course.level || "Beginner",
+            credits: course.credits || 0,
+            score: (quizScore !== undefined && quizScore !== null) ? quizScore : 100,
+            grade: (quizScore !== undefined && quizScore !== null && quizScore >= 80) ? "A" : 
+                   (quizScore !== undefined && quizScore !== null && quizScore >= 60) ? "B" : 
+                   (quizScore !== undefined && quizScore !== null && quizScore >= 40) ? "C" : 
+                   (quizScore !== undefined && quizScore !== null) ? "D" : "A",
+            issueDate: new Date()
+          });
+          console.log('Completed course created:', completedCourse._id);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: completed ? "Course completed successfully" : "Progress updated",
+        data: { enrollment }
+      });
+    } catch (error) {
+      console.error('Error in progress endpoint:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Internal server error",
+        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   })
 );
 

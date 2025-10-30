@@ -14,8 +14,6 @@ import {
   FaIdCard,
   FaHome,
   FaStore,
-  FaTrophy,
-  FaShieldAlt,
   FaChartLine,
   FaUsers,
   FaAngleLeft,
@@ -489,13 +487,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       protected: true,
     },
     {
-      path: "/learnpass",
-      icon: FaGraduationCap,
-      text: "LearnPass",
-      section: "main",
-      protected: true,
-    },
-    {
       path: "/marketplace",
       icon: FaStore,
       text: "Marketplace",
@@ -515,28 +506,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       ],
     },
     {
-      path: "/badges",
-      icon: FaTrophy,
-      text: "Badges",
-      section: "main",
-      protected: true,
-    },
-    {
       path: "/deposit-points",
       icon: FaCoins,
       text: "Nạp Point",
       section: "main",
       protected: true,
     },
-    {
-      path: "/transfer",
-      icon: FaWallet,
-      text: "Chuyển tiền",
-      section: "main",
-      protected: true,
-    },
-    { path: "/verify", icon: FaShieldAlt, text: "Xác thực", section: "main" },
-    { path: "/about", icon: FaIdCard, text: "Giới thiệu", section: "main" },
   ];
 
   // If current user is partner, replace navItems with partner-specific menu

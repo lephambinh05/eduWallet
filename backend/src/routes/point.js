@@ -1,23 +1,26 @@
-const express = require('express');
-const { ethers } = require('ethers');
+const express = require("express");
+const { ethers } = require("ethers");
 const router = express.Router();
-const { pointService } = require('../services/pointService');
-const { validate, schemas } = require('../middleware/validation');
+const { pointService } = require("../services/pointService");
+const { validate, schemas } = require("../middleware/validation");
+const { authenticateToken } = require("../middleware/auth");
+const User = require("../models/User");
+const BlockchainTransaction = require("../models/BlockchainTransaction");
 
 // Get user's PZO balance
-router.get('/pzo-balance/:address', async (req, res) => {
+router.get("/pzo-balance/:address", async (req, res) => {
   try {
     const { address } = req.params;
-    
+
     if (!address || !ethers.utils.isAddress(address)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid wallet address'
+        error: "Invalid wallet address",
       });
     }
 
     const result = await pointService.getPZOBalance(address);
-    
+
     if (result.success) {
       res.json({
         success: true,
@@ -25,38 +28,38 @@ router.get('/pzo-balance/:address', async (req, res) => {
           address,
           balance: result.balance,
           balanceWei: result.balanceWei,
-          symbol: 'PZO'
-        }
+          symbol: "PZO",
+        },
       });
     } else {
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
       });
     }
   } catch (error) {
-    console.error('Error in PZO balance endpoint:', error);
+    console.error("Error in PZO balance endpoint:", error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: "Internal server error",
     });
   }
 });
 
 // Get user's Point balance
-router.get('/point-balance/:address', async (req, res) => {
+router.get("/point-balance/:address", async (req, res) => {
   try {
     const { address } = req.params;
-    
+
     if (!address || !ethers.utils.isAddress(address)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid wallet address'
+        error: "Invalid wallet address",
       });
     }
 
     const result = await pointService.getPointBalance(address);
-    
+
     if (result.success) {
       res.json({
         success: true,
@@ -64,165 +67,508 @@ router.get('/point-balance/:address', async (req, res) => {
           address,
           balance: result.balance,
           balanceWei: result.balanceWei,
-          symbol: 'POINT'
-        }
+          symbol: "POINT",
+        },
       });
     } else {
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
       });
     }
   } catch (error) {
-    console.error('Error in Point balance endpoint:', error);
+    console.error("Error in Point balance endpoint:", error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: "Internal server error",
     });
   }
 });
 
 // Get exchange rate information
-router.get('/exchange-info', async (req, res) => {
+router.get("/exchange-info", async (req, res) => {
   try {
     const result = await pointService.getExchangeInfo();
-    
+
     if (result.success) {
       res.json({
         success: true,
-        data: result.data
+        data: result.data,
       });
     } else {
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
       });
     }
   } catch (error) {
-    console.error('Error in exchange info endpoint:', error);
+    console.error("Error in exchange info endpoint:", error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: "Internal server error",
     });
   }
 });
 
 // Calculate points from PZO amount
-router.post('/calculate-points', validate(schemas.calculatePoints), async (req, res) => {
-  try {
-    const { pzoAmount } = req.body;
-    
-    const result = await pointService.calculatePointsFromPZO(pzoAmount);
-    
-    if (result.success) {
-      res.json({
-        success: true,
-        data: {
-          pzoAmount,
-          points: result.points,
-          pointsWei: result.pointsWei
-        }
-      });
-    } else {
+router.post(
+  "/calculate-points",
+  validate(schemas.calculatePoints),
+  async (req, res) => {
+    try {
+      const { pzoAmount } = req.body;
+
+      const result = await pointService.calculatePointsFromPZO(pzoAmount);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          data: {
+            pzoAmount,
+            points: result.points,
+            pointsWei: result.pointsWei,
+          },
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error("Error in calculate points endpoint:", error);
       res.status(500).json({
         success: false,
-        error: result.error
+        error: "Internal server error",
       });
     }
-  } catch (error) {
-    console.error('Error in calculate points endpoint:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
   }
-});
+);
 
 // Calculate PZO from points amount
-router.post('/calculate-pzo', validate(schemas.calculatePZO), async (req, res) => {
-  try {
-    const { pointAmount } = req.body;
-    
-    const result = await pointService.calculatePZOFromPoints(pointAmount);
-    
-    if (result.success) {
-      res.json({
-        success: true,
-        data: {
-          pointAmount,
-          pzo: result.pzo,
-          pzoWei: result.pzoWei
-        }
-      });
-    } else {
+router.post(
+  "/calculate-pzo",
+  validate(schemas.calculatePZO),
+  async (req, res) => {
+    try {
+      const { pointAmount } = req.body;
+
+      const result = await pointService.calculatePZOFromPoints(pointAmount);
+
+      if (result.success) {
+        res.json({
+          success: true,
+          data: {
+            pointAmount,
+            pzo: result.pzo,
+            pzoWei: result.pzoWei,
+          },
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error("Error in calculate PZO endpoint:", error);
       res.status(500).json({
         success: false,
-        error: result.error
+        error: "Internal server error",
       });
     }
+  }
+);
+
+// Check PZO approval
+router.post(
+  "/check-approval",
+  validate(schemas.checkApproval),
+  async (req, res) => {
+    try {
+      const { userAddress, pzoAmount } = req.body;
+
+      const result = await pointService.checkPZOApproval(
+        userAddress,
+        pzoAmount
+      );
+
+      if (result.success) {
+        res.json({
+          success: true,
+          data: {
+            userAddress,
+            pzoAmount,
+            approved: result.approved,
+            allowance: result.allowance,
+            required: result.required,
+          },
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error("Error in check approval endpoint:", error);
+      res.status(500).json({
+        success: false,
+        error: "Internal server error",
+      });
+    }
+  }
+);
+
+// Process PZO deposit and credit EDU tokens to user account
+router.post("/deposit", authenticateToken, async (req, res) => {
+  try {
+    const { txHash, pzoAmount } = req.body;
+    const userId = req.user.id; // from authenticateToken middleware
+
+    // Validation
+    if (!txHash || !pzoAmount) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: txHash and pzoAmount",
+      });
+    }
+
+    const amount = parseFloat(pzoAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid pzoAmount",
+      });
+    }
+
+    // Check if this transaction has already been processed
+    const existingTx = await BlockchainTransaction.findOne({
+      txHash,
+      type: "deposit_points",
+      status: "confirmed",
+    });
+
+    if (existingTx) {
+      return res.status(400).json({
+        success: false,
+        error: "Transaction already processed",
+      });
+    }
+
+    // Get admin wallet settings to calculate EDU amount
+    const AdminWallet = require("../models/AdminWallet");
+    const adminWallet = await AdminWallet.findOne().sort({ createdAt: -1 });
+
+    let eduAmount = amount; // Default 1:1 if no price configured
+    if (adminWallet && adminWallet.eduPrice) {
+      const price = parseFloat(adminWallet.eduPrice);
+      if (!isNaN(price) && price > 0) {
+        eduAmount = amount / price; // PZO / price = EDU
+      }
+    }
+
+    // Find user and credit EDU tokens
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Credit EDU tokens to user account
+    user.eduTokenBalance = (user.eduTokenBalance || 0) + eduAmount;
+    await user.save();
+
+    // Update or create transaction record
+    await BlockchainTransaction.findOneAndUpdate(
+      { txHash },
+      {
+        $set: {
+          userId: userId,
+          type: "deposit_points",
+          amount: pzoAmount,
+          status: "confirmed",
+          metadata: {
+            eduCredited: eduAmount,
+            exchangeRate: adminWallet?.eduPrice || "default",
+            processedAt: new Date(),
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        pzoDeposited: amount,
+        eduCredited: eduAmount,
+        newBalance: user.eduTokenBalance,
+        txHash,
+      },
+      message: `Đã nạp thành công ${eduAmount.toFixed(2)} EDU vào tài khoản!`,
+    });
   } catch (error) {
-    console.error('Error in calculate PZO endpoint:', error);
+    console.error("Error processing deposit:", error);
     res.status(500).json({
       success: false,
-        error: 'Internal server error'
+      error: "Internal server error while processing deposit",
     });
   }
 });
 
-// Check PZO approval
-router.post('/check-approval', validate(schemas.checkApproval), async (req, res) => {
+// Public endpoint to process deposit without authentication (verify by wallet address)
+router.post("/deposit-public", async (req, res) => {
   try {
-    const { userAddress, pzoAmount } = req.body;
-    
-    const result = await pointService.checkPZOApproval(userAddress, pzoAmount);
-    
-    if (result.success) {
-      res.json({
-        success: true,
-        data: {
-          userAddress,
-          pzoAmount,
-          approved: result.approved,
-          allowance: result.allowance,
-          required: result.required
-        }
-      });
-    } else {
-      res.status(500).json({
+    const { txHash, pzoAmount, walletAddress } = req.body;
+
+    // Validation
+    if (!txHash || !pzoAmount || !walletAddress) {
+      return res.status(400).json({
         success: false,
-        error: result.error
+        error: "Missing required fields: txHash, pzoAmount, and walletAddress",
       });
     }
+
+    const amount = parseFloat(pzoAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid pzoAmount",
+      });
+    }
+
+    // Check if this transaction has already been processed
+    const existingTx = await BlockchainTransaction.findOne({
+      txHash,
+      type: "deposit_points",
+      status: "confirmed",
+    });
+
+    if (existingTx) {
+      return res.status(400).json({
+        success: false,
+        error: "Transaction already processed",
+        data: {
+          processedAt: existingTx.metadata?.processedAt,
+          eduCredited: existingTx.metadata?.eduCredited,
+        },
+      });
+    }
+
+    // Find user by wallet address (check in Wallet collection)
+    const Wallet = require("../../models/Wallet");
+    const wallet = await Wallet.findOne({
+      address: walletAddress.toLowerCase(),
+    });
+
+    if (!wallet || !wallet.user_id) {
+      return res.status(404).json({
+        success: false,
+        error: "Wallet not found or not linked to user",
+      });
+    }
+
+    const user = await User.findById(wallet.user_id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Get admin wallet settings to calculate EDU amount
+    const AdminWallet = require("../models/AdminWallet");
+    const adminWallet = await AdminWallet.findOne().sort({ createdAt: -1 });
+
+    let eduAmount = amount; // Default 1:1 if no price configured
+    if (adminWallet && adminWallet.eduPrice) {
+      const price = parseFloat(adminWallet.eduPrice);
+      if (!isNaN(price) && price > 0) {
+        eduAmount = amount / price; // PZO / price = EDU
+      }
+    }
+
+    // Credit EDU tokens to user account
+    user.eduTokenBalance = (user.eduTokenBalance || 0) + eduAmount;
+    await user.save();
+
+    // Update or create transaction record
+    await BlockchainTransaction.findOneAndUpdate(
+      { txHash },
+      {
+        $set: {
+          userId: user._id,
+          from: walletAddress,
+          type: "deposit_points",
+          amount: pzoAmount,
+          status: "confirmed",
+          metadata: {
+            eduCredited: eduAmount,
+            exchangeRate: adminWallet?.eduPrice || "default",
+            processedAt: new Date(),
+            processedBy: "auto-deposit-public",
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        pzoDeposited: amount,
+        eduCredited: eduAmount,
+        newBalance: user.eduTokenBalance,
+        txHash,
+      },
+      message: `Đã nạp thành công ${eduAmount.toFixed(2)} EDU vào tài khoản!`,
+    });
   } catch (error) {
-    console.error('Error in check approval endpoint:', error);
+    console.error("Error processing public deposit:", error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: "Internal server error while processing deposit: " + error.message,
+    });
+  }
+});
+
+// Admin endpoint to manually process a deposit transaction
+router.post("/admin/process-deposit", async (req, res) => {
+  try {
+    const { txHash, walletAddress, pzoAmount } = req.body;
+
+    // Validation
+    if (!txHash || !walletAddress || !pzoAmount) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: txHash, walletAddress, and pzoAmount",
+      });
+    }
+
+    const amount = parseFloat(pzoAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid pzoAmount",
+      });
+    }
+
+    // Check if this transaction has already been processed
+    const existingTx = await BlockchainTransaction.findOne({
+      txHash,
+      type: "deposit_points",
+      status: "confirmed",
+    });
+
+    if (existingTx) {
+      return res.status(400).json({
+        success: false,
+        error: "Transaction already processed",
+        data: {
+          processedAt: existingTx.metadata?.processedAt,
+          eduCredited: existingTx.metadata?.eduCredited,
+        },
+      });
+    }
+
+    // Find user by wallet address
+    const user = await User.findOne({
+      walletAddress: walletAddress.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found with wallet address: " + walletAddress,
+      });
+    }
+
+    // Get admin wallet settings to calculate EDU amount
+    const AdminWallet = require("../models/AdminWallet");
+    const adminWallet = await AdminWallet.findOne().sort({ createdAt: -1 });
+
+    let eduAmount = amount; // Default 1:1 if no price configured
+    if (adminWallet && adminWallet.eduPrice) {
+      const price = parseFloat(adminWallet.eduPrice);
+      if (!isNaN(price) && price > 0) {
+        eduAmount = amount / price; // PZO / price = EDU
+      }
+    }
+
+    // Credit EDU tokens to user account
+    user.eduTokenBalance = (user.eduTokenBalance || 0) + eduAmount;
+    await user.save();
+
+    // Update or create transaction record
+    await BlockchainTransaction.findOneAndUpdate(
+      { txHash },
+      {
+        $set: {
+          userId: user._id,
+          type: "deposit_points",
+          amount: pzoAmount,
+          status: "confirmed",
+          metadata: {
+            eduCredited: eduAmount,
+            exchangeRate: adminWallet?.eduPrice || "default",
+            processedAt: new Date(),
+            processedBy: "admin-manual",
+          },
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          walletAddress: user.walletAddress,
+        },
+        pzoDeposited: amount,
+        eduCredited: eduAmount,
+        newBalance: user.eduTokenBalance,
+        txHash,
+      },
+      message: `Đã xử lý thành công giao dịch! Cộng ${eduAmount.toFixed(
+        2
+      )} EDU cho user ${user.email}`,
+    });
+  } catch (error) {
+    console.error("Error processing admin deposit:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error: " + error.message,
     });
   }
 });
 
 // Get contract addresses
-router.get('/contract-addresses', async (req, res) => {
+router.get("/contract-addresses", async (req, res) => {
   try {
     const result = await pointService.getContractAddresses();
-    
+
     if (result.success) {
       res.json({
         success: true,
-        data: result.data
+        data: result.data,
       });
     } else {
       res.status(500).json({
         success: false,
-        error: result.error
+        error: result.error,
       });
     }
   } catch (error) {
-    console.error('Error in contract addresses endpoint:', error);
+    console.error("Error in contract addresses endpoint:", error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: "Internal server error",
     });
   }
 });
