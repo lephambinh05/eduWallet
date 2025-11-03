@@ -1,0 +1,704 @@
+{
+  "info": {
+    "name": "Partner API - EduWallet",
+    "description": "Complete Partner API collection with all 21 endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{partnerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "partnerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "courseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "enrollmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "completedCourseId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup",
+      "item": [
+        {
+          "name": "Login Partner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const token = pm.response.json().token;",
+                  "    pm.collectionVariables.set('partnerToken', token);",
+                  "    console.log('Partner token saved:', token.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"partner@test.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const token = pm.response.json().token;",
+                  "    pm.collectionVariables.set('studentToken', token);",
+                  "    console.log('Student token saved:', token.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. API Key Management",
+      "item": [
+        {
+          "name": "Generate API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const apiKey = pm.response.json().data.apiKey;",
+                  "    pm.collectionVariables.set('apiKey', apiKey);",
+                  "    console.log('API Key saved:', apiKey.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/apikey/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "apikey", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Get API Key Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/apikey",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "apikey"]
+            }
+          }
+        },
+        {
+          "name": "Reveal API Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/apikey/reveal",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "apikey", "reveal"]
+            }
+          }
+        },
+        {
+          "name": "Validate API Key",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/apikey/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "apikey", "validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Course Management",
+      "item": [
+        {
+          "name": "Create Course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const courseId = pm.response.json().data.course._id;",
+                  "    pm.collectionVariables.set('courseId', courseId);",
+                  "    console.log('Course ID saved:', courseId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"JavaScript Masterclass 2025\",\n  \"description\": \"Complete JavaScript course from basics to advanced\",\n  \"link\": \"https://example.com/courses/js-masterclass\",\n  \"priceEdu\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Get Partner's Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"JavaScript & TypeScript Masterclass 2025\",\n  \"description\": \"Updated description with TypeScript\",\n  \"priceEdu\": 180\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses/{{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses", "{{courseId}}"]
+            }
+          }
+        },
+        {
+          "name": "Publish Course",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publish\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses/{{courseId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses", "{{courseId}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Get Course (Public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/public/course/{{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "public", "course", "{{courseId}}"]
+            }
+          }
+        },
+        {
+          "name": "Public Course Listing",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/public-courses?page=1&limit=24&q=javascript",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "public-courses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "24"
+                },
+                {
+                  "key": "q",
+                  "value": "javascript"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Enrollment & Purchase",
+      "item": [
+        {
+          "name": "Purchase Course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const enrollmentId = pm.response.json().data.enrollment._id;",
+                  "    pm.collectionVariables.set('enrollmentId', enrollmentId);",
+                  "    console.log('Enrollment ID saved:', enrollmentId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metadata\": {\n    \"source\": \"postman\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses/{{courseId}}/purchase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses", "{{courseId}}", "purchase"]
+            }
+          }
+        },
+        {
+          "name": "Get My Enrollments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/my-enrollments?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "my-enrollments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Enrollment Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const userId = pm.response.json().data.enrollment.user._id;",
+                  "    pm.collectionVariables.set('userId', userId);",
+                  "    console.log('User ID saved:', userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/enrollment/{{enrollmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "enrollment", "{{enrollmentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progressPercent\": 75,\n  \"totalPoints\": 1200,\n  \"timeSpentSeconds\": 5400,\n  \"status\": \"in_progress\",\n  \"metadata\": {\n    \"lastModule\": \"Module 5\",\n    \"quizScore\": 85\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/enrollment/{{enrollmentId}}/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "enrollment", "{{enrollmentId}}", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Get Student Enrollment (Public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/public/enrollment/student/{{userId}}?courseId={{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "public", "enrollment", "student", "{{userId}}"],
+              "query": [
+                {
+                  "key": "courseId",
+                  "value": "{{courseId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Course Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/courses/{{courseId}}/students?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "courses", "{{courseId}}", "students"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Sales & Analytics",
+      "item": [
+        {
+          "name": "Get Sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/sales?page=1&limit=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "sales"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Learners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/learners?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "learners"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Completed Courses",
+      "item": [
+        {
+          "name": "Mark Enrollment Complete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const completedCourseId = pm.response.json().data.completedCourse._id;",
+                  "    pm.collectionVariables.set('completedCourseId', completedCourseId);",
+                  "    console.log('Completed Course ID saved:', completedCourseId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Programming\",\n  \"level\": \"Advanced\",\n  \"credits\": 3,\n  \"grade\": \"A\",\n  \"score\": 1500,\n  \"skills\": [\"JavaScript\", \"TypeScript\", \"React\", \"Node.js\"],\n  \"certificateUrl\": \"https://example.com/certificates/cert123\",\n  \"verificationUrl\": \"https://example.com/verify/cert123\",\n  \"imageUrl\": \"https://example.com/images/js-course.jpg\",\n  \"modulesCompleted\": 10,\n  \"totalModules\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/enrollment/{{enrollmentId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "enrollment", "{{enrollmentId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Get User's Completed Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/completed-courses/{{userId}}?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "completed-courses", "{{userId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Completed Courses (Public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/public/completed-courses/user/{{userId}}?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "public", "completed-courses", "user", "{{userId}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Completed Course",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated course description\",\n  \"grade\": \"A+\",\n  \"score\": 1600,\n  \"skills\": [\"JavaScript\", \"TypeScript\", \"React\", \"Node.js\", \"MongoDB\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/partner/completed-course/{{completedCourseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "partner", "completed-course", "{{completedCourseId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

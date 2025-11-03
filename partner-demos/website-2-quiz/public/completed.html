@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khóa học đã hoàn thành - Quiz Assessment Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .nav-buttons {
+            padding: 20px 30px;
+            display: flex;
+            gap: 10px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .courses-list {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .course-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+        
+        .course-card:hover {
+            border-color: #f5576c;
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.2);
+        }
+        
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .course-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .course-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .badge-completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .course-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .grade-A {
+            color: #28a745;
+        }
+        
+        .grade-B {
+            color: #17a2b8;
+        }
+        
+        .grade-C {
+            color: #ffc107;
+        }
+        
+        .grade-D {
+            color: #dc3545;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+        
+        .no-data-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Khóa học đã hoàn thành</h1>
+            <p>Quiz Assessment Platform</p>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="index.html" class="btn btn-secondary">← Quay lại trang chính</a>
+            <button class="btn btn-primary" onclick="loadCompletedCourses()">🔄 Làm mới</button>
+        </div>
+        
+        <div class="content">
+            <div id="stats" class="stats" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCourses">0</div>
+                    <div class="stat-label">Khóa học hoàn thành</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgScore">0</div>
+                    <div class="stat-label">Điểm trung bình</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTime">0h</div>
+                    <div class="stat-label">Tổng thời gian học</div>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading">
+                ⏳ Đang tải dữ liệu...
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <div id="coursesList" class="courses-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3001';
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('student') || '690302badd7c9774cfd2a6a7';
+        let PARTNER_API_KEY = null;
+        
+        // Load partner configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/config');
+                const config = await response.json();
+                PARTNER_API_KEY = config.apiKey;
+            } catch (err) {
+                console.error('Error loading config:', err);
+            }
+        }
+        
+        async function loadCompletedCourses() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const coursesList = document.getElementById('coursesList');
+            const stats = document.getElementById('stats');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            coursesList.innerHTML = '';
+            stats.style.display = 'none';
+            
+            try {
+                // Load config first if not loaded
+                if (!PARTNER_API_KEY) {
+                    await loadConfig();
+                }
+                
+                // Load completed courses
+                const completedResponse = await fetch(`${BACKEND_URL}/api/partner/public/completed-courses/user/${studentId}`, {
+                    headers: {
+                        'X-API-Key': PARTNER_API_KEY
+                    }
+                });
+                const completedData = await completedResponse.json();
+                
+                // Load enrollments for time data
+                const enrollmentsResponse = await fetch(`${BACKEND_URL}/api/partner/public/enrollment/student/${studentId}`, {
+                    headers: {
+                        'X-API-Key': PARTNER_API_KEY
+                    }
+                });
+                const enrollmentsData = await enrollmentsResponse.json();
+                
+                loading.style.display = 'none';
+                
+                if (!completedData.success || !completedData.data || !completedData.data.courses || completedData.data.courses.length === 0) {
+                    coursesList.innerHTML = `
+                        <div class="no-data">
+                            <div class="no-data-icon">📚</div>
+                            <h3>Chưa có khóa học nào hoàn thành</h3>
+                            <p>Hãy hoàn thành các bài kiểm tra để xem thông tin ở đây!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const courses = completedData.data.courses;
+                const enrollments = enrollmentsData.success && enrollmentsData.data && enrollmentsData.data.enrollments 
+                    ? enrollmentsData.data.enrollments 
+                    : [];
+                
+                // Create a map of enrollments by itemId
+                const enrollmentMap = {};
+                enrollments.forEach(e => {
+                    enrollmentMap[e.itemId] = e;
+                });
+                
+                // Calculate stats
+                let totalScore = 0;
+                let totalTime = 0;
+                let scoreCount = 0;
+                
+                courses.forEach(course => {
+                    if (course.score) {
+                        totalScore += course.score;
+                        scoreCount++;
+                    }
+                    
+                    const enrollment = enrollmentMap[course.itemId];
+                    if (enrollment && enrollment.timeSpentSeconds) {
+                        totalTime += enrollment.timeSpentSeconds;
+                    }
+                });
+                
+                // Display stats
+                document.getElementById('totalCourses').textContent = courses.length;
+                document.getElementById('avgScore').textContent = scoreCount > 0 
+                    ? Math.round(totalScore / scoreCount) + '/100'
+                    : 'N/A';
+                document.getElementById('totalTime').textContent = Math.round(totalTime / 3600) + 'h';
+                stats.style.display = 'grid';
+                
+                // Display courses
+                courses.forEach(course => {
+                    const enrollment = enrollmentMap[course.itemId];
+                    const timeSpent = enrollment ? Math.round(enrollment.timeSpentSeconds / 60) : 0;
+                    const progress = enrollment ? enrollment.progressPercent : 100;
+                    
+                    const courseCard = document.createElement('div');
+                    courseCard.className = 'course-card';
+                    courseCard.innerHTML = `
+                        <div class="course-header">
+                            <div>
+                                <h3 class="course-title">${course.name || 'Khóa học'}</h3>
+                                <p style="color: #6c757d;">${course.description || 'Không có mô tả'}</p>
+                            </div>
+                            <span class="course-badge badge-completed">✓ Hoàn thành</span>
+                        </div>
+                        
+                        <div class="course-details">
+                            <div class="detail-item">
+                                <span class="detail-label">📊 Điểm số</span>
+                                <span class="detail-value grade-${course.grade || 'D'}">
+                                    ${course.score !== null && course.score !== undefined ? course.score + '/100' : 'N/A'}
+                                </span>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">🏆 Xếp loại</span>
+                                <span class="detail-value grade-${course.grade || 'D'}">
+                                    ${course.grade || 'N/A'}
+                                </span>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">⏱️ Thời gian học</span>
+                                <span class="detail-value">${timeSpent} phút</span>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">📈 Tiến độ</span>
+                                <span class="detail-value">${progress}%</span>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">🏫 Nhà cung cấp</span>
+                                <span class="detail-value">${course.issuer || 'N/A'}</span>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <span class="detail-label">📅 Ngày hoàn thành</span>
+                                <span class="detail-value">
+                                    ${new Date(course.issueDate || course.createdAt).toLocaleDateString('vi-VN')}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    coursesList.appendChild(courseCard);
+                });
+                
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = '❌ Lỗi khi tải dữ liệu: ' + err.message;
+                console.error('Error loading completed courses:', err);
+            }
+        }
+        
+        // Load data on page load
+        loadCompletedCourses();
+    </script>
+</body>
+</html>
