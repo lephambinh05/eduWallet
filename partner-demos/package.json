@@ -1,0 +1,24 @@
+{
+  "name": "partner-demos-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for managing partner demo configurations",
+  "main": "sync-partners-to-db.js",
+  "scripts": {
+    "sync": "node sync-partners-to-db.js",
+    "generate": "node generate-env-from-db.js",
+    "verify": "node verify-partner-sync.js",
+    "test": "npm run sync && npm run verify"
+  },
+  "keywords": [
+    "partner",
+    "sync",
+    "database",
+    "configuration"
+  ],
+  "author": "EduWallet Team",
+  "license": "MIT",
+  "dependencies": {
+    "mongoose": "^8.0.0",
+    "dotenv": "^16.0.0"
+  }
+}

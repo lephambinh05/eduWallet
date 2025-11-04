@@ -1,3 +1,4 @@
+/* cspell:disable */
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
@@ -268,18 +269,6 @@ const ErrorMessage = styled.div`
   border-radius: 8px;
   padding: 1rem;
   color: #ff6b6b;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-`;
-
-const SuccessMessage = styled.div`
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
-  border-radius: 8px;
-  padding: 1rem;
-  color: #4caf50;
   display: flex;
   align-items: center;
   gap: 0.5rem;

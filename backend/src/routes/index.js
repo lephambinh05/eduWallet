@@ -5,7 +5,7 @@ const router = express.Router();
 const authRoutes = require("./auth");
 const userRoutes = require("./users");
 const institutionRoutes = require("./institutions");
-const learnPassRoutes = require("./learnpass");
+const learnPassRoutes = require("./learnpass"); // cspell:disable-line
 const certificateRoutes = require("./certificates");
 const marketplaceRoutes = require("./marketplace");
 const blockchainRoutes = require("./blockchain");
@@ -26,7 +26,7 @@ router.get("/health", (req, res) => {
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/institutions", institutionRoutes);
-router.use("/learnpass", learnPassRoutes);
+router.use("/learnpass", learnPassRoutes); // cspell:disable-line
 router.use("/certificates", certificateRoutes);
 router.use("/marketplace", marketplaceRoutes);
 router.use("/blockchain", blockchainRoutes);

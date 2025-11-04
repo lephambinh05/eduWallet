@@ -15,12 +15,10 @@ router.post("/changes", async (req, res) => {
   try {
     const { userId, tokenId, changeType, diff, meta } = req.body;
     if (!userId || !changeType) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "userId and changeType are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "userId and changeType are required",
+      });
     }
 
     const change = new PortfolioChange({
@@ -36,13 +34,11 @@ router.post("/changes", async (req, res) => {
     res.json({ success: true, data: change });
   } catch (error) {
     console.error("Error creating portfolio change:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 });
 
@@ -67,13 +63,11 @@ router.get("/:userId/changes", async (req, res) => {
     res.json({ success: true, data: { changes, page, limit, total } });
   } catch (error) {
     console.error("Error fetching portfolio changes:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 });
 
@@ -108,7 +102,7 @@ router.get("/:userId", async (req, res) => {
 
     // Calculate statistics
     const totalCoursesCount = courses.length + completedCourses.length;
-    
+
     const courseStats = {
       totalCourses: totalCoursesCount,
       completedCourses: completedCourses.length,
@@ -117,15 +111,16 @@ router.get("/:userId", async (req, res) => {
         totalCoursesCount > 0
           ? Math.round(
               (courses.reduce((sum, course) => sum + (course.score || 0), 0) +
-                completedCourses.reduce((sum, cc) => sum + (cc.score || 0), 0)) /
+                completedCourses.reduce(
+                  (sum, cc) => sum + (cc.score || 0),
+                  0
+                )) /
                 totalCoursesCount
             )
           : 0,
       completionRate:
         totalCoursesCount > 0
-          ? Math.round(
-              (completedCourses.length / totalCoursesCount) * 100
-            )
+          ? Math.round((completedCourses.length / totalCoursesCount) * 100)
           : 0,
     };
 

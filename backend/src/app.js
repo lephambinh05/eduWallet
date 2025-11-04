@@ -20,9 +20,9 @@ const logger = require("./utils/logger");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 
 // Initialize blockchain service (optional)
-let blockchainService;
+let blockchainService; // eslint-disable-line no-unused-vars
 try {
-  blockchainService = require("./services/blockchainService");
+  blockchainService = require("./services/blockchainService"); // eslint-disable-line no-unused-vars
   logger.info("Blockchain service initialized");
 } catch (error) {
   logger.warn("Blockchain service initialization failed:", error.message);
@@ -57,7 +57,7 @@ require("./models/LearnPass");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const institutionRoutes = require("./routes/institutions");
-const learnPassRoutes = require("./routes/learnPass");
+const learnPassRoutes = require("./routes/learnpass"); // cspell:disable-line
 const certificateRoutes = require("./routes/certificates");
 const marketplaceRoutes = require("./routes/marketplace");
 const blockchainRoutes = require("./routes/blockchain");
@@ -193,11 +193,11 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/institutions", institutionRoutes);
-app.use("/api/learnpass", learnPassRoutes);
+app.use("/api/learnpass", learnPassRoutes); // cspell:disable-line
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/blockchain", blockchainRoutes);
-app.use("/api/eduwallet", eduWalletDataStoreRoutes);
+app.use("/api/eduwallet", eduWalletDataStoreRoutes); // cspell:disable-line
 app.use("/api/point", pointRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/partner", partnerRoutes);
@@ -252,7 +252,8 @@ io.on("connection", (socket) => {
 
   // Handle LearnPass updates
   socket.on("learnpass-update", (data) => {
-    socket.to(`user-${data.userId}`).emit("learnpass-updated", data);
+    // cspell:disable-line
+    socket.to(`user-${data.userId}`).emit("learnpass-updated", data); // cspell:disable-line
   });
 
   // Handle certificate issuance

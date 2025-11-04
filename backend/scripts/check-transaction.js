@@ -6,7 +6,6 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 // Import models properly
-const User = require("../src/models/User");
 const BlockchainTransaction = require("../src/models/BlockchainTransaction");
 
 async function checkTransaction(txHash) {
@@ -29,8 +28,8 @@ async function checkTransaction(txHash) {
       console.log("");
       console.log("This transaction may not have been saved yet.");
       console.log("Please provide:");
-      console.log("1. Your wallet address (địa chỉ ví đã chuyển PZO)");
-      console.log("2. Số lượng PZO đã chuyển");
+      console.log("1. Your wallet address (wallet address that sent PZO)");
+      console.log("2. Amount of PZO sent");
     } else {
       console.log("✅ Transaction found!");
       console.log("");

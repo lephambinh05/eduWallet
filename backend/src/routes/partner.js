@@ -122,7 +122,7 @@ router.put(
   authorize("partner"),
   asyncHandler(async (req, res) => {
     const course = await PartnerCourse.findById(req.params.id);
-    
+
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -959,7 +959,7 @@ router.patch(
     const { courseId } = req.params;
     const updates = req.body;
 
-    if (!courseId || courseId === 'null' || courseId === 'undefined') {
+    if (!courseId || courseId === "null" || courseId === "undefined") {
       return res.status(400).json({
         success: false,
         message: "Valid courseId is required",
@@ -1030,21 +1030,33 @@ router.post(
   asyncHandler(async (req, res) => {
     try {
       const { courseId } = req.params;
-      const { studentId, progressPercent, timeSpentSeconds, completed, quizScore } = req.body;
+      const {
+        studentId,
+        progressPercent,
+        timeSpentSeconds,
+        completed,
+        quizScore,
+      } = req.body;
 
-      console.log('Progress request:', { courseId, studentId, progressPercent, completed, quizScore });
+      console.log("Progress request:", {
+        courseId,
+        studentId,
+        progressPercent,
+        completed,
+        quizScore,
+      });
 
       if (!studentId) {
         return res.status(400).json({
           success: false,
-          message: "Student ID is required"
+          message: "Student ID is required",
         });
       }
 
       // Find or create enrollment
       let enrollment = await Enrollment.findOne({
         itemId: courseId,
-        user: studentId
+        user: studentId,
       });
 
       if (!enrollment) {
@@ -1053,30 +1065,30 @@ router.post(
         if (!course) {
           return res.status(404).json({
             success: false,
-            message: "Course not found"
+            message: "Course not found",
           });
         }
 
-        console.log('Creating new enrollment for course:', course.title);
+        console.log("Creating new enrollment for course:", course.title);
 
         // For partner courses accessed directly, we'll create a Purchase record first
-        const Purchase = require('../models/Purchase');
-        
+        const Purchase = require("../models/Purchase");
+
         const priceValue = course.priceEdu || 0;
         const sellerId = course.owner; // PartnerCourse uses 'owner' not 'partner'
-        
-        console.log('Creating purchase with seller:', sellerId);
-        
+
+        console.log("Creating purchase with seller:", sellerId);
+
         const purchase = await Purchase.create({
           itemId: courseId,
           buyer: studentId,
           seller: sellerId,
           price: priceValue,
           quantity: 1,
-          total: priceValue
+          total: priceValue,
         });
 
-        console.log('Purchase created:', purchase._id);
+        console.log("Purchase created:", purchase._id);
 
         enrollment = await Enrollment.create({
           user: studentId,
@@ -1087,12 +1099,12 @@ router.post(
           progressPercent: progressPercent || 0,
           timeSpentSeconds: timeSpentSeconds || 0,
           status: completed ? "completed" : "in_progress",
-          lastAccessed: new Date()
+          lastAccessed: new Date(),
         });
 
-        console.log('Enrollment created:', enrollment._id);
+        console.log("Enrollment created:", enrollment._id);
       } else {
-        console.log('Updating existing enrollment:', enrollment._id);
+        console.log("Updating existing enrollment:", enrollment._id);
         // Update existing enrollment
         if (progressPercent !== undefined) {
           enrollment.progressPercent = progressPercent;
@@ -1109,62 +1121,539 @@ router.post(
       }
 
       // If completed and quiz score provided, create CompletedCourse
-      if (completed && !await CompletedCourse.findOne({ enrollmentId: enrollment._id })) {
-        const course = await PartnerCourse.findById(courseId).populate('owner', 'name username email');
+      if (
+        completed &&
+        !(await CompletedCourse.findOne({ enrollmentId: enrollment._id }))
+      ) {
+        const course = await PartnerCourse.findById(courseId).populate(
+          "owner",
+          "name username email"
+        );
 
         if (course) {
-          console.log('Creating completed course record');
-          
+          console.log("Creating completed course record");
+
           // Get issuer name from owner
-          const issuerName = course.owner?.name || course.owner?.username || 'Partner';
-          
+          const issuerName =
+            course.owner?.name || course.owner?.username || "Partner";
+
           // Map course owner ID to correct Partner ID
           // These Partner records were created without ownerUserId, so we use manual mapping
           const ownerToPartnerMap = {
-            '6902fb27137fbb370d9a8642': '690312ac7814790e3335d7ec', // partner.video@demo.com → Web1 Video
-            '6902fb28137fbb370d9a8646': '690312ac7814790e3335d7ef', // partner.quiz@demo.com → Web2 Quiz
-            '6902fb28137fbb370d9a864a': '690312ac7814790e3335d7f2'  // partner.hybrid@demo.com → Web3 Hybrid
+            "6902fb27137fbb370d9a8642": "690312ac7814790e3335d7ec", // partner.video@demo.com → Web1 Video
+            "6902fb28137fbb370d9a8646": "690312ac7814790e3335d7ef", // partner.quiz@demo.com → Web2 Quiz
+            "6902fb28137fbb370d9a864a": "690312ac7814790e3335d7f2", // partner.hybrid@demo.com → Web3 Hybrid
           };
-          
+
           const ownerIdStr = course.owner._id.toString();
           const issuerId = ownerToPartnerMap[ownerIdStr] || course.owner._id;
-          
-          console.log('Owner ID:', ownerIdStr);
-          console.log('Mapped to Partner ID:', issuerId);
-          console.log('Using issuer ID:', issuerId);
-          
+
+          console.log("Owner ID:", ownerIdStr);
+          console.log("Mapped to Partner ID:", issuerId);
+          console.log("Using issuer ID:", issuerId);
+
           const completedCourse = await CompletedCourse.create({
             enrollmentId: enrollment._id,
             userId: studentId,
             name: course.title,
-            description: course.description || '',
+            description: course.description || "",
             issuer: issuerName,
             issuerId: issuerId,
             category: course.category || "General",
             level: course.level || "Beginner",
             credits: course.credits || 0,
-            score: (quizScore !== undefined && quizScore !== null) ? quizScore : 100,
-            grade: (quizScore !== undefined && quizScore !== null && quizScore >= 80) ? "A" : 
-                   (quizScore !== undefined && quizScore !== null && quizScore >= 60) ? "B" : 
-                   (quizScore !== undefined && quizScore !== null && quizScore >= 40) ? "C" : 
-                   (quizScore !== undefined && quizScore !== null) ? "D" : "A",
-            issueDate: new Date()
+            score:
+              quizScore !== undefined && quizScore !== null ? quizScore : 100,
+            grade:
+              quizScore !== undefined && quizScore !== null && quizScore >= 80
+                ? "A"
+                : quizScore !== undefined &&
+                  quizScore !== null &&
+                  quizScore >= 60
+                ? "B"
+                : quizScore !== undefined &&
+                  quizScore !== null &&
+                  quizScore >= 40
+                ? "C"
+                : quizScore !== undefined && quizScore !== null
+                ? "D"
+                : "A",
+            issueDate: new Date(),
           });
-          console.log('Completed course created:', completedCourse._id);
+          console.log("Completed course created:", completedCourse._id);
         }
       }
 
       res.json({
         success: true,
-        message: completed ? "Course completed successfully" : "Progress updated",
-        data: { enrollment }
+        message: completed
+          ? "Course completed successfully"
+          : "Progress updated",
+        data: { enrollment },
       });
     } catch (error) {
-      console.error('Error in progress endpoint:', error);
+      console.error("Error in progress endpoint:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Internal server error",
-        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
+    }
+  })
+);
+
+// =====================================================================
+// ENHANCED INTEGRATION APIs - Phase 1 Implementation
+// Theo khuyến nghị từ API_COMPARISON_ANALYSIS.md
+// =====================================================================
+
+/**
+ * POST /api/partner/public/learning/start
+ * Partner notifies EduWallet when a user starts learning a course
+ * Mục đích: Track khi student bắt đầu học, tạo learning session
+ */
+router.post(
+  "/public/learning/start",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    const { userId, courseId, startedAt } = req.body;
+
+    if (!userId || !courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: userId, courseId",
+      });
+    }
+
+    // Find enrollment by user and itemId (courseId in PartnerCourse)
+    let enrollment = await Enrollment.findOne({
+      user: userId,
+      itemId: courseId,
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found. User must purchase the course first.",
+      });
+    }
+
+    // Update enrollment with start tracking
+    if (!enrollment.lastAccessed) {
+      enrollment.lastAccessed = startedAt || new Date();
+    }
+
+    // Initialize metadata for session tracking
+    if (!enrollment.metadata) {
+      enrollment.metadata = {};
+    }
+    enrollment.metadata.sessionStarted = startedAt || new Date();
+    enrollment.metadata.sessionCount =
+      (enrollment.metadata.sessionCount || 0) + 1;
+
+    await enrollment.save();
+
+    res.json({
+      success: true,
+      message: "Learning session started",
+      data: {
+        enrollmentId: enrollment._id,
+        sessionId: enrollment._id.toString(),
+        startedAt: enrollment.metadata.sessionStarted,
+        progress: enrollment.progressPercent || 0,
+        status: enrollment.status,
+      },
+    });
+  })
+);
+
+/**
+ * POST /api/partner/public/learning/progress
+ * Real-time progress sync from partner to EduWallet (optional for partners)
+ * Mục đích: Partner có thể gửi progress updates realtime thay vì chỉ khi hoàn thành
+ */
+router.post(
+  "/public/learning/progress",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    const { userId, courseId, progress, currentLesson, timeSpent } = req.body;
+
+    if (!userId || !courseId || progress === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: userId, courseId, progress",
+      });
+    }
+
+    // Validate progress range
+    if (progress < 0 || progress > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Progress must be between 0 and 100",
+      });
+    }
+
+    // Find enrollment
+    const enrollment = await Enrollment.findOne({
+      user: userId,
+      itemId: courseId,
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found. Please start learning session first.",
+      });
+    }
+
+    // Update progress
+    enrollment.progressPercent = progress;
+    enrollment.lastAccessed = new Date();
+
+    if (timeSpent !== undefined) {
+      enrollment.timeSpentSeconds =
+        (enrollment.timeSpentSeconds || 0) + timeSpent;
+    }
+
+    // Update metadata
+    if (!enrollment.metadata) {
+      enrollment.metadata = {};
+    }
+    enrollment.metadata.lastProgressUpdate = new Date();
+    enrollment.metadata.currentLesson = currentLesson;
+
+    // Track progress history
+    if (!enrollment.metadata.progressHistory) {
+      enrollment.metadata.progressHistory = [];
+    }
+    enrollment.metadata.progressHistory.push({
+      progress,
+      timestamp: new Date(),
+      lesson: currentLesson,
+    });
+
+    // Auto-update status if completed
+    if (progress >= 100 && enrollment.status !== "completed") {
+      enrollment.status = "completed";
+      enrollment.completedAt = new Date();
+    }
+
+    await enrollment.save();
+
+    res.json({
+      success: true,
+      message: "Progress updated successfully",
+      data: {
+        enrollmentId: enrollment._id,
+        progress: enrollment.progressPercent,
+        currentLesson: enrollment.metadata.currentLesson,
+        timeSpent: enrollment.timeSpentSeconds,
+        lastAccessed: enrollment.lastAccessed,
+        status: enrollment.status,
+      },
+    });
+  })
+);
+
+/**
+ * GET /api/partner/public/course-structure/:courseId
+ * Get detailed course structure from EduWallet (if available)
+ * Mục đích: Partner hoặc frontend có thể query course structure từ EduWallet
+ */
+router.get(
+  "/public/course-structure/:courseId",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    const { courseId } = req.params;
+
+    const course = await PartnerCourse.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Extract structure from course metadata
+    const structure = {
+      courseId: course._id,
+      title: course.title,
+      description: course.description,
+      category: course.category,
+      level: course.level,
+      duration: course.duration,
+      lessons: course.metadata?.lessons || [],
+      modules: course.metadata?.modules || [],
+      quizzes: course.metadata?.quizzes || [],
+      totalLessons: course.metadata?.totalLessons || 0,
+      estimatedTime: course.metadata?.estimatedTime || null,
+    };
+
+    res.json({
+      success: true,
+      message: "Course structure retrieved successfully",
+      data: structure,
+    });
+  })
+);
+
+/**
+ * GET /api/partner/public/learning-session/:userId/:courseId
+ * Get current learning session info for a user and course
+ * Mục đích: Partner có thể query xem user đã học đến đâu
+ */
+router.get(
+  "/public/learning-session/:userId/:courseId",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    const { userId, courseId } = req.params;
+
+    const enrollment = await Enrollment.findOne({
+      user: userId,
+      itemId: courseId,
+    }).populate("itemId", "title description");
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "No active learning session found",
+      });
+    }
+
+    // Get course info
+    const course = await PartnerCourse.findById(courseId);
+
+    res.json({
+      success: true,
+      message: "Learning session retrieved successfully",
+      data: {
+        sessionId: enrollment._id.toString(),
+        enrollmentId: enrollment._id,
+        courseId: courseId,
+        courseTitle:
+          enrollment.courseTitle || (course ? course.title : "Unknown"),
+        startedAt: enrollment.createdAt,
+        lastAccessed: enrollment.lastAccessed,
+        progress: enrollment.progressPercent || 0,
+        currentLesson: enrollment.metadata?.currentLesson || null,
+        timeSpent: enrollment.timeSpentSeconds || 0,
+        status: enrollment.status,
+        completedAt: enrollment.completedAt || null,
+        metadata: enrollment.metadata || {},
+        sessionCount: enrollment.metadata?.sessionCount || 0,
+      },
+    });
+  })
+);
+
+// =====================================================================
+// FETCH COURSES FROM PARTNER DEMO SYSTEM
+// =====================================================================
+
+/**
+ * GET /api/partner/fetch-demo-courses
+ * EduWallet fetches course list from partner's demo website
+ * Mục đích: EduWallet có thể lấy danh sách khóa học từ partner demo system
+ */
+router.get(
+  "/fetch-demo-courses",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    try {
+      const partner = req.partner;
+
+      // Get partner's demo URL
+      const partnerDemoUrl = partner.demoUrl || partner.domain;
+
+      if (!partnerDemoUrl) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Partner demo URL not configured. Please set demoUrl or domain in partner settings.",
+        });
+      }
+
+      // Fetch courses from partner demo
+      const axios = require("axios");
+      const response = await axios.get(`${partnerDemoUrl}/api/courses`, {
+        timeout: 10000,
+        headers: {
+          "User-Agent": "EduWallet-System/1.0",
+          "X-Requested-By": "EduWallet",
+        },
+      });
+
+      if (!response.data || !response.data.success) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to fetch courses from partner demo",
+        });
+      }
+
+      const demoCourses = response.data.courses || [];
+
+      // Transform to EduWallet format
+      const transformedCourses = demoCourses.map((course) => ({
+        externalCourseId: course.id,
+        title: course.name,
+        description: course.description,
+        category: course.category || "General",
+        level: course.level || "Beginner",
+        credits: course.credits || 0,
+        skills: course.skills || [],
+        metadata: {
+          videoId: course.videoId,
+          videoDuration: course.videoDuration,
+          quizzes: course.quizzes,
+          lessons: course.lessons,
+          originalData: course,
+        },
+        source: "partner-demo",
+        partnerId: partner._id,
+        partnerName: partner.name,
+      }));
+
+      res.json({
+        success: true,
+        message: `Fetched ${transformedCourses.length} courses from partner demo`,
+        data: {
+          partner: {
+            id: partner._id,
+            name: partner.name,
+            domain: partnerDemoUrl,
+          },
+          courses: transformedCourses,
+          totalCourses: transformedCourses.length,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching partner demo courses:", error);
+
+      if (error.code === "ECONNREFUSED") {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Cannot connect to partner demo website. Please ensure the demo is running.",
+          error: "Connection refused",
+        });
+      }
+
+      if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
+        return res.status(504).json({
+          success: false,
+          message: "Request to partner demo timed out",
+          error: "Connection timeout",
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to fetch partner demo courses",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/partner/fetch-demo-course/:courseId
+ * Fetch specific course details from partner demo system
+ * Mục đích: Lấy chi tiết 1 khóa học cụ thể từ partner demo
+ */
+router.get(
+  "/fetch-demo-course/:courseId",
+  authenticatePartnerApiKey,
+  asyncHandler(async (req, res) => {
+    try {
+      const partner = req.partner;
+      const { courseId } = req.params;
+
+      const partnerDemoUrl = partner.demoUrl || partner.domain;
+
+      if (!partnerDemoUrl) {
+        return res.status(400).json({
+          success: false,
+          message: "Partner demo URL not configured",
+        });
+      }
+
+      // Fetch course from partner demo
+      const axios = require("axios");
+      const response = await axios.get(
+        `${partnerDemoUrl}/api/courses/${courseId}`,
+        {
+          timeout: 10000,
+          headers: {
+            "User-Agent": "EduWallet-System/1.0",
+            "X-Requested-By": "EduWallet",
+          },
+        }
+      );
+
+      if (!response.data || !response.data.success) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found in partner demo system",
+        });
+      }
+
+      const course = response.data.course;
+
+      // Transform to EduWallet format
+      const transformedCourse = {
+        externalCourseId: course.id,
+        title: course.name,
+        description: course.description,
+        category: course.category || "General",
+        level: course.level || "Beginner",
+        credits: course.credits || 0,
+        skills: course.skills || [],
+        lessons: course.lessons || [],
+        quizzes: course.quizzes || [],
+        metadata: {
+          videoId: course.videoId,
+          videoDuration: course.videoDuration,
+          originalData: course,
+        },
+        source: "partner-demo",
+        partnerId: partner._id,
+        partnerName: partner.name,
+      };
+
+      res.json({
+        success: true,
+        message: "Course fetched successfully",
+        data: {
+          partner: {
+            id: partner._id,
+            name: partner.name,
+            domain: partnerDemoUrl,
+          },
+          course: transformedCourse,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching partner demo course:", error);
+
+      if (error.response && error.response.status === 404) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found in partner demo system",
+        });
+      }
+
+      if (error.code === "ECONNREFUSED") {
+        return res.status(503).json({
+          success: false,
+          message: "Cannot connect to partner demo website",
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to fetch course from partner demo",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
   })

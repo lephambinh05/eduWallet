@@ -3,6 +3,7 @@
 ## ⚠️ Lỗi thường gặp
 
 Khi deploy lên aaPanel nhưng vẫn thấy CSP error với `localhost:3001`:
+
 ```
 Connecting to 'http://localhost:3001/...' violates CSP
 ```
@@ -18,6 +19,7 @@ npm run env:prod
 ```
 
 Verify:
+
 ```bash
 cat .env | grep NODE_ENV
 # Phải là: NODE_ENV=production
@@ -33,11 +35,13 @@ npm run build
 ```
 
 Script sẽ tự động:
+
 - ✅ `prebuild` → Generate .htaccess từ .env production
 - ✅ `build` → Build React app
 - ✅ `postbuild` → Generate .htaccess lại để đảm bảo
 
 Kết quả:
+
 ```
 ✅ Generated: F:\eduWallet\build\.htaccess
 ✅ Generated: F:\eduWallet\deployment\eduwallet-frontend\.htaccess
@@ -53,6 +57,7 @@ cat build/.htaccess | grep "Content-Security-Policy"
 ```
 
 Phải thấy:
+
 ```apache
 connect-src 'self' https://api-eduwallet.mojistudio.vn wss://api-eduwallet.mojistudio.vn;
 ```
@@ -101,6 +106,7 @@ rsync -avz --delete build/ user@server:/www/wwwroot/eduwallet.mojistudio.vn/
 4. **Check Network** → Headers → Response Headers → Content-Security-Policy
 
 Should see:
+
 ```
 connect-src 'self' https://api-eduwallet.mojistudio.vn wss://api-eduwallet.mojistudio.vn;
 ```
@@ -119,6 +125,7 @@ Default Document: index.html
 aaPanel tự động đọc `.htaccess` từ folder build.
 
 Hoặc thêm vào Nginx config:
+
 ```nginx
 location / {
     try_files $uri $uri/ /index.html;
@@ -141,6 +148,7 @@ Process Manager: PM2
 ```
 
 #### backend/.env trên server:
+
 ```env
 PORT=5000
 NODE_ENV=production
@@ -202,6 +210,7 @@ echo "🌐 Visit: https://eduwallet.mojistudio.vn"
 ```
 
 Sử dụng:
+
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
@@ -212,12 +221,14 @@ chmod +x deploy.sh
 ### Vẫn thấy localhost trong CSP?
 
 1. **Kiểm tra .env:**
+
    ```bash
    cat .env | grep NODE_ENV
    # Phải là production, không phải development
    ```
 
 2. **Build lại:**
+
    ```bash
    rm -rf build
    npm run env:prod
@@ -231,15 +242,19 @@ chmod +x deploy.sh
 ### API calls không hoạt động?
 
 1. **Check CORS trên backend:**
+
    ```javascript
    // backend/app.js
-   app.use(cors({
-     origin: 'https://eduwallet.mojistudio.vn',
-     credentials: true
-   }));
+   app.use(
+     cors({
+       origin: "https://eduwallet.mojistudio.vn",
+       credentials: true,
+     })
+   );
    ```
 
 2. **Check backend đang chạy:**
+
    ```bash
    curl https://api-eduwallet.mojistudio.vn/health
    ```
@@ -249,14 +264,16 @@ chmod +x deploy.sh
 ### .htaccess không hoạt động?
 
 1. **aaPanel → Website → Config:**
+
    - Enable `.htaccess` support
    - Module `mod_rewrite` phải enabled
 
 2. **Hoặc dùng Nginx config:**
+
    ```nginx
    location / {
        try_files $uri $uri/ /index.html;
-       
+
        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://api-eduwallet.mojistudio.vn wss://api-eduwallet.mojistudio.vn;";
    }
    ```
@@ -283,6 +300,7 @@ Browser DevTools → Console → Filter by "CSP"
 ## 🎉 Kết quả mong đợi
 
 Sau khi deploy đúng:
+
 - ✅ Website accessible tại https://eduwallet.mojistudio.vn
 - ✅ Không còn CSP errors trong console
 - ✅ API calls hoạt động với https://api-eduwallet.mojistudio.vn

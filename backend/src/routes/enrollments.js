@@ -1,6 +1,7 @@
+/* cspell:disable */
 const express = require("express");
 const router = express.Router();
-const { asyncHandler, AppError } = require("../middleware/errorHandler");
+const { asyncHandler } = require("../middleware/errorHandler");
 const { authenticateToken } = require("../middleware/auth");
 const Enrollment = require("../models/Enrollment");
 const mongoose = require("mongoose");

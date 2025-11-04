@@ -380,8 +380,8 @@ const PortfolioMintingModal = ({ isOpen, onClose, onSuccess }) => {
             <PreviewGrid>
               <PreviewItem>
                 <PreviewNumber>
-                  {(portfolioData.courses?.length || 0) + 
-                   (portfolioData.completedCourses?.length || 0)}
+                  {(portfolioData.courses?.length || 0) +
+                    (portfolioData.completedCourses?.length || 0)}
                 </PreviewNumber>
                 <PreviewLabel>Courses</PreviewLabel>
               </PreviewItem>

@@ -1,3 +1,4 @@
+/* cspell:disable */
 import React, { useEffect, useState } from "react";
 import api from "../../config/api";
 import toast from "react-hot-toast";
@@ -20,7 +21,9 @@ export default function PartnerAPIDocs() {
   // modal state for password when rotating key
   const [showRotateModal, setShowRotateModal] = useState(false);
   const [rotatePassword, setRotatePassword] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const [modalLoading, setModalLoading] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [modalError, setModalError] = useState(null);
 
   useEffect(() => {
@@ -39,9 +42,17 @@ export default function PartnerAPIDocs() {
     setLoading(true);
     try {
       const res = await api.get(`/api/partner/apikey`);
-      const payload = (res && res.data && res.data.data) ? res.data.data : (res && res.data) ? res.data : null;
+      const payload =
+        res && res.data && res.data.data
+          ? res.data.data
+          : res && res.data
+          ? res.data
+          : null;
       setMetadata(payload || null);
-      const pid = (payload && payload.partnerId) || (res && res.data && res.data.partnerId) || null;
+      const pid =
+        (payload && payload.partnerId) ||
+        (res && res.data && res.data.partnerId) ||
+        null;
       if (pid) setPartnerId(pid);
 
       const saved = sessionStorage.getItem(storageKey(pid));
@@ -63,7 +74,10 @@ export default function PartnerAPIDocs() {
     if (!partnerId) {
       sessionStorage.setItem(storageKey(), JSON.stringify({ apiKey: key }));
     } else {
-      sessionStorage.setItem(storageKey(partnerId), JSON.stringify({ apiKey: key }));
+      sessionStorage.setItem(
+        storageKey(partnerId),
+        JSON.stringify({ apiKey: key })
+      );
     }
   }
 
@@ -72,7 +86,12 @@ export default function PartnerAPIDocs() {
     try {
       const body = password ? { password } : {};
       const res = await api.post(`/api/partner/apikey/generate`, body);
-      const payload = (res && res.data && res.data.data) ? res.data.data : (res && res.data) ? res.data : null;
+      const payload =
+        res && res.data && res.data.data
+          ? res.data.data
+          : res && res.data
+          ? res.data
+          : null;
       if (payload && payload.apiKey) {
         setApiKey(payload.apiKey);
         persistKeyToSession(payload.apiKey);
@@ -94,7 +113,12 @@ export default function PartnerAPIDocs() {
     setLoading(true);
     try {
       const res = await api.post(`/api/partner/apikey/reveal`);
-      const payload = (res && res.data && res.data.data) ? res.data.data : (res && res.data) ? res.data : null;
+      const payload =
+        res && res.data && res.data.data
+          ? res.data.data
+          : res && res.data
+          ? res.data
+          : null;
       if (payload && payload.apiKey) {
         setApiKey(payload.apiKey);
         persistKeyToSession(payload.apiKey);
@@ -135,7 +159,9 @@ export default function PartnerAPIDocs() {
         keyToDownload = await revealKey();
         if (!keyToDownload) return;
       }
-      const blob = new Blob([keyToDownload], { type: "text/plain;charset=utf-8" });
+      const blob = new Blob([keyToDownload], {
+        type: "text/plain;charset=utf-8",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -162,25 +188,6 @@ export default function PartnerAPIDocs() {
     setModalError(null);
   }
 
-  async function handleRotateSubmit(e) {
-    e.preventDefault();
-    setModalLoading(true);
-    setModalError(null);
-    try {
-      if (!rotatePassword) {
-        setModalError("Vui lòng nhập mật khẩu tài khoản.");
-        setModalLoading(false);
-        return;
-      }
-      await generateKey(rotatePassword);
-      setShowRotateModal(false);
-    } catch (err) {
-      setModalError(err?.response?.data?.message || "Đổi khóa thất bại.");
-    } finally {
-      setModalLoading(false);
-    }
-  }
-
   function copyText(text) {
     try {
       navigator.clipboard.writeText(text);
@@ -190,10 +197,81 @@ export default function PartnerAPIDocs() {
     }
   }
 
+  async function confirmRotate() {
+    if (!rotatePassword) {
+      toast.error("Vui lòng nhập mật khẩu.");
+      return;
+    }
+    await generateKey(rotatePassword);
+    closeRotateModal();
+  }
+
+  // Inline styles
+  const buttonStyle = {
+    padding: "8px 16px",
+    borderRadius: 6,
+    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 14,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+  };
+
+  const primaryButtonStyle = {
+    ...buttonStyle,
+    background: "#1976d2",
+    border: "1px solid #1976d2",
+  };
+
+  const dangerButtonStyle = {
+    ...buttonStyle,
+    background: "#d32f2f",
+    border: "1px solid #d32f2f",
+  };
+
+  const inputStyle = {
+    padding: "8px 12px",
+    borderRadius: 6,
+    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(0,0,0,0.3)",
+    color: "#fff",
+    fontSize: 14,
+    width: "100%",
+    marginTop: 8,
+  };
+
+  const modalOverlayStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+  };
+
+  const modalStyle = {
+    background: "#1e1e1e",
+    padding: 24,
+    borderRadius: 8,
+    maxWidth: 400,
+    width: "90%",
+    color: "#fff",
+  };
+
   return (
     <div style={{ color: "#fff", padding: 20 }}>
       <h2 style={{ color: "#fff" }}>Partner API Docs</h2>
-      <p style={{ color: "#ddd" }}>Tại đây bạn có thể tạo, sao chép, tải xuống, và quay vòng API key của partner.</p>
+      <p style={{ color: "#ddd" }}>
+        Tại đây bạn có thể tạo, sao chép, tải xuống, và quay vòng API key của
+        partner.
+      </p>
 
       <section style={{ marginTop: 12 }}>
         <h3>Khóa API</h3>
@@ -201,34 +279,69 @@ export default function PartnerAPIDocs() {
         {loading && <div>Đang tải...</div>}
 
         {!loading && (
-          <div style={{ border: "1px solid rgba(255,255,255,0.06)", padding: 16, borderRadius: 8 }}>
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,0.06)",
+              padding: 16,
+              borderRadius: 8,
+            }}
+          >
             {metadata && metadata.exists ? (
               <div>
                 <div style={{ marginBottom: 8 }}>
-                  Khóa hiện tại: <strong style={{ fontFamily: "monospace" }}>{apiKey ? apiKey : maskKey(metadata.maskedKey || "")}</strong>
+                  Khóa hiện tại:{" "}
+                  <strong style={{ fontFamily: "monospace" }}>
+                    {apiKey ? apiKey : maskKey(metadata.maskedKey || "")}
+                  </strong>
                 </div>
 
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={copyKey} style={buttonStyle} title="Sao chép">
+                  <button
+                    onClick={copyKey}
+                    style={buttonStyle}
+                    title="Sao chép"
+                  >
                     <FiCopy style={{ marginRight: 6 }} /> Sao chép
                   </button>
-                  <button onClick={downloadKey} style={buttonStyle} title="Tải xuống">
+                  <button
+                    onClick={downloadKey}
+                    style={buttonStyle}
+                    title="Tải xuống"
+                  >
                     <FiDownload style={{ marginRight: 6 }} /> Tải xuống
                   </button>
-                  <button onClick={openRotateModal} style={dangerButtonStyle} title="Đổi khóa API">
+                  <button
+                    onClick={openRotateModal}
+                    style={dangerButtonStyle}
+                    title="Đổi khóa API"
+                  >
                     Đổi khóa API
                   </button>
                 </div>
 
                 <div style={{ marginTop: 12, color: "#ccc" }}>
-                  Tạo lúc: {metadata.createdAt ? new Date(metadata.createdAt).toLocaleString() : "—"} • Lần quay vòng cuối: {metadata.rotatedAt ? new Date(metadata.rotatedAt).toLocaleString() : "—"}
+                  Tạo lúc:{" "}
+                  {metadata.createdAt
+                    ? new Date(metadata.createdAt).toLocaleString()
+                    : "—"}{" "}
+                  • Lần quay vòng cuối:{" "}
+                  {metadata.rotatedAt
+                    ? new Date(metadata.rotatedAt).toLocaleString()
+                    : "—"}
                 </div>
               </div>
             ) : (
               <div>
-                <div style={{ marginBottom: 12 }}>Bạn chưa có khóa API. Nhấn tạo để tạo khóa mới.</div>
+                <div style={{ marginBottom: 12 }}>
+                  Bạn chưa có khóa API. Nhấn tạo để tạo khóa mới.
+                </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => generateKey()} style={primaryButtonStyle}>Tạo khóa API</button>
+                  <button
+                    onClick={() => generateKey()}
+                    style={primaryButtonStyle}
+                  >
+                    Tạo khóa API
+                  </button>
                 </div>
               </div>
             )}
@@ -238,36 +351,137 @@ export default function PartnerAPIDocs() {
 
       <section style={{ marginTop: 24 }}>
         <h3>Ví dụ & Links</h3>
-        <div style={{ border: '1px solid rgba(255,255,255,0.06)', padding: 12, borderRadius: 8 }}>
-          <small style={{ color: '#ddd' }}>Danh sách endpoint mẫu và ví dụ curl để thử nhanh.</small>
-          <ul style={{ marginTop: 10, color: '#fff' }}>
+        <div
+          style={{
+            border: "1px solid rgba(255,255,255,0.06)",
+            padding: 12,
+            borderRadius: 8,
+          }}
+        >
+          <small style={{ color: "#ddd" }}>
+            Danh sách endpoint mẫu và ví dụ curl để thử nhanh.
+          </small>
+          <ul style={{ marginTop: 10, color: "#fff" }}>
             <li style={{ marginBottom: 8 }}>
               <strong>GET</strong> Metadata:
-              <a href={`${BASE_URL}/api/partner/apikey`} target="_blank" rel="noreferrer" style={{ color: '#9ad3ff', marginLeft: 8 }}>{BASE_URL || ''}/api/partner/apikey</a>
-              <button onClick={() => copyText(`${BASE_URL || ''}/api/partner/apikey`)} style={{ ...buttonStyle, marginLeft: 8 }}><FiCopy /> Copy</button>
+              <a
+                href={`${BASE_URL}/api/partner/apikey`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#9ad3ff", marginLeft: 8 }}
+              >
+                {BASE_URL || ""}/api/partner/apikey
+              </a>
+              <button
+                onClick={() => copyText(`${BASE_URL || ""}/api/partner/apikey`)}
+                style={{ ...buttonStyle, marginLeft: 8 }}
+              >
+                <FiCopy /> Copy
+              </button>
             </li>
             <li style={{ marginBottom: 8 }}>
               <strong>POST</strong> Tạo / Quay vòng:
-              <a href={`${BASE_URL}/api/partner/apikey/generate`} target="_blank" rel="noreferrer" style={{ color: '#9ad3ff', marginLeft: 8 }}>{BASE_URL || ''}/api/partner/apikey/generate</a>
-              <button onClick={() => copyText(`${BASE_URL || ''}/api/partner/apikey/generate`)} style={{ ...buttonStyle, marginLeft: 8 }}><FiCopy /> Copy</button>
+              <a
+                href={`${BASE_URL}/api/partner/apikey/generate`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#9ad3ff", marginLeft: 8 }}
+              >
+                {BASE_URL || ""}/api/partner/apikey/generate
+              </a>
+              <button
+                onClick={() =>
+                  copyText(`${BASE_URL || ""}/api/partner/apikey/generate`)
+                }
+                style={{ ...buttonStyle, marginLeft: 8 }}
+              >
+                <FiCopy /> Copy
+              </button>
             </li>
             <li style={{ marginBottom: 8 }}>
               <strong>POST</strong> Reveal:
-              <a href={`${BASE_URL}/api/partner/apikey/reveal`} target="_blank" rel="noreferrer" style={{ color: '#9ad3ff', marginLeft: 8 }}>{BASE_URL || ''}/api/partner/apikey/reveal</a>
-              <button onClick={() => copyText(`${BASE_URL || ''}/api/partner/apikey/reveal`)} style={{ ...buttonStyle, marginLeft: 8 }}><FiCopy /> Copy</button>
+              <a
+                href={`${BASE_URL}/api/partner/apikey/reveal`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#9ad3ff", marginLeft: 8 }}
+              >
+                {BASE_URL || ""}/api/partner/apikey/reveal
+              </a>
+              <button
+                onClick={() =>
+                  copyText(`${BASE_URL || ""}/api/partner/apikey/reveal`)
+                }
+                style={{ ...buttonStyle, marginLeft: 8 }}
+              >
+                <FiCopy /> Copy
+              </button>
             </li>
             <li style={{ marginBottom: 8 }}>
               <strong>GET</strong> Public course:
-              <code style={{ marginLeft: 8 }}>{BASE_URL || ''}/api/partner/public/course/:id</code>
-              <button onClick={() => copyText(`${BASE_URL || ''}/api/partner/public/course/:id`)} style={{ ...buttonStyle, marginLeft: 8 }}><FiCopy /> Copy</button>
+              <code style={{ marginLeft: 8 }}>
+                {BASE_URL || ""}/api/partner/public/course/:id
+              </code>
+              <button
+                onClick={() =>
+                  copyText(`${BASE_URL || ""}/api/partner/public/course/:id`)
+                }
+                style={{ ...buttonStyle, marginLeft: 8 }}
+              >
+                <FiCopy /> Copy
+              </button>
             </li>
           </ul>
 
           <div style={{ marginTop: 10 }}>
-            <small style={{ color: '#ddd' }}>Ví dụ curl nhanh:</small>
-            <pre style={{ background: '#0b2545', padding: 12, borderRadius: 6, color: '#fff', overflowX: 'auto' }}>
-{`# GET metadata (requires Authorization header)
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" ${BASE_URL || ''}/api/partner/apikey
+            <small style={{ color: "#ddd" }}>Ví dụ curl nhanh:</small>
+            <pre
+              style={{
+                background: "#0b2545",
+                padding: 12,
+                borderRadius: 6,
+                color: "#fff",
+                overflowX: "auto",
+              }}
+            >
+              {`# GET metadata (requires Authorization header)
+curl -H "Authorization: Bearer <ACCESS_TOKEN>" ${
+                BASE_URL || ""
+              }/api/partner/apikey
 
 # Rotate (with password):
-curl -X POST -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Content-Type: application/json" -d '{
+curl -X POST -H "Authorization: Bearer <ACCESS_TOKEN>" \\
+  -H "Content-Type: application/json" \\
+  -d '{"password": "your_password"}' \\
+  ${BASE_URL || ""}/api/partner/apikey/generate`}
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      {showRotateModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalStyle}>
+            <h3>Xác nhận đổi khóa API</h3>
+            <p>Vui lòng nhập mật khẩu tài khoản để xác nhận:</p>
+            <input
+              type="password"
+              value={rotatePassword}
+              onChange={(e) => setRotatePassword(e.target.value)}
+              placeholder="Mật khẩu"
+              style={inputStyle}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={confirmRotate} style={primaryButtonStyle}>
+                Xác nhận
+              </button>
+              <button onClick={closeRotateModal} style={buttonStyle}>
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

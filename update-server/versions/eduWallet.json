@@ -1,0 +1,23 @@
+{
+  "name": "eduWallet",
+  "version": "2.0.0",
+  "description": "Auto-update system integrated",
+  "downloadUrl": "/downloads/eduWallet-v2.0.0.zip",
+  "fileSize": 314572800,
+  "checksum": "sha256:abc123def456...",
+  "releaseDate": "2025-11-04T20:00:00Z",
+  "changelog": [
+    "Added auto-update system",
+    "PHP to Node.js conversion",
+    "Fixed security vulnerabilities",
+    "Improved performance",
+    "Updated dependencies"
+  ],
+  "requirements": {
+    "node": ">=18.0.0",
+    "mongodb": ">=7.0.0",
+    "apache": ">=2.4.0"
+  },
+  "breaking": false,
+  "critical": false
+}
