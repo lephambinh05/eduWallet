@@ -323,9 +323,9 @@ const PortfolioHistory = () => {
       if (user && user.email) {
         try {
           const base =
-            process.env.REACT_APP_API_BASE_URL ||
             process.env.REACT_APP_BACKEND_URL ||
-            "http://127.0.0.1:3001";
+            process.env.REACT_APP_API_BASE_URL ||
+            "http://localhost:5000";
           const res = await fetch(
             `${base}/api/portfolio/email/${encodeURIComponent(user.email)}`
           );
@@ -408,9 +408,9 @@ const PortfolioHistory = () => {
         const token = localStorage.getItem("accessToken");
         if (token) {
           const base =
-            process.env.REACT_APP_API_BASE_URL ||
             process.env.REACT_APP_BACKEND_URL ||
-            "http://127.0.0.1:3001";
+            process.env.REACT_APP_API_BASE_URL ||
+            "http://localhost:5000";
           const txRes = await fetch(`${base}/api/blockchain/transactions/me`, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -524,9 +524,9 @@ const PortfolioHistory = () => {
       try {
         const token = localStorage.getItem("accessToken");
         const base =
-          process.env.REACT_APP_API_BASE_URL ||
           process.env.REACT_APP_BACKEND_URL ||
-          "http://127.0.0.1:3001";
+          process.env.REACT_APP_API_BASE_URL ||
+          "http://localhost:5000";
 
         let persistedTokenIds = null;
         if (token) {

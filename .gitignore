@@ -2,3 +2,20 @@ node_modules/
 .cache/
 dist/
 build/
+
+# Environment files
+
+
+# Keep template files
+!.env.example
+!.env.development
+!.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

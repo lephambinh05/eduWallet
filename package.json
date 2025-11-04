@@ -31,7 +31,12 @@
   "scripts": {
     "start": "node scripts/start-with-kill.js",
     "start:direct": "react-scripts start",
+    "prebuild": "node scripts/generate-htaccess.js",
     "build": "react-scripts build",
+    "postbuild": "node scripts/generate-htaccess.js",
+    "generate:htaccess": "node scripts/generate-htaccess.js",
+    "env:dev": "node scripts/switch-env.js development",
+    "env:prod": "node scripts/switch-env.js production",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

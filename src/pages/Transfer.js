@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { getUserFromLocalStorage } from '../utils/userUtils';
 
+// Get backend URL from environment
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 function Transfer() {
   const [toUserId, setToUserId] = useState('');
   const [amount, setAmount] = useState('');
@@ -8,7 +11,7 @@ function Transfer() {
 
   const handleTransfer = async () => {
     if (!toUserId || !amount) return alert("Điền đủ thông tin!");
-    await fetch('http://localhost:3001/api/transfer', {
+    await fetch(`${BACKEND_URL}/api/transfer`, {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

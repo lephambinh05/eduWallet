@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Demo - Video Learning Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        /* Course List Section */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .toolbar h2 {
+            color: #333;
+            margin: 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .course-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .course-card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.4em;
+        }
+        
+        .course-card p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .course-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .course-meta span {
+            background: #f5f5f5;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #555;
+        }
+        
+        .course-price {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            font-weight: 600;
+        }
+        
+        .course-link {
+            color: #667eea;
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 10px;
+            display: block;
+        }
+        
+        /* Video Section */
+        .video-section {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #000;
+            margin-bottom: 20px;
+        }
+        
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .course-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .course-info h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .course-info p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        /* Modal for creating course */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h2 {
+            color: #333;
+            margin: 0;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        /* Video Progress Bar */
+        .video-progress {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 25px;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .progress-info span:first-child {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 20px;
+        }
+        
+        .progress-stats {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .progress-stats span {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .progress-stats strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>🎥</span>
+                Partner Video Platform
+            </h1>
+            <p>Nền tảng học tập video - Tích hợp EduWallet</p>
+            <div style="margin-top: 15px;">
+                <a href="completed.html" class="btn" style="background: white; color: #667eea; text-decoration: none; display: inline-block;">
+                    🎓 Xem khóa học đã hoàn thành
+                </a>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Course List Section -->
+            <div id="courseListSection" class="section active">
+                <div class="toolbar">
+                    <h2>Danh sách khóa học</h2>
+                    <button class="btn btn-success" onclick="showCreateCourseModal()">
+                        ➕ Tạo khóa học mới
+                    </button>
+                </div>
+                
+                <div id="messageContainer" class="message"></div>
+                
+                <div id="coursesContainer" class="loading">
+                    Đang tải khóa học
+                </div>
+            </div>
+            
+            <!-- Video Learning Section -->
+            <div id="videoSection" class="section video-section">
+                <div id="videoMessage" class="message"></div>
+                
+                <div id="courseDetails" class="course-info">
+                    <!-- Course info will be loaded here -->
+                </div>
+                
+                <div class="video-wrapper">
+                    <iframe 
+                        id="videoPlayer"
+                        width="100%" 
+                        height="100%" 
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen
+                        style="border-radius: 12px;">
+                    </iframe>
+                </div>
+                
+                <div class="video-progress">
+                    <div class="progress-info">
+                        <span id="progressText">Tiến độ học tập: 0%</span>
+                        <span id="timeInfo">0:00 / 0:00</span>
+                    </div>
+                    <div class="progress-bar" onclick="seekVideo(event)" style="cursor: pointer;">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>📊 Đã xem: <strong id="watchedTime">0 phút</strong></span>
+                        <span>⏱️ Còn lại: <strong id="remainingTime">0 phút</strong></span>
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button class="btn btn-success" onclick="markAsComplete()" id="completeBtn">
+                            ✓ Đánh dấu hoàn thành
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="backToCourses()">
+                        ← Quay lại danh sách
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Course Modal -->
+    <div id="createCourseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tạo khóa học mới</h2>
+                <button class="close" onclick="closeCreateCourseModal()">&times;</button>
+            </div>
+            
+            <form id="createCourseForm" onsubmit="createCourse(event)">
+                <div class="form-group">
+                    <label for="courseTitle">Tiêu đề khóa học *</label>
+                    <input 
+                        type="text" 
+                        id="courseTitle" 
+                        required
+                        placeholder="VD: Học lập trình Web cơ bản"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseDescription">Mô tả</label>
+                    <textarea 
+                        id="courseDescription"
+                        placeholder="Mô tả ngắn về khóa học..."
+                    ></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseLink">Đường dẫn khóa học *</label>
+                    <input 
+                        type="text" 
+                        id="courseLink" 
+                        required
+                        placeholder="VD: dev-appt"
+                    >
+                    <small>Đường dẫn này sẽ được dùng trong URL: domain.com/<strong>dev-appt</strong>?student=ID</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="coursePrice">Giá (EDU) *</label>
+                    <input 
+                        type="number" 
+                        id="coursePrice" 
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="VD: 50"
+                    >
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateCourseModal()">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Tạo khóa học
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - will be loaded from server
+        let BACKEND_URL = 'http://localhost:3001';
+        let PARTNER_JWT_TOKEN = null;
+        let PARTNER_ID = null;
+        
+        // Get student ID from URL parameter or use default
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('student') || '690302badd7c9774cfd2a6a7';
+        
+        let currentCourse = null;
+        
+        // Load partner configuration from server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/config');
+                const config = await response.json();
+                
+                BACKEND_URL = config.backendUrl;
+                PARTNER_JWT_TOKEN = config.jwtToken;
+                PARTNER_ID = config.partnerId;
+                
+                console.log('✅ Partner config loaded:', config.partnerId);
+                return true;
+            } catch (error) {
+                console.error('❌ Error loading config:', error);
+                showMessage('messageContainer', 'Lỗi tải cấu hình. Vui lòng thử lại.', 'error');
+                return false;
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load config first
+            const configLoaded = await loadConfig();
+            
+            if (configLoaded) {
+                // Then load courses
+                loadCourses();
+            }
+            
+            // If student ID in URL, we could auto-enroll or show student info
+            if (studentId) {
+                console.log('Student ID from URL:', studentId);
+                showMessage('messageContainer', `👤 Student ID: ${studentId}`, 'success');
+            }
+        });
+
+        // Load courses from backend Partner API
+        async function loadCourses() {
+            const container = document.getElementById('coursesContainer');
+            container.innerHTML = '<div class="loading">Đang tải khóa học</div>';
+            
+            if (!PARTNER_JWT_TOKEN) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>❌ Lỗi cấu hình</h3>
+                        <p>Không tìm thấy JWT token</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/partner/courses`, {
+                    headers: {
+                        'Authorization': `Bearer ${PARTNER_JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.courses) {
+                    displayCourses(data.data.courses);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>📚 Chưa có khóa học nào</h3>
+                            <p>Nhấn nút "Tạo khóa học mới" để bắt đầu!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>❌ Lỗi tải khóa học</h3>
+                        <p>${error.message}</p>
+                        <button class="btn" onclick="loadCourses()">Thử lại</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Display courses in grid
+        function displayCourses(courses) {
+            const container = document.getElementById('coursesContainer');
+            
+            if (!courses || courses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📚 Chưa có khóa học nào</h3>
+                        <p>Nhấn nút "Tạo khóa học mới" để bắt đầu!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const grid = document.createElement('div');
+            grid.className = 'courses-grid';
+            
+            courses.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'course-card';
+                
+                // Build URL with student parameter
+                const courseUrl = buildCourseUrl(course.link, studentId);
+                
+                card.innerHTML = `
+                    <h3>${course.title}</h3>
+                    <p>${course.description || 'Chưa có mô tả'}</p>
+                    <div class="course-meta">
+                        <span class="course-price">💰 ${course.priceEdu} EDU</span>
+                        <span>📅 ${new Date(course.createdAt).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    ${courseUrl ? `<a class="course-link" href="${courseUrl}" target="_blank">🔗 ${courseUrl}</a>` : ''}
+                `;
+                
+                // Click to view course details (if you want to show video)
+                card.onclick = () => selectCourse(course);
+                
+                grid.appendChild(card);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(grid);
+        }
+
+        // Build course URL with student parameter
+        function buildCourseUrl(coursePath, studentId) {
+            if (!coursePath) return null;
+            
+            const domain = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : '';
+            let url = `${window.location.protocol}//${domain}${port}/${coursePath}`;
+            
+            if (studentId) {
+                url += `?student=${studentId}`;
+            }
+            
+            return url;
+        }
+
+        // Select and view a course
+        function selectCourse(course) {
+            currentCourse = course;
+            
+            // YouTube video playlist for Website 1
+            const videoPlaylist = [
+                'https://www.youtube.com/embed/9I2oOAr2okY',
+                'https://www.youtube.com/embed/WprjBK0p6rw',
+                'https://www.youtube.com/embed/SqcY0GlETPk', // React Tutorial
+                'https://www.youtube.com/embed/W6NZfCO5SIk', // JavaScript Tutorial
+                'https://www.youtube.com/embed/UBUNrFtufWo'  // Programming Tutorial
+            ];
+            
+            // Random video from playlist
+            const randomVideo = videoPlaylist[Math.floor(Math.random() * videoPlaylist.length)];
+            
+            // Display course info
+            document.getElementById('courseDetails').innerHTML = `
+                <h2>${course.title}</h2>
+                <p><strong>Mô tả:</strong> ${course.description || 'Chưa có mô tả'}</p>
+                <p><strong>Giá:</strong> ${course.priceEdu} EDU</p>
+                <p><strong>Đường dẫn:</strong> ${course.link}</p>
+                ${studentId ? `<p><strong>Student ID:</strong> ${studentId}</p>` : ''}
+            `;
+            
+            // Load YouTube video
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.src = randomVideo + '?autoplay=0&rel=0';
+            
+            // Initialize progress tracking for iframe
+            initializeVideoPlayer();
+            
+            showSection('videoSection');
+        }
+        
+        // Initialize video player and progress tracking
+        function initializeVideoPlayer() {
+            // For YouTube iframe, we can manually control progress
+            let watchTime = 0;
+            let totalTime = 600; // 10 minutes per video
+            let isCompleted = false;
+            
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const timeInfo = document.getElementById('timeInfo');
+            const watchedTime = document.getElementById('watchedTime');
+            const remainingTime = document.getElementById('remainingTime');
+            const completeBtn = document.getElementById('completeBtn');
+            
+            // Clear previous interval
+            if (window.videoProgressInterval) {
+                clearInterval(window.videoProgressInterval);
+            }
+            
+            // Reset progress
+            watchTime = 0;
+            isCompleted = false;
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Tiến độ học tập: 0%';
+            completeBtn.disabled = false;
+            completeBtn.textContent = '✓ Đánh dấu hoàn thành';
+            completeBtn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+            
+            // Store current time globally for seek function
+            window.currentVideoTime = 0;
+            window.totalVideoTime = totalTime;
+            
+            // Update progress every second
+            window.videoProgressInterval = setInterval(() => {
+                if (!isCompleted) {
+                    watchTime++;
+                    window.currentVideoTime = watchTime;
+                    
+                    const progress = (watchTime / totalTime) * 100;
+                    progressFill.style.width = Math.min(progress, 100) + '%';
+                    progressText.textContent = `Tiến độ học tập: ${Math.min(Math.round(progress), 100)}%`;
+                    
+                    // Format time
+                    const currentMin = Math.floor(watchTime / 60);
+                    const currentSec = watchTime % 60;
+                    const durationMin = Math.floor(totalTime / 60);
+                    const durationSec = totalTime % 60;
+                    
+                    timeInfo.textContent = `${currentMin}:${currentSec.toString().padStart(2, '0')} / ${durationMin}:${durationSec.toString().padStart(2, '0')}`;
+                    
+                    // Update stats
+                    watchedTime.textContent = `${currentMin} phút ${currentSec} giây`;
+                    const remaining = totalTime - watchTime;
+                    const remainingMin = Math.floor(remaining / 60);
+                    const remainingSec = remaining % 60;
+                    remainingTime.textContent = `${remainingMin} phút ${remainingSec} giây`;
+                    
+                    // Auto complete when reach end
+                    if (watchTime >= totalTime) {
+                        markAsComplete();
+                    }
+                }
+            }, 1000);
+        }
+        
+        // Seek video by clicking on progress bar
+        function seekVideo(event) {
+            const progressBar = event.currentTarget;
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            
+            const totalTime = window.totalVideoTime || 600;
+            const newTime = Math.floor(totalTime * percentage);
+            
+            window.currentVideoTime = newTime;
+            
+            // Update UI immediately
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const timeInfo = document.getElementById('timeInfo');
+            const watchedTime = document.getElementById('watchedTime');
+            const remainingTime = document.getElementById('remainingTime');
+            
+            const progress = (newTime / totalTime) * 100;
+            progressFill.style.width = Math.min(progress, 100) + '%';
+            progressText.textContent = `Tiến độ học tập: ${Math.min(Math.round(progress), 100)}%`;
+            
+            const currentMin = Math.floor(newTime / 60);
+            const currentSec = newTime % 60;
+            const durationMin = Math.floor(totalTime / 60);
+            const durationSec = totalTime % 60;
+            
+            timeInfo.textContent = `${currentMin}:${currentSec.toString().padStart(2, '0')} / ${durationMin}:${durationSec.toString().padStart(2, '0')}`;
+            watchedTime.textContent = `${currentMin} phút ${currentSec} giây`;
+            
+            const remaining = totalTime - newTime;
+            const remainingMin = Math.floor(remaining / 60);
+            const remainingSec = remaining % 60;
+            remainingTime.textContent = `${remainingMin} phút ${remainingSec} giây`;
+        }
+        
+        // Mark video as complete
+        async function markAsComplete() {
+            console.log('🎯 markAsComplete() called');
+            console.log('Current course:', currentCourse);
+            
+            if (!currentCourse) {
+                console.error('❌ No current course selected!');
+                alert('Vui lòng chọn một video trước!');
+                return;
+            }
+            
+            console.log('Course ID:', currentCourse._id);
+            console.log('Student ID:', studentId);
+            
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const completeBtn = document.getElementById('completeBtn');
+            
+            // Set to 100%
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Tiến độ học tập: 100% - Đã hoàn thành!';
+            
+            // Update button
+            completeBtn.disabled = true;
+            completeBtn.textContent = '✓ Đang lưu...';
+            
+            // Clear interval
+            if (window.videoProgressInterval) {
+                clearInterval(window.videoProgressInterval);
+            }
+            
+            // Save to database
+            try {
+                const timeSpent = window.currentVideoTime || 600;
+                const requestData = {
+                    studentId: studentId,
+                    progressPercent: 100,
+                    timeSpentSeconds: timeSpent,
+                    completed: true
+                    // No quizScore for video - backend will default to 100
+                };
+                
+                console.log('📤 Sending completion request...');
+                console.log('URL:', `${BACKEND_URL}/api/partner/courses/${currentCourse._id}/progress`);
+                console.log('Request data:', requestData);
+                
+                const response = await fetch(`${BACKEND_URL}/api/partner/courses/${currentCourse._id}/progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('📥 Response status:', response.status, response.statusText);
+                
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+                
+                if (data.success) {
+                    console.log('✅ Course completed successfully!');
+                    completeBtn.textContent = '✓ Đã hoàn thành';
+                    completeBtn.style.background = '#6c757d';
+                    showMessage('videoMessage', '🎉 Chúc mừng! Đã lưu tiến trình hoàn thành vào hệ thống!', 'success');
+                } else {
+                    console.error('❌ Backend returned success=false:', data.message);
+                    throw new Error(data.message || 'Failed to save progress');
+                }
+            } catch (error) {
+                console.error('❌ Error saving progress:', error);
+                completeBtn.textContent = '✗ Lỗi lưu';
+                completeBtn.style.background = '#dc3545';
+                showMessage('videoMessage', '❌ Lỗi khi lưu tiến trình. Vui lòng thử lại!', 'error');
+                setTimeout(() => {
+                    completeBtn.disabled = false;
+                    completeBtn.textContent = '✓ Thử lại';
+                    completeBtn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                }, 3000);
+                return;
+            }
+            
+            setTimeout(() => {
+                document.getElementById('videoMessage').classList.remove('show');
+            }, 5000);
+        }
+
+        // Create new course
+        async function createCourse(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('courseTitle').value.trim();
+            const description = document.getElementById('courseDescription').value.trim();
+            const link = document.getElementById('courseLink').value.trim();
+            const priceEdu = parseFloat(document.getElementById('coursePrice').value);
+            
+            if (!title || !link || isNaN(priceEdu)) {
+                showMessage('messageContainer', 'Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/partner/courses`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${PARTNER_JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        link,
+                        priceEdu
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('messageContainer', '✅ Tạo khóa học thành công!', 'success');
+                    closeCreateCourseModal();
+                    
+                    // Reset form
+                    document.getElementById('createCourseForm').reset();
+                    
+                    // Reload courses
+                    setTimeout(() => {
+                        loadCourses();
+                    }, 1000);
+                } else {
+                    showMessage('messageContainer', '❌ ' + (data.message || 'Lỗi tạo khóa học'), 'error');
+                }
+            } catch (error) {
+                console.error('Error creating course:', error);
+                showMessage('messageContainer', '❌ Lỗi kết nối: ' + error.message, 'error');
+            }
+        }
+
+        // Modal functions
+        function showCreateCourseModal() {
+            document.getElementById('createCourseModal').classList.add('show');
+        }
+
+        function closeCreateCourseModal() {
+            document.getElementById('createCourseModal').classList.remove('show');
+        }
+
+        // Navigation functions
+        function backToCourses() {
+            currentCourse = null;
+            showSection('courseListSection');
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        function showMessage(elementId, message, type) {
+            const messageEl = document.getElementById(elementId);
+            messageEl.textContent = message;
+            messageEl.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('createCourseModal');
+            if (event.target == modal) {
+                closeCreateCourseModal();
+            }
+        }
+    </script>
+</body>
+</html>

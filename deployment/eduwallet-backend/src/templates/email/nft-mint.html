@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT đã được tạo thành công - EduWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .content { padding: 40px 30px; }
+        .nft-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+        .content h2 { color: #2d3748; margin-bottom: 20px; font-size: 24px; }
+        .content p { color: #4a5568; line-height: 1.6; margin-bottom: 15px; font-size: 16px; }
+        .nft-info { background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px solid #667eea; padding: 30px; border-radius: 12px; margin: 30px 0; }
+        .nft-title { color: #667eea; font-size: 20px; font-weight: 600; margin-bottom: 15px; text-align: center; }
+        .nft-preview { text-align: center; margin: 20px 0; }
+        .nft-image { width: 120px; height: 120px; border-radius: 12px; border: 3px solid #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 48px; color: white; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #4a5568; }
+        .value { color: #2d3748; font-family: monospace; }
+        .transaction-box { background: #f0fff4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #48bb78; }
+        .btn { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; text-decoration: none; border-radius: 8px; margin: 10px 5px; font-weight: 600; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
+        .benefits { background: #fef5e7; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f6ad55; }
+        .benefits h3 { color: #744210; margin-bottom: 15px; }
+        .benefits ul { padding-left: 20px; }
+        .benefits li { margin-bottom: 8px; color: #744210; }
+        .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; }
+        @media (max-width: 600px) {
+            .container { margin: 0; }
+            .header, .content, .footer { padding: 20px; }
+            .info-row { flex-direction: column; }
+            .btn { margin: 5px 0; display: block; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 NFT tạo thành công!</h1>
+            <p>Chứng chỉ số của bạn đã sẵn sàng</p>
+        </div>
+        
+        <div class="content">
+            <div class="nft-icon">✨</div>
+            
+            <h2>Chúc mừng {{firstName}}!</h2>
+            
+            <p>NFT Portfolio của bạn đã được tạo thành công trên blockchain! Đây là tài sản số thuộc về bạn và có thể được xác thực trên toàn thế giới.</p>
+            
+            <div class="nft-info">
+                <div class="nft-title">🖼️ {{nftName}}</div>
+                
+                <div class="nft-preview">
+                    <div class="nft-image">🎓</div>
+                    <p style="margin-top: 15px; color: #667eea; font-weight: 600;">Portfolio NFT</p>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">🔖 Token ID:</span>
+                    <span class="value">#{{tokenId}}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">⛓️ Blockchain:</span>
+                    <span class="value">Pione Zero Network</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">🏷️ Standard:</span>
+                    <span class="value">ERC-721</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="label">👤 Owner:</span>
+                    <span class="value">{{firstName}}</span>
+                </div>
+            </div>
+            
+            <div class="transaction-box">
+                <h3 style="color: #38a169; margin-bottom: 10px;">✅ Giao dịch xác nhận</h3>
+                <p><strong>Transaction Hash:</strong></p>
+                <p style="word-break: break-all; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                    {{transactionHash}}
+                </p>
+                <a href="{{explorerUrl}}" target="_blank" style="color: #38a169; text-decoration: none; font-weight: 600;">
+                    🔍 Xem trên Blockchain Explorer →
+                </a>
+            </div>
+            
+            <center>
+                <a href="{{portfolioUrl}}" class="btn">📱 Xem Portfolio</a>
+                <a href="{{explorerUrl}}" class="btn btn-secondary" target="_blank">🔍 Xem trên Explorer</a>
+            </center>
+            
+            <div class="benefits">
+                <h3>🌟 Lợi ích của NFT Portfolio:</h3>
+                <ul>
+                    <li><strong>🔒 Bảo mật tuyệt đối:</strong> Không thể làm giả hoặc sao chép</li>
+                    <li><strong>🌐 Công nhận toàn cầu:</strong> Có thể xác thực ở bất kỳ đâu</li>
+                    <li><strong>💼 Sở hữu vĩnh viễn:</strong> Thuộc về bạn mãi mãi</li>
+                    <li><strong>📈 Có thể giao dịch:</strong> Chuyển nhượng khi cần thiết</li>
+                    <li><strong>🎯 Tích hợp dễ dàng:</strong> Sử dụng trong các ứng dụng khác</li>
+                </ul>
+            </div>
+            
+            <p><strong>📚 NFT này chứa thông tin:</strong></p>
+            <ul style="padding-left: 20px; margin-bottom: 20px;">
+                <li>📄 Thông tin cá nhân và học vấn</li>
+                <li>🏆 Danh sách khóa học đã hoàn thành</li>
+                <li>🏅 Chứng chỉ và badges đạt được</li>
+                <li>📊 Điểm số và thành tích</li>
+                <li>⏰ Dấu thời gian tạo trên blockchain</li>
+            </ul>
+            
+            <div style="background: #e6fffa; padding: 20px; border-radius: 8px; border-left: 4px solid #38b2ac; margin: 20px 0;">
+                <p><strong>💡 Mẹo:</strong> Lưu lại Transaction Hash để có thể tra cứu NFT này bất cứ lúc nào. Bạn cũng có thể chia sẻ link explorer với nhà tuyển dụng để họ xác thực thông tin!</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>🎓 EduWallet</strong></p>
+            <p>Nền tảng giáo dục blockchain tiên tiến</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                © 2025 EduWallet. All rights reserved.<br>
+                Email này được gửi tự động, vui lòng không reply.<br>
+                Cần hỗ trợ? Liên hệ: support@eduwallet.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>
