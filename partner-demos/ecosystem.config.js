@@ -6,7 +6,7 @@ module.exports = {
     {
       name: "partner1-video",
       script: "./website-1-video/server.js",
-      cwd: "/var/www/partner-demos",
+      cwd: "/www/wwwroot/partner-demos",
       instances: 2,
       exec_mode: "cluster",
       env: {
@@ -24,7 +24,7 @@ module.exports = {
     {
       name: "partner2-quiz",
       script: "./website-2-quiz/server.js",
-      cwd: "/var/www/partner-demos",
+      cwd: "/www/wwwroot/partner-demos",
       instances: 2,
       exec_mode: "cluster",
       env: {
@@ -42,7 +42,7 @@ module.exports = {
     {
       name: "partner3-hybrid",
       script: "./website-3-hybrid/server.js",
-      cwd: "/var/www/partner-demos",
+      cwd: "/www/wwwroot/partner-demos",
       instances: 2,
       exec_mode: "cluster",
       env: {
