@@ -671,12 +671,14 @@ const PartnerCourses = () => {
                     setFormData({ ...formData, domain: e.target.value })
                   }
                 />
-                <small style={{ 
-                  color: "rgba(255, 255, 255, 0.5)", 
-                  fontSize: "0.85rem",
-                  marginTop: "0.5rem",
-                  display: "block"
-                }}>
+                <small
+                  style={{
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontSize: "0.85rem",
+                    marginTop: "0.5rem",
+                    display: "block",
+                  }}
+                >
                   Chỉ cần nhập domain, hệ thống sẽ tự động tạo API endpoints
                 </small>
               </FormGroup>

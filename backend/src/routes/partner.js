@@ -1659,4 +1659,243 @@ router.get(
   })
 );
 
+// =======================
+// PARTNER SOURCES API
+// =======================
+const PartnerSource = require("../models/PartnerSource");
+const axios = require("axios");
+
+// GET /api/partner/sources - Get all partner sources
+router.get(
+  "/sources",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const sources = await PartnerSource.find({ partner: req.user.userId }).sort(
+      { createdAt: -1 }
+    );
+
+    res.json({
+      success: true,
+      data: { sources },
+    });
+  })
+);
+
+// POST /api/partner/sources - Create new partner source
+router.post(
+  "/sources",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const { name, domain } = req.body;
+
+    if (!name || !domain) {
+      return res.status(400).json({
+        success: false,
+        message: "Tên và Domain là bắt buộc",
+      });
+    }
+
+    // Clean domain (remove http/https if present)
+    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+    const source = await PartnerSource.create({
+      partner: req.user.userId,
+      name,
+      domain: cleanDomain,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { source },
+      message: "Đã tạo nguồn API thành công",
+    });
+  })
+);
+
+// PATCH /api/partner/sources/:id - Update partner source
+router.patch(
+  "/sources/:id",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const { name, domain, isActive } = req.body;
+
+    const source = await PartnerSource.findOne({
+      _id: req.params.id,
+      partner: req.user.userId,
+    });
+
+    if (!source) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nguồn API",
+      });
+    }
+
+    if (name) source.name = name;
+    if (domain) {
+      // Clean domain
+      source.domain = domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    }
+    if (isActive !== undefined) source.isActive = isActive;
+
+    await source.save();
+
+    res.json({
+      success: true,
+      data: { source },
+      message: "Đã cập nhật nguồn API",
+    });
+  })
+);
+
+// DELETE /api/partner/sources/:id - Delete partner source
+router.delete(
+  "/sources/:id",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const source = await PartnerSource.findOneAndDelete({
+      _id: req.params.id,
+      partner: req.user.userId,
+    });
+
+    if (!source) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nguồn API",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Đã xóa nguồn API",
+    });
+  })
+);
+
+// POST /api/partner/sources/:id/sync - Sync courses from partner source
+router.post(
+  "/sources/:id/sync",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const source = await PartnerSource.findOne({
+      _id: req.params.id,
+      partner: req.user.userId,
+    });
+
+    if (!source) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nguồn API",
+      });
+    }
+
+    if (!source.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "Nguồn API đã bị vô hiệu hóa",
+      });
+    }
+
+    try {
+      // Update sync status to pending
+      source.lastSyncStatus = "pending";
+      await source.save();
+
+      // Build API URL from domain
+      const coursesApiUrl = source.getApiEndpoints().courses;
+
+      // Fetch courses from partner API
+      const headers = {};
+      if (source.apiKey) {
+        headers["Authorization"] = `Bearer ${source.apiKey}`;
+      }
+
+      const response = await axios.get(coursesApiUrl, {
+        headers,
+        timeout: 30000,
+      });
+
+      let courses = [];
+      if (Array.isArray(response.data)) {
+        courses = response.data;
+      } else if (
+        response.data.courses &&
+        Array.isArray(response.data.courses)
+      ) {
+        courses = response.data.courses;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        courses = response.data.data;
+      } else {
+        throw new Error("Invalid API response format");
+      }
+
+      let syncedCount = 0;
+
+      // Create or update courses
+      for (const courseData of courses) {
+        try {
+          const coursePayload = {
+            partner: req.user.userId,
+            partnerCourseId:
+              courseData.id || courseData._id || courseData.courseId,
+            title: courseData.title || courseData.name,
+            description: courseData.description || "",
+            price: parseFloat(courseData.price) || 0,
+            currency: courseData.currency || "PZO",
+            duration: courseData.duration || 0,
+            level: courseData.level || "beginner",
+            category: courseData.category || "other",
+            url: courseData.url || courseData.link || source.coursesApiUrl,
+            thumbnail: courseData.thumbnail || courseData.image,
+            published:
+              courseData.published !== undefined ? courseData.published : true,
+            sourceId: source._id,
+          };
+
+          await PartnerCourse.findOneAndUpdate(
+            {
+              partner: req.user.userId,
+              partnerCourseId: coursePayload.partnerCourseId,
+            },
+            coursePayload,
+            { upsert: true, new: true }
+          );
+
+          syncedCount++;
+        } catch (err) {
+          console.error(`Error syncing course ${courseData.id}:`, err);
+        }
+      }
+
+      // Update sync status
+      source.lastSyncAt = new Date();
+      source.lastSyncStatus = "success";
+      source.syncedCoursesCount = syncedCount;
+      source.lastSyncError = null;
+      await source.save();
+
+      res.json({
+        success: true,
+        message: `Đã đồng bộ ${syncedCount} khóa học thành công`,
+        data: {
+          synced: syncedCount,
+          total: courses.length,
+        },
+      });
+    } catch (error) {
+      // Update sync status to failed
+      source.lastSyncStatus = "failed";
+      source.lastSyncError = error.message;
+      await source.save();
+
+      throw error;
+    }
+  })
+);
+
 module.exports = router;

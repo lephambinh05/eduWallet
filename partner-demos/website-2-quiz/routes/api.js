@@ -2,120 +2,61 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
-// Mock database
+// In-memory storage for student progress (temporary)
 const students = {};
-const courses = {
-  quiz_course_001: {
-    id: "quiz_course_001",
-    name: "Kiểm tra kiến thức JavaScript",
-    description: "Khóa học kiểm tra kiến thức JavaScript qua 2 bài quiz",
-    issuer: "Đại học Bách Khoa",
-    category: "Programming",
-    level: "Intermediate",
-    credits: 2,
-    skills: ["JavaScript", "ES6", "Async Programming", "DOM Manipulation"],
-    tasks: [
-      {
-        id: "task_1",
-        title: "JavaScript Cơ bản",
-        questions: [
-          {
-            id: "q1",
-            question: "JavaScript là ngôn ngữ lập trình gì?",
-            options: [
-              "Ngôn ngữ biên dịch",
-              "Ngôn ngữ thông dịch",
-              "Ngôn ngữ máy",
-              "Ngôn ngữ assembly",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q2",
-            question: "Cách khai báo biến trong JavaScript là?",
-            options: [
-              "var, let, const",
-              "int, float, string",
-              "dim, set",
-              "define, declare",
-            ],
-            correctAnswer: 0,
-          },
-          {
-            id: "q3",
-            question: "typeof null trả về giá trị gì?",
-            options: ["null", "undefined", "object", "number"],
-            correctAnswer: 2,
-          },
-          {
-            id: "q4",
-            question: "Arrow function được giới thiệu trong phiên bản nào?",
-            options: ["ES5", "ES6", "ES7", "ES8"],
-            correctAnswer: 1,
-          },
-          {
-            id: "q5",
-            question: "DOM là viết tắt của?",
-            options: [
-              "Document Object Model",
-              "Data Object Model",
-              "Dynamic Object Model",
-              "Document Oriented Model",
-            ],
-            correctAnswer: 0,
-          },
-        ],
-      },
-      {
-        id: "task_2",
-        title: "JavaScript Nâng cao",
-        questions: [
-          {
-            id: "q6",
-            question: "Promise có bao nhiêu trạng thái?",
-            options: ["2", "3", "4", "5"],
-            correctAnswer: 1,
-          },
-          {
-            id: "q7",
-            question: "async/await được giới thiệu trong phiên bản nào?",
-            options: ["ES6", "ES7", "ES8", "ES9"],
-            correctAnswer: 2,
-          },
-          {
-            id: "q8",
-            question: "Closure trong JavaScript là gì?",
-            options: [
-              "Một loại vòng lặp",
-              "Hàm có thể truy cập biến ngoài phạm vi",
-              "Một kiểu dữ liệu",
-              "Một method của Object",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q9",
-            question: "Event bubbling là gì?",
-            options: [
-              "Sự kiện lan truyền từ cha đến con",
-              "Sự kiện lan truyền từ con đến cha",
-              "Sự kiện không lan truyền",
-              "Sự kiện bị hủy",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q10",
-            question: "Map và Set được thêm vào JavaScript ở phiên bản nào?",
-            options: ["ES5", "ES6", "ES7", "ES8"],
-            correctAnswer: 1,
-          },
-        ],
-      },
-    ],
-  },
-};
+
+// ============================================================================
+// DATABASE MODELS (Partner's own database)
+// ============================================================================
+
+// Quiz Course Schema
+const QuizCourseSchema = new mongoose.Schema({
+  courseId: { type: String, required: true, unique: true },
+  title: { type: String, required: true },
+  description: String,
+  issuer: String,
+  category: String,
+  level: String,
+  credits: Number,
+  skills: [String],
+  link: String,
+  priceEdu: Number,
+  tasks: [
+    {
+      id: String,
+      title: String,
+      questions: [
+        {
+          id: String,
+          question: String,
+          options: [String],
+          correctAnswer: Number,
+        },
+      ],
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+const QuizCourse = mongoose.model("QuizCourse", QuizCourseSchema);
+
+// Connect to MongoDB (Partner's own database)
+if (process.env.MONGODB_URI) {
+  mongoose
+    .connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    .then(() => {
+      console.log("✅ Connected to Partner MongoDB (Quiz)");
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection error:", err);
+    });
+}
 
 // Helper function to create HMAC signature
 function createSignature(timestamp, body) {
@@ -126,26 +67,141 @@ function createSignature(timestamp, body) {
   return `sha256=${hmac.digest("hex")}`;
 }
 
-// Get all courses
-router.get("/courses", (req, res) => {
-  res.json({
-    success: true,
-    courses: Object.values(courses),
-  });
+// ============================================================================
+// COURSE MANAGEMENT ENDPOINTS (Partner creates courses here)
+// ============================================================================
+
+// Create new quiz course
+router.post("/courses", async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      issuer,
+      category,
+      level,
+      credits,
+      skills,
+      tasks,
+      link,
+      priceEdu,
+    } = req.body;
+
+    if (!title || !tasks || tasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: title, tasks",
+      });
+    }
+
+    // Generate unique courseId
+    const courseId = `quiz_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    const course = new QuizCourse({
+      courseId,
+      title,
+      description: description || "",
+      issuer: issuer || process.env.PARTNER_NAME || "Partner",
+      category: category || "Programming",
+      level: level || "Intermediate",
+      credits: credits || 2,
+      skills: skills || [],
+      tasks: tasks,
+      link: link || "",
+      priceEdu: priceEdu || 0,
+    });
+
+    await course.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Quiz course created successfully",
+      course,
+    });
+  } catch (error) {
+    console.error("Error creating course:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+      error: error.message,
+    });
+  }
 });
 
-// Get course information
-router.get("/courses/:courseId", (req, res) => {
-  const { courseId } = req.params;
-  const course = courses[courseId];
+// Get all courses (EduWallet calls this to sync courses)
+router.get("/courses", async (req, res) => {
+  try {
+    const courses = await QuizCourse.find().sort({ createdAt: -1 });
 
-  if (!course) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Course not found" });
+    res.json({
+      success: true,
+      courses: courses.map((c) => ({
+        id: c.courseId,
+        courseId: c.courseId,
+        title: c.title,
+        name: c.title,
+        description: c.description,
+        issuer: c.issuer,
+        category: c.category,
+        level: c.level,
+        credits: c.credits,
+        skills: c.skills,
+        tasks: c.tasks,
+        link: c.link,
+        priceEdu: c.priceEdu,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch courses",
+      error: error.message,
+    });
   }
+});
 
-  res.json({ success: true, course });
+// Get course information by ID
+router.get("/courses/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const course = await QuizCourse.findOne({ courseId });
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      course: {
+        id: course.courseId,
+        courseId: course.courseId,
+        title: course.title,
+        name: course.title,
+        description: course.description,
+        issuer: course.issuer,
+        category: course.category,
+        level: course.level,
+        credits: course.credits,
+        skills: course.skills,
+        tasks: course.tasks,
+        link: course.link,
+        priceEdu: course.priceEdu,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching course:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch course",
+      error: error.message,
+    });
+  }
 });
 
 // Start learning session
@@ -158,64 +214,73 @@ router.post("/learning/start", async (req, res) => {
       .json({ success: false, message: "Missing required fields" });
   }
 
-  const course = courses[courseId];
-  if (!course) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Course not found" });
-  }
-
-  // Initialize student progress
-  if (!students[studentId]) {
-    students[studentId] = {};
-  }
-
-  const startedAt = new Date().toISOString();
-  students[studentId][courseId] = {
-    progress: 0,
-    score: 0,
-    status: "In Progress",
-    startedAt: startedAt,
-    tasksCompleted: 0,
-    totalTasks: course.tasks.length,
-    taskResults: {},
-    answers: {},
-  };
-
-  // 🆕 Notify EduWallet about learning start
   try {
-    await axios.post(
-      `${process.env.API_URL}/api/partner/public/learning/start`,
-      {
-        userId: studentId,
-        courseId: courseId,
-        startedAt: startedAt,
-      },
-      {
-        headers: {
-          "x-api-key": process.env.PARTNER_API_KEY,
-          "Content-Type": "application/json",
-        },
-        timeout: 5000,
-      }
-    );
-    console.log("✅ Notified EduWallet about learning start");
-  } catch (error) {
-    console.warn(
-      "⚠️ Failed to notify EduWallet about learning start:",
-      error.message
-    );
-  }
+    const course = await QuizCourse.findOne({ courseId });
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
 
-  res.json({
-    success: true,
-    message: "Learning session started",
-    data: students[studentId][courseId],
-  });
+    // Initialize student progress
+    if (!students[studentId]) {
+      students[studentId] = {};
+    }
+
+    const startedAt = new Date().toISOString();
+    students[studentId][courseId] = {
+      progress: 0,
+      score: 0,
+      status: "In Progress",
+      startedAt: startedAt,
+      tasksCompleted: 0,
+      totalTasks: course.tasks.length,
+      taskResults: {},
+      answers: {},
+    };
+
+    // 🆕 Notify EduWallet about learning start
+    try {
+      await axios.post(
+        `${process.env.API_URL}/api/partner/public/learning/start`,
+        {
+          userId: studentId,
+          courseId: courseId,
+          startedAt: startedAt,
+        },
+        {
+          headers: {
+            "x-api-key": process.env.PARTNER_API_KEY,
+            "Content-Type": "application/json",
+          },
+          timeout: 5000,
+        }
+      );
+      console.log("✅ Notified EduWallet about learning start");
+    } catch (error) {
+      console.warn(
+        "⚠️ Failed to notify EduWallet about learning start:",
+        error.message
+      );
+    }
+
+    res.json({
+      success: true,
+      message: "Learning session started",
+      data: students[studentId][courseId],
+    });
+  } catch (error) {
+    console.error("Error starting learning session:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to start learning session",
+      error: error.message,
+    });
+  }
 });
 
 // Submit task answers
-router.post("/learning/submit-task", (req, res) => {
+router.post("/learning/submit-task", async (req, res) => {
   const { studentId, courseId, taskId, answers } = req.body;
 
   if (!studentId || !courseId || !taskId || !answers) {
@@ -224,77 +289,88 @@ router.post("/learning/submit-task", (req, res) => {
       .json({ success: false, message: "Missing required fields" });
   }
 
-  const course = courses[courseId];
-  const studentProgress = students[studentId]?.[courseId];
+  try {
+    const course = await QuizCourse.findOne({ courseId });
+    const studentProgress = students[studentId]?.[courseId];
 
-  if (!course || !studentProgress) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Course or progress not found" });
-  }
-
-  // Find the task
-  const task = course.tasks.find((t) => t.id === taskId);
-  if (!task) {
-    return res.status(404).json({ success: false, message: "Task not found" });
-  }
-
-  // Calculate score for this task
-  let correctAnswers = 0;
-  task.questions.forEach((question, index) => {
-    if (answers[question.id] === question.correctAnswer) {
-      correctAnswers++;
+    if (!course || !studentProgress) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course or progress not found" });
     }
-  });
 
-  const taskScore = (correctAnswers / task.questions.length) * 100;
+    // Find the task
+    const task = course.tasks.find((t) => t.id === taskId);
+    if (!task) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    }
 
-  // Store task result
-  studentProgress.taskResults[taskId] = {
-    score: taskScore,
-    correctAnswers,
-    totalQuestions: task.questions.length,
-    completedAt: new Date().toISOString(),
-  };
+    // Calculate score for this task
+    let correctAnswers = 0;
+    task.questions.forEach((question, index) => {
+      if (answers[question.id] === question.correctAnswer) {
+        correctAnswers++;
+      }
+    });
 
-  studentProgress.answers[taskId] = answers;
+    const taskScore = (correctAnswers / task.questions.length) * 100;
 
-  // Update overall progress
-  const completedTasks = Object.keys(studentProgress.taskResults).length;
-  studentProgress.tasksCompleted = completedTasks;
-  studentProgress.progress =
-    (completedTasks / studentProgress.totalTasks) * 100;
+    // Store task result
+    studentProgress.taskResults[taskId] = {
+      score: taskScore,
+      correctAnswers,
+      totalQuestions: task.questions.length,
+      completedAt: new Date().toISOString(),
+    };
 
-  // Calculate overall score
-  const taskScores = Object.values(studentProgress.taskResults).map(
-    (r) => r.score
-  );
-  studentProgress.score = Math.round(
-    taskScores.reduce((a, b) => a + b, 0) / taskScores.length
-  );
+    studentProgress.answers[taskId] = answers;
 
-  // Update status
-  if (studentProgress.progress >= 100) {
-    studentProgress.status = "Completed";
-    studentProgress.completedAt = new Date().toISOString();
+    // Update overall progress
+    const completedTasks = Object.keys(studentProgress.taskResults).length;
+    studentProgress.tasksCompleted = completedTasks;
+    studentProgress.progress =
+      (completedTasks / studentProgress.totalTasks) * 100;
 
-    // Determine grade
-    if (studentProgress.score >= 95) studentProgress.grade = "A+";
-    else if (studentProgress.score >= 90) studentProgress.grade = "A";
-    else if (studentProgress.score >= 85) studentProgress.grade = "B+";
-    else if (studentProgress.score >= 80) studentProgress.grade = "B";
-    else if (studentProgress.score >= 70) studentProgress.grade = "C";
-    else studentProgress.grade = "D";
+    // Calculate overall score
+    const taskScores = Object.values(studentProgress.taskResults).map(
+      (r) => r.score
+    );
+    studentProgress.score = Math.round(
+      taskScores.reduce((a, b) => a + b, 0) / taskScores.length
+    );
+
+    // Update status
+    if (studentProgress.progress >= 100) {
+      studentProgress.status = "Completed";
+      studentProgress.completedAt = new Date().toISOString();
+
+      // Determine grade
+      if (studentProgress.score >= 95) studentProgress.grade = "A+";
+      else if (studentProgress.score >= 90) studentProgress.grade = "A";
+      else if (studentProgress.score >= 85) studentProgress.grade = "B+";
+      else if (studentProgress.score >= 80) studentProgress.grade = "B";
+      else if (studentProgress.score >= 70) studentProgress.grade = "C";
+      else studentProgress.grade = "D";
+    }
+
+    res.json({
+      success: true,
+      taskResult: studentProgress.taskResults[taskId],
+      progress: studentProgress.progress,
+      score: studentProgress.score,
+      status: studentProgress.status,
+      grade: studentProgress.grade,
+    });
+  } catch (error) {
+    console.error("Error submitting task:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to submit task",
+      error: error.message,
+    });
   }
-
-  res.json({
-    success: true,
-    taskResult: studentProgress.taskResults[taskId],
-    progress: studentProgress.progress,
-    score: studentProgress.score,
-    status: studentProgress.status,
-    grade: studentProgress.grade,
-  });
 });
 
 // Complete course and send to EduWallet
@@ -307,45 +383,45 @@ router.post("/learning/complete", async (req, res) => {
       .json({ success: false, message: "Missing required fields" });
   }
 
-  const course = courses[courseId];
-  const studentProgress = students[studentId]?.[courseId];
-
-  if (!course || !studentProgress) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Course or progress not found" });
-  }
-
-  if (studentProgress.progress < 100) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Course not completed yet" });
-  }
-
-  // Prepare CompletedCourse payload theo format mới
-  const issueDate = new Date();
-  const completedCourseData = {
-    name: course.name,
-    description: course.description,
-    issuer: course.issuer,
-    issueDate: issueDate.toISOString(),
-    expiryDate: null,
-    category: course.category,
-    level: course.level,
-    credits: course.credits,
-    grade: studentProgress.grade,
-    score: studentProgress.score,
-    status: "Completed",
-    progress: 100,
-    modulesCompleted: studentProgress.tasksCompleted,
-    totalModules: studentProgress.totalTasks,
-    skills: course.skills,
-    verificationUrl: null,
-    certificateUrl: null,
-    imageUrl: null,
-  };
-
   try {
+    const course = await QuizCourse.findOne({ courseId });
+    const studentProgress = students[studentId]?.[courseId];
+
+    if (!course || !studentProgress) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course or progress not found" });
+    }
+
+    if (studentProgress.progress < 100) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Course not completed yet" });
+    }
+
+    // Prepare CompletedCourse payload theo format mới
+    const issueDate = new Date();
+    const completedCourseData = {
+      name: course.title,
+      description: course.description,
+      issuer: course.issuer,
+      issueDate: issueDate.toISOString(),
+      expiryDate: null,
+      category: course.category,
+      level: course.level,
+      credits: course.credits,
+      grade: studentProgress.grade,
+      score: studentProgress.score,
+      status: "Completed",
+      progress: 100,
+      modulesCompleted: studentProgress.tasksCompleted,
+      totalModules: studentProgress.totalTasks,
+      skills: course.skills,
+      verificationUrl: null,
+      certificateUrl: null,
+      imageUrl: null,
+    };
+
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const payload = {
       partnerId: process.env.PARTNER_ID,
@@ -378,15 +454,13 @@ router.post("/learning/complete", async (req, res) => {
     });
   } catch (error) {
     console.error(
-      "Error sending to EduWallet:",
+      "Error completing course:",
       error.response?.data || error.message
     );
     res.status(500).json({
       success: false,
-      message: "Failed to send to EduWallet",
+      message: "Failed to complete course",
       error: error.response?.data || error.message,
-      completedCourse: completedCourseData,
-      studentProgress,
     });
   }
 });
@@ -522,7 +596,7 @@ router.post("/admin/retry-webhook/:index", async (req, res) => {
 /**
  * GET /student/:studentId/dashboard
  */
-router.get("/student/:studentId/dashboard", (req, res) => {
+router.get("/student/:studentId/dashboard", async (req, res) => {
   const { studentId } = req.params;
   const studentData = students[studentId];
 
@@ -533,46 +607,57 @@ router.get("/student/:studentId/dashboard", (req, res) => {
     });
   }
 
-  const coursesData = Object.entries(studentData).map(
-    ([courseId, progress]) => {
-      const course = courses[courseId];
+  try {
+    const coursesData = await Promise.all(
+      Object.entries(studentData).map(async ([courseId, progress]) => {
+        const course = await QuizCourse.findOne({ courseId });
 
-      return {
-        courseId,
-        courseName: course?.name,
-        courseDescription: course?.description,
-        progress: progress.progress,
-        score: progress.score,
-        status: progress.status,
-        startedAt: progress.startedAt,
-        completedAt: progress.completedAt,
-        completedTasks: progress.completedTasks,
-        totalTasks: course?.tasks?.length || 0,
-        grade: progress.grade,
-      };
-    }
-  );
+        return {
+          courseId,
+          courseName: course?.title || "Unknown Course",
+          courseDescription: course?.description,
+          progress: progress.progress,
+          score: progress.score,
+          status: progress.status,
+          startedAt: progress.startedAt,
+          completedAt: progress.completedAt,
+          completedTasks: progress.completedTasks,
+          totalTasks: course?.tasks?.length || 0,
+          grade: progress.grade,
+        };
+      })
+    );
 
-  const completedCourses = coursesData.filter((c) => c.status === "Completed");
-  const stats = {
-    totalCourses: coursesData.length,
-    inProgress: coursesData.filter((c) => c.status === "In Progress").length,
-    completed: completedCourses.length,
-    averageScore:
-      completedCourses.length > 0
-        ? (
-            completedCourses.reduce((sum, c) => sum + (c.score || 0), 0) /
-            completedCourses.length
-          ).toFixed(2)
-        : 0,
-  };
+    const completedCourses = coursesData.filter(
+      (c) => c.status === "Completed"
+    );
+    const stats = {
+      totalCourses: coursesData.length,
+      inProgress: coursesData.filter((c) => c.status === "In Progress").length,
+      completed: completedCourses.length,
+      averageScore:
+        completedCourses.length > 0
+          ? (
+              completedCourses.reduce((sum, c) => sum + (c.score || 0), 0) /
+              completedCourses.length
+            ).toFixed(2)
+          : 0,
+    };
 
-  res.json({
-    success: true,
-    studentId,
-    stats,
-    courses: coursesData,
-  });
+    res.json({
+      success: true,
+      studentId,
+      stats,
+      courses: coursesData,
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard",
+      error: error.message,
+    });
+  }
 });
 
 /**

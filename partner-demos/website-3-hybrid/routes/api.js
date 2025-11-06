@@ -2,85 +2,60 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
-// Mock database
+// In-memory storage for student progress (temporary)
 const students = {};
-const courses = {
-  hybrid_course_001: {
-    id: "hybrid_course_001",
-    name: "Full Stack Web Development",
-    description:
-      "Khóa học Full Stack từ cơ bản đến nâng cao với video và bài kiểm tra",
-    issuer: "Học viện Công nghệ",
-    category: "Programming",
-    level: "Advanced",
-    credits: 4,
-    skills: ["React", "Node.js", "MongoDB", "Express", "REST API"],
-    tasks: [
-      {
-        id: "task_1",
-        type: "video",
-        title: "Xem video hướng dẫn",
-        videoId: "dQw4w9WgXcQ",
-        videoDuration: 480, // 8 minutes
-        description: "Xem video hướng dẫn về Full Stack Development",
-      },
-      {
-        id: "task_2",
-        type: "quiz",
-        title: "Bài kiểm tra kiến thức",
-        description: "Trả lời 5 câu hỏi về Full Stack Development",
-        questions: [
-          {
-            id: "q1",
-            question: "REST API là gì?",
-            options: [
-              "Một framework JavaScript",
-              "Một kiến trúc web service",
-              "Một database",
-              "Một ngôn ngữ lập trình",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q2",
-            question: "MongoDB là loại database nào?",
-            options: [
-              "SQL database",
-              "NoSQL database",
-              "Graph database",
-              "In-memory database",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q3",
-            question: "Express.js được sử dụng cho?",
-            options: [
-              "Frontend framework",
-              "Backend framework",
-              "Database",
-              "Testing framework",
-            ],
-            correctAnswer: 1,
-          },
-          {
-            id: "q4",
-            question: "React sử dụng concept nào để quản lý UI?",
-            options: ["MVC", "Component-based", "Page-based", "Template-based"],
-            correctAnswer: 1,
-          },
-          {
-            id: "q5",
-            question: "Node.js chạy trên runtime nào?",
-            options: ["Browser", "V8 Engine", "JVM", ".NET Runtime"],
-            correctAnswer: 1,
-          },
-        ],
-      },
-    ],
-  },
-};
+
+// ============================================================================
+// DATABASE MODELS (Partner's own database)
+// ============================================================================
+
+// Hybrid Course Schema (Video + Quiz tasks)
+const HybridCourseSchema = new mongoose.Schema({
+  courseId: { type: String, required: true, unique: true },
+  title: { type: String, required: true },
+  description: String,
+  issuer: String,
+  category: String,
+  level: String,
+  credits: Number,
+  skills: [String],
+  link: String,
+  priceEdu: Number,
+  tasks: [{
+    id: String,
+    type: String, // 'video' or 'quiz'
+    title: String,
+    // For video type:
+    videoId: String,
+    videoDuration: Number,
+    description: String,
+    // For quiz type:
+    questions: [{
+      id: String,
+      question: String,
+      options: [String],
+      correctAnswer: Number
+    }]
+  }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const HybridCourse = mongoose.model('HybridCourse', HybridCourseSchema);
+
+// Connect to MongoDB (Partner's own database)
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => {
+    console.log('✅ Connected to Partner MongoDB (Hybrid)');
+  }).catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+  });
+}
 
 // Helper function to create HMAC signature
 function createSignature(timestamp, body) {
@@ -91,23 +66,129 @@ function createSignature(timestamp, body) {
   return `sha256=${hmac.digest("hex")}`;
 }
 
-// Get all courses
-router.get("/courses", (req, res) => {
-  res.json({
-    success: true,
-    courses: Object.values(courses),
-  });
+// ============================================================================
+// COURSE MANAGEMENT ENDPOINTS (Partner creates courses here)
+// ============================================================================
+
+// Create new hybrid course
+router.post("/courses", async (req, res) => {
+  try {
+    const { title, description, issuer, category, level, credits, skills, tasks, link, priceEdu } = req.body;
+
+    if (!title || !tasks || tasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: title, tasks"
+      });
+    }
+
+    // Generate unique courseId
+    const courseId = `hybrid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const course = new HybridCourse({
+      courseId,
+      title,
+      description: description || "",
+      issuer: issuer || process.env.PARTNER_NAME || "Partner",
+      category: category || "Programming",
+      level: level || "Advanced",
+      credits: credits || 4,
+      skills: skills || [],
+      tasks: tasks,
+      link: link || "",
+      priceEdu: priceEdu || 0
+    });
+
+    await course.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Hybrid course created successfully",
+      course
+    });
+  } catch (error) {
+    console.error("Error creating course:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+      error: error.message
+    });
+  }
 });
 
-// Get course information
-router.get("/courses/:courseId", (req, res) => {
-  const { courseId } = req.params;
-  const course = courses[courseId];
+// Get all courses (EduWallet calls this to sync courses)
+router.get("/courses", async (req, res) => {
+  try {
+    const courses = await HybridCourse.find().sort({ createdAt: -1 });
 
-  if (!course) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Course not found" });
+    res.json({
+      success: true,
+      courses: courses.map(c => ({
+        id: c.courseId,
+        courseId: c.courseId,
+        title: c.title,
+        name: c.title,
+        description: c.description,
+        issuer: c.issuer,
+        category: c.category,
+        level: c.level,
+        credits: c.credits,
+        skills: c.skills,
+        tasks: c.tasks,
+        link: c.link,
+        priceEdu: c.priceEdu
+      }))
+    });
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch courses",
+      error: error.message
+    });
+  }
+});
+
+// Get course information by ID
+router.get("/courses/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const course = await HybridCourse.findOne({ courseId });
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      course: {
+        id: course.courseId,
+        courseId: course.courseId,
+        title: course.title,
+        name: course.title,
+        description: course.description,
+        issuer: course.issuer,
+        category: course.category,
+        level: course.level,
+        credits: course.credits,
+        skills: course.skills,
+        tasks: course.tasks,
+        link: course.link,
+        priceEdu: course.priceEdu
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching course:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch course",
+      error: error.message
+    });
+  }
+});
   }
 
   res.json({ success: true, course });

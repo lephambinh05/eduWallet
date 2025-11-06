@@ -316,6 +316,16 @@ export const partnerAPI = {
     api.post(`/api/partner/courses/${id}/purchase`, data || {}),
   publishCourse: (id, publish = true) =>
     api.patch(`/api/partner/courses/${id}/publish`, { publish }),
+  toggleCoursePublish: (id, publish) =>
+    api.patch(`/api/partner/courses/${id}/publish`, { publish }),
+
+  // Partner Sources (API URLs của web đối tác)
+  getPartnerSources: () => api.get("/api/partner/sources"),
+  createPartnerSource: (data) => api.post("/api/partner/sources", data),
+  updatePartnerSource: (id, data) =>
+    api.patch(`/api/partner/sources/${id}`, data),
+  deletePartnerSource: (id) => api.delete(`/api/partner/sources/${id}`),
+  syncCoursesFromSource: (id) => api.post(`/api/partner/sources/${id}/sync`),
 };
 
 export default api;

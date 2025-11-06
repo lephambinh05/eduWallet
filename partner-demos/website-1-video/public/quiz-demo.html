@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz Demo - Partner Learning Platform</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 2em;
+      }
+
+      .course-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+      }
+
+      .quiz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #eee;
+      }
+
+      .timer {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #667eea;
+      }
+
+      .question-card {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        border-left: 5px solid #667eea;
+      }
+
+      .question-text {
+        font-size: 1.2em;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .option {
+        background: white;
+        padding: 15px 20px;
+        margin: 10px 0;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+      }
+
+      .option:hover {
+        border-color: #667eea;
+        transform: translateX(5px);
+      }
+
+      .option.selected {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .option.correct {
+        background: #28a745;
+        color: white;
+        border-color: #28a745;
+      }
+
+      .option.incorrect {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+      }
+
+      .option-label {
+        width: 30px;
+        height: 30px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+      }
+
+      .option.selected .option-label {
+        background: white;
+        color: #667eea;
+      }
+
+      .explanation {
+        background: #e7f3ff;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        border-left: 4px solid #2196f3;
+      }
+
+      .explanation-title {
+        font-weight: bold;
+        color: #2196f3;
+        margin-bottom: 5px;
+      }
+
+      .btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1em;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+      }
+
+      .btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .results {
+        text-align: center;
+        padding: 40px;
+      }
+
+      .score-display {
+        font-size: 4em;
+        font-weight: bold;
+        color: #667eea;
+        margin: 20px 0;
+      }
+
+      .grade {
+        font-size: 3em;
+        font-weight: bold;
+        margin: 20px 0;
+      }
+
+      .grade.pass {
+        color: #28a745;
+      }
+
+      .grade.fail {
+        color: #dc3545;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 10px;
+        background: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #667eea;
+        transition: width 0.3s ease;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #667eea;
+      }
+
+      .error {
+        background: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #ffc107;
+        margin-bottom: 20px;
+      }
+
+      .success {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #28a745;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎓 Quiz Assessment</h1>
+
+      <div id="app">
+        <div class="loading">Loading quiz...</div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:3001/api";
+      const STUDENT_ID = "690302badd7c9774cfd2a6a7";
+      let COURSE_ID = "quiz_react_advanced_2024"; // Default quiz course
+      let quizData = null;
+      let currentQuestionIndex = 0;
+      let answers = {};
+      let startTime = null;
+      let timerInterval = null;
+
+      // Get course ID from URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("courseId")) {
+        COURSE_ID = urlParams.get("courseId");
+      }
+
+      async function init() {
+        try {
+          // Start learning session
+          await fetch(`${API_URL}/learning/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: STUDENT_ID,
+              courseId: COURSE_ID,
+            }),
+          });
+
+          // Get quiz questions
+          const response = await fetch(
+            `${API_URL}/quiz/${COURSE_ID}/questions`
+          );
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.message);
+          }
+
+          quizData = data.quiz;
+          startTime = Date.now();
+
+          if (quizData.timeLimit) {
+            startTimer(quizData.timeLimit);
+          }
+
+          renderQuiz();
+        } catch (error) {
+          document.getElementById("app").innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+        }
+      }
+
+      function startTimer(seconds) {
+        let remaining = seconds;
+        timerInterval = setInterval(() => {
+          remaining--;
+          const minutes = Math.floor(remaining / 60);
+          const secs = remaining % 60;
+          document.getElementById("timer").textContent = `${minutes}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+
+          if (remaining <= 0) {
+            clearInterval(timerInterval);
+            submitQuiz();
+          }
+        }, 1000);
+      }
+
+      function renderQuiz() {
+        const progress =
+          ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+
+        let html = `
+                <div class="course-info">
+                    <h2>Total Questions: ${quizData.totalQuestions}</h2>
+                    <p>Passing Score: ${quizData.passingScore}%</p>
+                    ${
+                      quizData.timeLimit
+                        ? `<p>Time Limit: ${Math.floor(
+                            quizData.timeLimit / 60
+                          )} minutes</p>`
+                        : ""
+                    }
+                </div>
+
+                <div class="quiz-header">
+                    <div>Question ${currentQuestionIndex + 1} of ${
+          quizData.totalQuestions
+        }</div>
+                    ${
+                      quizData.timeLimit
+                        ? '<div class="timer" id="timer">--:--</div>'
+                        : ""
+                    }
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
+            `;
+
+        const question = quizData.questions[currentQuestionIndex];
+        html += `
+                <div class="question-card">
+                    <div class="question-text">
+                        ${question.id}. ${question.question}
+                    </div>
+                    <div class="options">
+                        ${question.options
+                          .map(
+                            (option, index) => `
+                            <div class="option ${
+                              answers[question.id] === index ? "selected" : ""
+                            }"
+                                 onclick="selectAnswer(${
+                                   question.id
+                                 }, ${index})">
+                                <div class="option-label">${String.fromCharCode(
+                                  65 + index
+                                )}</div>
+                                <div>${option}</div>
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between;">
+                    <button class="btn" onclick="previousQuestion()"
+                            ${currentQuestionIndex === 0 ? "disabled" : ""}>
+                        ← Previous
+                    </button>
+                    ${
+                      currentQuestionIndex < quizData.totalQuestions - 1
+                        ? `
+                        <button class="btn" onclick="nextQuestion()">
+                            Next →
+                        </button>
+                    `
+                        : `
+                        <button class="btn" onclick="submitQuiz()">
+                            Submit Quiz
+                        </button>
+                    `
+                    }
+                </div>
+            `;
+
+        document.getElementById("app").innerHTML = html;
+      }
+
+      function selectAnswer(questionId, answerIndex) {
+        answers[questionId] = answerIndex;
+        renderQuiz();
+      }
+
+      function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          renderQuiz();
+        }
+      }
+
+      function nextQuestion() {
+        if (currentQuestionIndex < quizData.totalQuestions - 1) {
+          currentQuestionIndex++;
+          renderQuiz();
+        }
+      }
+
+      async function submitQuiz() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+
+        try {
+          const response = await fetch(`${API_URL}/quiz/submit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: STUDENT_ID,
+              courseId: COURSE_ID,
+              answers: answers,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.message);
+          }
+
+          renderResults(result);
+
+          // If passed, complete the course
+          if (result.passed) {
+            await fetch(`${API_URL}/learning/complete`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                studentId: STUDENT_ID,
+                courseId: COURSE_ID,
+              }),
+            });
+          }
+        } catch (error) {
+          document.getElementById("app").innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+        }
+      }
+
+      function renderResults(result) {
+        let html = `
+                <div class="results">
+                    <div class="${result.passed ? "success" : "error"}">
+                        ${
+                          result.passed
+                            ? "🎉 Congratulations! You passed!"
+                            : "😔 Sorry, you did not pass."
+                        }
+                    </div>
+
+                    <div class="score-display">${result.score}%</div>
+                    <div class="grade ${result.passed ? "pass" : "fail"}">${
+          result.grade
+        }</div>
+
+                    <p style="font-size: 1.2em; margin: 20px 0;">
+                        You got <strong>${
+                          result.correctAnswers
+                        }</strong> out of <strong>${
+          result.totalQuestions
+        }</strong> questions correct.
+                    </p>
+                    <p style="color: #666;">
+                        Passing Score: ${result.passingScore}%
+                    </p>
+                </div>
+
+                <h2 style="margin-top: 40px; margin-bottom: 20px;">Detailed Results</h2>
+            `;
+
+        result.results.forEach((item, index) => {
+          html += `
+                    <div class="question-card">
+                        <div class="question-text">
+                            ${index + 1}. ${item.question}
+                        </div>
+                        <div class="options">
+                            ${quizData.questions[index].options
+                              .map((option, optIndex) => {
+                                let className = "option";
+                                if (optIndex === item.correctAnswer) {
+                                  className += " correct";
+                                } else if (
+                                  optIndex === item.userAnswer &&
+                                  !item.isCorrect
+                                ) {
+                                  className += " incorrect";
+                                }
+                                return `
+                                    <div class="${className}">
+                                        <div class="option-label">${String.fromCharCode(
+                                          65 + optIndex
+                                        )}</div>
+                                        <div>${option}</div>
+                                    </div>
+                                `;
+                              })
+                              .join("")}
+                        </div>
+                        ${
+                          item.explanation
+                            ? `
+                            <div class="explanation">
+                                <div class="explanation-title">💡 Explanation</div>
+                                <div>${item.explanation}</div>
+                            </div>
+                        `
+                            : ""
+                        }
+                    </div>
+                `;
+        });
+
+        html += `
+                <button class="btn" onclick="location.reload()">
+                    Try Again
+                </button>
+            `;
+
+        document.getElementById("app").innerHTML = html;
+      }
+
+      // Initialize on page load
+      init();
+    </script>
+  </body>
+</html>

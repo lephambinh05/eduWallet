@@ -33,25 +33,19 @@ const SidebarContainer = styled(motion.div).attrs((props) => ({
   left: 0;
   top: 0;
   height: 100vh;
-  width: ${(props) => (props.$isOpen ? "280px" : "80px")};
+  width: 280px;
   background: rgba(20, 20, 40, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1.5px solid rgba(120, 80, 220, 0.2);
   z-index: 1000;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 32px rgba(83, 52, 131, 0.15);
+  transform: translateX(${(props) => (props.$isOpen ? "0" : "-100%")});
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: ${(props) =>
+    props.$isOpen ? "4px 0 32px rgba(83, 52, 131, 0.18)" : "none"};
   overflow: hidden;
   display: flex;
   flex-direction: column;
-
-  @media (max-width: 768px) {
-    width: 280px;
-    transform: translateX(${(props) => (props.$isOpen ? "0" : "-100%")});
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: ${(props) =>
-      props.$isOpen ? "4px 0 32px rgba(83, 52, 131, 0.18)" : "none"};
-  }
 `;
 
 const SidebarHeader = styled.div.attrs((props) => ({
@@ -96,30 +90,43 @@ const Logo = styled(Link).attrs((props) => ({
 const ToggleButton = styled.button.attrs((props) => ({
   "data-is-open": props.$isOpen,
 }))`
-  position: absolute;
-  top: 18px;
-  right: 12px;
+  position: ${(props) => (props.$isOpen ? "absolute" : "fixed")};
+  top: ${(props) => (props.$isOpen ? "18px" : "20px")};
+  left: ${(props) => (props.$isOpen ? "auto" : "20px")};
+  right: ${(props) => (props.$isOpen ? "12px" : "auto")};
   background: linear-gradient(135deg, #a259ff 0%, #3772ff 100%);
   border: none;
   outline: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
   color: white;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   z-index: 1100;
+  box-shadow: 0 4px 16px rgba(162, 89, 255, 0.4);
 
   &:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 16px rgba(162, 89, 255, 0.3);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(162, 89, 255, 0.5);
   }
-  @media (max-width: 768px) {
-    display: none;
+
+  &:active {
+    transform: scale(0.95);
   }
+`;
+
+const HamburgerLine = styled.span`
+  width: 20px;
+  height: 2.5px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s;
 `;
 
 const SidebarContent = styled.div`
@@ -364,19 +371,18 @@ const MobileOverlay = styled(motion.div).attrs((props) => ({
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 999;
-  display: none;
-
-  @media (max-width: 768px) {
-    display: ${(props) => (props.$isOpen ? "block" : "none")};
-  }
+  opacity: ${(props) => (props.$isOpen ? "1" : "0")};
+  visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
+  transition: all 0.3s;
 `;
 
 const MobileToggle = styled.button`
   position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1001;
+  top: 20px;
+  left: 20px;
+  z-index: 1101;
   background: linear-gradient(135deg, #a259ff 0%, #3772ff 100%);
   border: none;
   width: 48px;
@@ -385,18 +391,23 @@ const MobileToggle = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
   color: white;
-  font-size: 1.2rem;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(162, 89, 255, 0.3);
-  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(162, 89, 255, 0.4);
+  transition: all 0.3s;
+  opacity: ${(props) => (props.$isOpen ? "0" : "1")};
+  visibility: ${(props) => (props.$isOpen ? "hidden" : "visible")};
+  pointer-events: ${(props) => (props.$isOpen ? "none" : "auto")};
 
   &:hover {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(162, 89, 255, 0.5);
   }
 
-  @media (min-width: 769px) {
-    display: none;
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -419,13 +430,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const { logout } = useAuth();
   const user = getCurrentUser();
 
-  // close sidebar on route change for small screens
-  useEffect(() => {
-    if (window.innerWidth <= 768) {
-      setIsOpen(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  // Không tự động đóng sidebar trên mobile nữa - để người dùng tự điều khiển
+  // useEffect(() => {
+  //   if (window.innerWidth <= 768) {
+  //     setIsOpen(false);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [location.pathname]);
 
   // close on ESC key for accessibility
   useEffect(() => {
@@ -571,7 +582,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               title={item.text}
               onClick={() => {
                 setOpenGroups((s) => ({ ...s, [item.path]: !isOpenGroup }));
-                if (window.innerWidth <= 768) setIsOpen(false);
               }}
               style={{ cursor: "pointer" }}
             >
@@ -594,9 +604,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     $active={location.pathname === c.path}
                     $isOpen={isOpen}
                     title={c.text}
-                    onClick={() => {
-                      if (window.innerWidth <= 768) setIsOpen(false);
-                    }}
                     style={{ paddingLeft: isOpen ? 18 : 0, fontSize: "0.9rem" }}
                   >
                     <span className="nav-text">{c.text}</span>
@@ -614,11 +621,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             to={item.path}
             $active={location.pathname === item.path}
             $isOpen={isOpen}
-            onClick={() => {
-              if (window.innerWidth <= 768) {
-                setIsOpen(false);
-              }
-            }}
           >
             <item.icon className="nav-icon" />
             <span className="nav-text">{item.text}</span>
@@ -630,25 +632,22 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      <MobileToggle onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? <FaAngleLeft /> : <FaAngleRight />}
+      <MobileToggle
+        $isOpen={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Open sidebar"
+      >
+        <HamburgerLine />
+        <HamburgerLine />
+        <HamburgerLine />
       </MobileToggle>
 
-      <MobileOverlay
-        $isOpen={isOpen}
-        onClick={() => setIsOpen(false)}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isOpen ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
-      />
+      <MobileOverlay $isOpen={isOpen} onClick={() => setIsOpen(false)} />
 
       <SidebarContainer
         role="navigation"
         aria-label="Main navigation"
         $isOpen={isOpen}
-        initial={{ x: -280 }}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
       >
         <ToggleButton
           aria-expanded={isOpen}

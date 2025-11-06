@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import Sidebar from "./Sidebar";
@@ -23,18 +23,9 @@ const MainContent = styled(motion.main).attrs((props) => ({
   "data-sidebar-open": props.$sidebarOpen,
 }))`
   flex: 1;
-  margin-left: ${(props) => (props.$sidebarOpen ? "280px" : "80px")};
+  margin-left: ${(props) => (props.$sidebarOpen ? "280px" : "0")};
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-
-  @media (max-width: 1024px) {
-    margin-left: ${(props) => (props.$sidebarOpen ? "240px" : "70px")};
-  }
-
-  @media (max-width: 768px) {
-    margin-left: 0;
-    width: 100vw;
-  }
 `;
 
 const ContentWrapper = styled.div`
@@ -77,20 +68,8 @@ const PageContent = styled(motion.div)`
 `;
 
 const Layout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  // Bắt đầu với sidebar đóng (ẩn hoàn toàn)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <LayoutContainer>

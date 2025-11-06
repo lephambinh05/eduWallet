@@ -7,7 +7,12 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": ["eduwallet", "partner", "demo", "video"],
+  "keywords": [
+    "eduwallet",
+    "partner",
+    "demo",
+    "video"
+  ],
   "author": "EduWallet Partner",
   "license": "MIT",
   "dependencies": {
@@ -16,7 +21,8 @@
     "dotenv": "^16.0.3",
     "axios": "^1.4.0",
     "body-parser": "^1.20.2",
-    "crypto": "^1.0.1"
+    "crypto": "^1.0.1",
+    "mongoose": "^7.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
