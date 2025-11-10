@@ -1,446 +1,585 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Learning Platform - Partner Demo</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 40px;
+      }
+
+      .section {
+        display: none;
+      }
+
+      .section.active {
+        display: block;
+      }
+
+      /* Login Section */
+      .login-section {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 500;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      /* Course List Section */
+      .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+      }
+
+      .course-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 25px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .course-card:hover {
+        transform: translateY(-5px);
+        border-color: #667eea;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+      }
+
+      .course-card h3 {
+        color: #667eea;
+        margin-bottom: 12px;
+        font-size: 1.4em;
+      }
+
+      .course-card p {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.6;
+      }
+
+      .course-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .course-meta span {
+        background: #f5f5f5;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85em;
+        color: #555;
+      }
+
+      .course-price {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        font-weight: 600;
+      }
+
+      /* Video Section */
+      .video-section {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .video-wrapper {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #000;
+        margin-bottom: 20px;
+      }
+
+      .video-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .course-info {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .course-info h2 {
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .course-info p {
+        color: #666;
+        line-height: 1.8;
+        margin-bottom: 15px;
+      }
+
+      .skills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .skill-tag {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+      }
+
+      .progress-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .progress-bar-container {
+        background: #e0e0e0;
+        height: 30px;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .button-secondary {
+        background: #6c757d;
+      }
+
+      .button-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      }
+
+      .message {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .message.show {
+        display: block;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .loading::after {
+        content: "...";
+        animation: loading 1.5s infinite;
+      }
+
+      @keyframes loading {
+        0%,
+        20% {
+          content: ".";
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        40% {
+          content: "..";
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+        60%,
+        100% {
+          content: "...";
         }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
-        .section {
-            display: none;
-        }
-        
-        .section.active {
-            display: block;
-        }
-        
-        /* Login Section */
-        .login-section {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        /* Course List Section */
-        .courses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-        
-        .course-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 25px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .course-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
-        }
-        
-        .course-card h3 {
-            color: #667eea;
-            margin-bottom: 12px;
-            font-size: 1.4em;
-        }
-        
-        .course-card p {
-            color: #666;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        
-        .course-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .course-meta span {
-            background: #f5f5f5;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: #555;
-        }
-        
-        .course-price {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white !important;
-            font-weight: 600;
-        }
-        
-        /* Video Section */
-        .video-section {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            overflow: hidden;
-            border-radius: 12px;
-            background: #000;
-            margin-bottom: 20px;
-        }
-        
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .course-info {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .course-info h2 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        
-        .course-info p {
-            color: #666;
-            line-height: 1.8;
-            margin-bottom: 15px;
-        }
-        
-        .skills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .skill-tag {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-        
-        .progress-container {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .progress-bar-container {
-            background: #e0e0e0;
-            height: 30px;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.5s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .button-secondary {
-            background: #6c757d;
-        }
-        
-        .button-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        
-        .message {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .message.show {
-            display: block;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        
-        .loading::after {
-            content: '...';
-            animation: loading 1.5s infinite;
-        }
-        
-        @keyframes loading {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>
-                <span>🎥</span>
-                Video Learning Platform
-            </h1>
-            <p>Nền tảng học tập video tích hợp EduWallet</p>
+      <div class="header">
+        <h1>
+          <span>🎥</span>
+          Video Learning Platform
+        </h1>
+        <p>Nền tảng học tập video tích hợp EduWallet</p>
+      </div>
+
+      <div class="content">
+        <!-- Login Section -->
+        <div id="loginSection" class="section active login-section">
+          <h2 style="text-align: center; margin-bottom: 30px; color: #333">
+            Đăng nhập học viên
+          </h2>
+          <div id="loginMessage" class="message"></div>
+          <form id="loginForm">
+            <div class="form-group">
+              <label for="studentId">Mã học viên:</label>
+              <input
+                type="text"
+                id="studentId"
+                name="studentId"
+                placeholder="Nhập mã học viên (VD: STUDENT001)"
+                required
+              />
+            </div>
+            <button type="submit">Đăng nhập</button>
+          </form>
         </div>
-        
-        <div class="content">
-            <!-- Login Section -->
-            <div id="loginSection" class="section active login-section">
-                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Đăng nhập học viên</h2>
-                <div id="loginMessage" class="message"></div>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="studentId">Mã học viên:</label>
-                        <input 
-                            type="text" 
-                            id="studentId" 
-                            name="studentId" 
-                            placeholder="Nhập mã học viên (VD: STUDENT001)"
-                            required
-                        >
-                    </div>
-                    <button type="submit">Đăng nhập</button>
-                </form>
-            </div>
-            
-            <!-- Course List Section -->
-            <div id="courseListSection" class="section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>Danh sách khóa học</h2>
-                    <button class="button-secondary" onclick="logout()">Đăng xuất</button>
-                </div>
-                <div id="coursesContainer" class="loading">
-                    Đang tải khóa học
-                </div>
-            </div>
-            
-            <!-- Video Learning Section -->
-            <div id="videoSection" class="section video-section">
-                <div id="videoMessage" class="message"></div>
-                
-                <div id="courseDetails" class="course-info">
-                    <!-- Course info will be loaded here -->
-                </div>
-                
-                <div class="video-wrapper">
-                    <iframe 
-                        id="videoPlayer"
-                        src="" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                </div>
-                
-                <div class="progress-container">
-                    <h3>Tiến độ học tập</h3>
-                    <div class="progress-bar-container">
-                        <div id="progressBar" class="progress-bar" style="width: 0%;">0%</div>
-                    </div>
-                </div>
-                
-                <div class="button-group">
-                    <button class="button-secondary" onclick="backToCourses()">Quay lại danh sách</button>
-                    <button class="button-success" onclick="completeCourse()">Hoàn thành khóa học</button>
-                </div>
-            </div>
+
+        <!-- Course List Section -->
+        <div id="courseListSection" class="section">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            "
+          >
+            <h2>Danh sách khóa học</h2>
+            <button class="button-secondary" onclick="logout()">
+              Đăng xuất
+            </button>
+          </div>
+          <div id="coursesContainer" class="loading">Đang tải khóa học</div>
         </div>
+
+        <!-- Video Learning Section -->
+        <div id="videoSection" class="section video-section">
+          <div id="videoMessage" class="message"></div>
+
+          <div id="courseDetails" class="course-info">
+            <!-- Course info will be loaded here -->
+          </div>
+
+          <div class="video-wrapper">
+            <iframe
+              id="videoPlayer"
+              src=""
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            >
+            </iframe>
+          </div>
+
+          <div class="progress-container">
+            <h3>Tiến độ học tập</h3>
+            <div class="progress-bar-container">
+              <div id="progressBar" class="progress-bar" style="width: 0%">
+                0%
+              </div>
+            </div>
+          </div>
+
+          <!-- Back button removed per partner request -->
+          <div class="button-group">
+            <button class="button-success" onclick="completeCourse()">
+              Hoàn thành khóa học
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Course Modal (added skills input) -->
+    <div
+      id="createCourseModal"
+      class="modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        class="modal-content"
+        style="
+          background: #fff;
+          padding: 20px;
+          border-radius: 10px;
+          max-width: 700px;
+          width: 90%;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2>Tạo khóa học mới</h2>
+          <button class="close" onclick="closeCreateCourseModal()">
+            &times;
+          </button>
+        </div>
+
+        <form id="createCourseForm" onsubmit="createCourse(event)">
+          <div class="form-group">
+            <label for="courseTitle">Tiêu đề khóa học *</label>
+            <input
+              type="text"
+              id="courseTitle"
+              required
+              placeholder="VD: Học lập trình Web cơ bản"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="courseDescription">Mô tả</label>
+            <textarea
+              id="courseDescription"
+              placeholder="Mô tả ngắn về khóa học..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="courseLink">Đường dẫn khóa học *</label>
+            <input
+              type="text"
+              id="courseLink"
+              required
+              placeholder="VD: dev-appt"
+            />
+            <small
+              >Đường dẫn này sẽ được dùng trong URL:
+              domain.com/<strong>dev-appt</strong>?student=ID</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="coursePrice">Giá (EDU) *</label>
+            <input
+              type="number"
+              id="coursePrice"
+              required
+              min="0"
+              step="0.01"
+              placeholder="VD: 50"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="courseSkills"
+              >Kỹ năng (skills) (phân tách bằng dấu phẩy)</label
+            >
+            <input type="text" id="courseSkills" placeholder="VD: LTW,Web,JS" />
+            <small>Danh sách kỹ năng sẽ được lưu trong trường skills</small>
+          </div>
+
+          <div
+            class="button-group"
+            style="
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+              margin-top: 10px;
+            "
+          >
+            <button
+              type="button"
+              class="button-secondary"
+              onclick="closeCreateCourseModal()"
+            >
+              Hủy
+            </button>
+            <button type="submit" class="button-success">Tạo khóa học</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script>
-        let currentStudent = null;
-        let currentCourse = null;
-        let progressInterval = null;
-        let currentProgress = 0;
+      let currentStudent = null;
+      let currentCourse = null;
+      let progressInterval = null;
+      let currentProgress = 0;
 
-        // Login handler
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const studentId = document.getElementById('studentId').value.trim();
-            
-            if (studentId) {
-                currentStudent = studentId;
-                showMessage('loginMessage', 'Đăng nhập thành công!', 'success');
-                
-                setTimeout(() => {
-                    showSection('courseListSection');
-                    loadCourses();
-                }, 1000);
-            }
+      // Login handler
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const studentId = document.getElementById("studentId").value.trim();
+
+          if (studentId) {
+            currentStudent = studentId;
+            showMessage("loginMessage", "Đăng nhập thành công!", "success");
+
+            setTimeout(() => {
+              showSection("courseListSection");
+              loadCourses();
+            }, 1000);
+          }
         });
 
-        // Load courses from server
-        async function loadCourses() {
-            const container = document.getElementById('coursesContainer');
-            container.innerHTML = '<div class="loading">Đang tải khóa học</div>';
-            
-            try {
-                const response = await fetch('/api/courses');
-                const data = await response.json();
-                
-                if (data.success && data.courses) {
-                    displayCourses(data.courses);
-                } else {
-                    container.innerHTML = '<p style="text-align: center; color: #666;">Không có khóa học nào</p>';
-                }
-            } catch (error) {
-                console.error('Error loading courses:', error);
-                container.innerHTML = '<p style="text-align: center; color: #d32f2f;">Lỗi tải khóa học. Vui lòng thử lại.</p>';
-            }
+      // Load courses from server
+      async function loadCourses() {
+        const container = document.getElementById("coursesContainer");
+        container.innerHTML = '<div class="loading">Đang tải khóa học</div>';
+
+        try {
+          const response = await fetch("/api/courses");
+          const data = await response.json();
+
+          if (data.success && data.courses) {
+            displayCourses(data.courses);
+          } else {
+            container.innerHTML =
+              '<p style="text-align: center; color: #666;">Không có khóa học nào</p>';
+          }
+        } catch (error) {
+          console.error("Error loading courses:", error);
+          container.innerHTML =
+            '<p style="text-align: center; color: #d32f2f;">Lỗi tải khóa học. Vui lòng thử lại.</p>';
+        }
+      }
+
+      // Display courses in grid
+      function displayCourses(courses) {
+        const container = document.getElementById("coursesContainer");
+
+        if (courses.length === 0) {
+          container.innerHTML =
+            '<p style="text-align: center; color: #666;">Chưa có khóa học nào</p>';
+          return;
         }
 
-        // Display courses in grid
-        function displayCourses(courses) {
-            const container = document.getElementById('coursesContainer');
-            
-            if (courses.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666;">Chưa có khóa học nào</p>';
-                return;
-            }
-            
-            const grid = document.createElement('div');
-            grid.className = 'courses-grid';
-            
-            courses.forEach(course => {
-                const card = document.createElement('div');
-                card.className = 'course-card';
-                card.onclick = () => selectCourse(course.id);
-                
-                card.innerHTML = `
+        const grid = document.createElement("div");
+        grid.className = "courses-grid";
+
+        courses.forEach((course) => {
+          const card = document.createElement("div");
+          card.className = "course-card";
+          card.onclick = () => selectCourse(course.id);
+
+          card.innerHTML = `
                     <h3>${course.name}</h3>
                     <p>${course.description}</p>
                     <div class="course-meta">
@@ -450,202 +589,316 @@
                         <span class="course-price">💰 ${course.priceEdu} EDU</span>
                     </div>
                 `;
-                
-                grid.appendChild(card);
-            });
-            
-            container.innerHTML = '';
-            container.appendChild(grid);
+
+          grid.appendChild(card);
+        });
+
+        container.innerHTML = "";
+        container.appendChild(grid);
+      }
+
+      // Select and start a course
+      async function selectCourse(courseId) {
+        try {
+          // Get course details
+          const courseResponse = await fetch(`/api/courses/${courseId}`);
+          const courseData = await courseResponse.json();
+
+          if (!courseData.success) {
+            alert("Không tìm thấy khóa học");
+            return;
+          }
+
+          currentCourse = courseData.course;
+
+          // Start learning session
+          const startResponse = await fetch("/api/learning/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: currentStudent,
+              courseId: courseId,
+            }),
+          });
+
+          const startData = await startResponse.json();
+
+          if (startData.success) {
+            showCoursePlayer();
+          } else {
+            alert("Không thể bắt đầu khóa học: " + startData.message);
+          }
+        } catch (error) {
+          console.error("Error starting course:", error);
+          alert("Lỗi khi bắt đầu khóa học");
+        }
+      }
+
+      // Show course player: redirect to quiz page for quiz courses, otherwise show video
+      function showCoursePlayer() {
+        // Normalize courseId key
+        const courseIdKey =
+          currentCourse.courseId ||
+          currentCourse.id ||
+          currentCourse._id ||
+          currentCourse.courseId;
+
+        // If quiz course, redirect to quiz page which will fetch real quiz data
+        if (
+          currentCourse &&
+          (currentCourse.courseType === "quiz" ||
+            currentCourse.courseType === "quiz-only")
+        ) {
+          const u = new URL("quiz.html", window.location.origin);
+          if (courseIdKey) u.searchParams.set("courseId", courseIdKey);
+          if (currentStudent) u.searchParams.set("student", currentStudent);
+          window.location.href = u.toString();
+          return;
         }
 
-        // Select and start a course
-        async function selectCourse(courseId) {
-            try {
-                // Get course details
-                const courseResponse = await fetch(`/api/courses/${courseId}`);
-                const courseData = await courseResponse.json();
-                
-                if (!courseData.success) {
-                    alert('Không tìm thấy khóa học');
-                    return;
-                }
-                
-                currentCourse = courseData.course;
-                
-                // Start learning session
-                const startResponse = await fetch('/api/learning/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        studentId: currentStudent,
-                        courseId: courseId
-                    })
-                });
-                
-                const startData = await startResponse.json();
-                
-                if (startData.success) {
-                    showCoursePlayer();
-                } else {
-                    alert('Không thể bắt đầu khóa học: ' + startData.message);
-                }
-            } catch (error) {
-                console.error('Error starting course:', error);
-                alert('Lỗi khi bắt đầu khóa học');
-            }
+        // Hybrid without video -> send to quiz as fallback
+        if (
+          currentCourse &&
+          currentCourse.courseType === "hybrid" &&
+          !currentCourse.videoId &&
+          currentCourse.quiz
+        ) {
+          const u = new URL("quiz.html", window.location.origin);
+          if (courseIdKey) u.searchParams.set("courseId", courseIdKey);
+          if (currentStudent) u.searchParams.set("student", currentStudent);
+          window.location.href = u.toString();
+          return;
         }
 
-        // Show video player with course
-        function showCoursePlayer() {
-            // Display course info
-            document.getElementById('courseDetails').innerHTML = `
+        // Display course info
+        document.getElementById("courseDetails").innerHTML = `
                 <h2>${currentCourse.name}</h2>
                 <p><strong>Giảng viên:</strong> ${currentCourse.issuer}</p>
                 <p>${currentCourse.description}</p>
                 <div class="skills">
-                    ${currentCourse.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    ${currentCourse.skills
+                      .map((skill) => `<span class="skill-tag">${skill}</span>`)
+                      .join("")}
                 </div>
             `;
-            
-            // Load YouTube video
-            const videoUrl = `https://www.youtube.com/embed/${currentCourse.videoId}?enablejsapi=1&autoplay=1`;
-            document.getElementById('videoPlayer').src = videoUrl;
-            
-            // Reset progress
-            currentProgress = 0;
-            updateProgressBar(0);
-            
-            // Show video section
-            showSection('videoSection');
-            
-            // Start tracking progress
-            startProgressTracking();
+
+        // Load YouTube video
+        const videoUrl = `https://www.youtube.com/embed/${currentCourse.videoId}?enablejsapi=1&autoplay=1`;
+        document.getElementById("videoPlayer").src = videoUrl;
+
+        // Reset progress
+        currentProgress = 0;
+        updateProgressBar(0);
+
+        // Show video section
+        showSection("videoSection");
+
+        // Start tracking progress
+        startProgressTracking();
+      }
+
+      // Track video progress
+      function startProgressTracking() {
+        if (progressInterval) {
+          clearInterval(progressInterval);
         }
 
-        // Track video progress
-        function startProgressTracking() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-            }
-            
-            // Simulate progress every 5 seconds
-            let watchedSeconds = 0;
-            progressInterval = setInterval(async () => {
-                watchedSeconds += 5;
-                
-                try {
-                    const response = await fetch('/api/learning/progress', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            studentId: currentStudent,
-                            courseId: currentCourse.id,
-                            watchedSeconds: watchedSeconds
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        currentProgress = data.data.progress;
-                        updateProgressBar(currentProgress);
-                    }
-                } catch (error) {
-                    console.error('Error updating progress:', error);
-                }
-            }, 5000);
-        }
+        // Simulate progress every 5 seconds
+        let watchedSeconds = 0;
+        progressInterval = setInterval(async () => {
+          watchedSeconds += 5;
 
-        // Update progress bar
-        function updateProgressBar(progress) {
-            const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = progress + '%';
-            progressBar.textContent = progress + '%';
-        }
-
-        // Complete course
-        async function completeCourse() {
-            if (currentProgress < 80) {
-                alert('Bạn cần xem ít nhất 80% video để hoàn thành khóa học');
-                return;
-            }
-            
-            if (!confirm('Bạn có chắc muốn hoàn thành khóa học này?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/learning/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        studentId: currentStudent,
-                        courseId: currentCourse.id,
-                        finalScore: 95
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showMessage('videoMessage', 'Chúc mừng! Bạn đã hoàn thành khóa học. Dữ liệu đã được gửi đến EduWallet.', 'success');
-                    
-                    // Stop progress tracking
-                    if (progressInterval) {
-                        clearInterval(progressInterval);
-                    }
-                    
-                    // Update to 100%
-                    updateProgressBar(100);
-                    
-                    setTimeout(() => {
-                        backToCourses();
-                    }, 3000);
-                } else {
-                    showMessage('videoMessage', 'Lỗi: ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error completing course:', error);
-                showMessage('videoMessage', 'Lỗi khi hoàn thành khóa học', 'error');
-            }
-        }
-
-        // Navigation functions
-        function backToCourses() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-            }
-            document.getElementById('videoPlayer').src = '';
-            showSection('courseListSection');
-        }
-
-        function logout() {
-            if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                currentStudent = null;
-                currentCourse = null;
-                if (progressInterval) {
-                    clearInterval(progressInterval);
-                }
-                document.getElementById('studentId').value = '';
-                showSection('loginSection');
-            }
-        }
-
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
+          try {
+            const response = await fetch("/api/learning/progress", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                studentId: currentStudent,
+                courseId: currentCourse.id,
+                watchedSeconds: watchedSeconds,
+              }),
             });
-            document.getElementById(sectionId).classList.add('active');
+
+            const data = await response.json();
+            if (data.success) {
+              currentProgress = data.data.progress;
+              updateProgressBar(currentProgress);
+            }
+          } catch (error) {
+            console.error("Error updating progress:", error);
+          }
+        }, 5000);
+      }
+
+      // Update progress bar
+      function updateProgressBar(progress) {
+        const progressBar = document.getElementById("progressBar");
+        progressBar.style.width = progress + "%";
+        progressBar.textContent = progress + "%";
+      }
+
+      // Complete course
+      async function completeCourse() {
+        if (currentProgress < 80) {
+          alert("Bạn cần xem ít nhất 80% video để hoàn thành khóa học");
+          return;
         }
 
-        function showMessage(elementId, message, type) {
-            const messageEl = document.getElementById(elementId);
-            messageEl.textContent = message;
-            messageEl.className = `message ${type} show`;
-            
-            setTimeout(() => {
-                messageEl.classList.remove('show');
-            }, 5000);
+        if (!confirm("Bạn có chắc muốn hoàn thành khóa học này?")) {
+          return;
         }
+
+        try {
+          const response = await fetch("/api/learning/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: currentStudent,
+              courseId: currentCourse.id,
+              finalScore: 95,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showMessage(
+              "videoMessage",
+              "Chúc mừng! Bạn đã hoàn thành khóa học. Dữ liệu đã được gửi đến EduWallet.",
+              "success"
+            );
+
+            // Stop progress tracking
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
+
+            // Update to 100%
+            updateProgressBar(100);
+
+            setTimeout(() => {
+              backToCourses();
+            }, 3000);
+          } else {
+            showMessage("videoMessage", "Lỗi: " + data.message, "error");
+          }
+        } catch (error) {
+          console.error("Error completing course:", error);
+          showMessage("videoMessage", "Lỗi khi hoàn thành khóa học", "error");
+        }
+      }
+
+      // Navigation functions
+      function backToCourses() {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        document.getElementById("videoPlayer").src = "";
+        showSection("courseListSection");
+      }
+
+      function logout() {
+        if (confirm("Bạn có chắc muốn đăng xuất?")) {
+          currentStudent = null;
+          currentCourse = null;
+          if (progressInterval) {
+            clearInterval(progressInterval);
+          }
+          document.getElementById("studentId").value = "";
+          showSection("loginSection");
+        }
+      }
+
+      function showSection(sectionId) {
+        document.querySelectorAll(".section").forEach((section) => {
+          section.classList.remove("active");
+        });
+        document.getElementById(sectionId).classList.add("active");
+      }
+
+      function showMessage(elementId, message, type) {
+        const messageEl = document.getElementById(elementId);
+        messageEl.textContent = message;
+        messageEl.className = `message ${type} show`;
+
+        setTimeout(() => {
+          messageEl.classList.remove("show");
+        }, 5000);
+      }
+
+      // Create course modal controls
+      function showCreateCourseModal() {
+        const modal = document.getElementById("createCourseModal");
+        if (modal) {
+          modal.style.display = "flex";
+        }
+      }
+      function closeCreateCourseModal() {
+        const modal = document.getElementById("createCourseModal");
+        if (modal) {
+          modal.style.display = "none";
+        }
+      }
+
+      async function createCourse(e) {
+        e.preventDefault();
+
+        const title = document.getElementById("courseTitle")?.value.trim();
+        const description = document
+          .getElementById("courseDescription")
+          ?.value.trim();
+        const link = document.getElementById("courseLink")?.value.trim();
+        const price = parseFloat(
+          document.getElementById("coursePrice")?.value || 0
+        );
+        const skillsRaw = document.getElementById("courseSkills")?.value || "";
+        const skills = skillsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        if (!title || !link) {
+          alert("Vui lòng cung cấp tiêu đề và đường dẫn khóa học.");
+          return;
+        }
+        if (!skills.length) {
+          if (
+            !confirm(
+              "Bạn chưa nhập kỹ năng (skills). Tiếp tục không có skills?"
+            )
+          ) {
+            return;
+          }
+        }
+
+        const payload = {
+          name: title,
+          description: description,
+          courseId: link,
+          priceEdu: price,
+          skills: skills,
+        };
+
+        try {
+          const resp = await fetch("/api/courses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+          if (data.success) {
+            alert("Tạo khóa học thành công");
+            closeCreateCourseModal();
+            document.getElementById("createCourseForm").reset();
+            loadCourses();
+          } else {
+            alert("Lỗi tạo khóa học: " + (data.message || "Unknown"));
+          }
+        } catch (err) {
+          console.error("Create course error", err);
+          alert("Lỗi khi tạo khóa học");
+        }
+      }
     </script>
-</body>
+  </body>
 </html>

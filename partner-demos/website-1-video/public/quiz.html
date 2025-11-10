@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz - Partner Learning Platform</title>
+    <style>
+      /* same styles as previous demo page */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      /* truncated for brevity: styles identical to quiz-demo.html */
+      .question-card {
+        background: #f7fafc;
+        padding: 18px;
+        border-radius: 10px;
+        margin: 18px 0;
+      }
+      .question-text {
+        font-weight: 700;
+        margin-bottom: 12px;
+        font-size: 1.05rem;
+      }
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e6edf3;
+        background: white;
+        cursor: pointer;
+      }
+      .option:hover {
+        box-shadow: 0 6px 18px rgba(102, 126, 234, 0.12);
+        transform: translateY(-2px);
+      }
+      .option.selected {
+        border-color: #4f46e5;
+        background: linear-gradient(90deg, #eef2ff, white);
+      }
+      /* Result highlighting */
+      .option.correct {
+        border-color: #10b981; /* green */
+        background: linear-gradient(90deg, #ecfdf5, #ffffff); /* light green */
+      }
+      .option.correct .option-label {
+        background: #10b981;
+        color: #ffffff;
+      }
+      .option.incorrect {
+        border-color: #ef4444; /* red */
+        background: linear-gradient(90deg, #fff5f5, #ffffff); /* light red */
+      }
+      .option.incorrect .option-label {
+        background: #ef4444;
+        color: #ffffff;
+      }
+      /* Make result options non-interactive */
+      .results .option {
+        cursor: default;
+      }
+      .result-summary {
+        padding: 18px 24px;
+        border-radius: 12px;
+        background: #f8fafc;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .score-box {
+        width: 110px;
+        height: 110px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #ffffff, #f1f5f9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        box-shadow: 0 6px 18px rgba(102, 126, 234, 0.06);
+      }
+      .score-number {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #111827;
+      }
+      .grade-pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .summary-body {
+        flex: 1;
+      }
+      .summary-body .title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+      .summary-body .meta {
+        color: #6b7280;
+        margin-bottom: 6px;
+      }
+      .option-label {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #eef2ff;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      .option-text {
+        flex: 1;
+      }
+      .select-btn {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .select-btn:hover {
+        background: #4338ca;
+      }
+      .btn {
+        background: #111827;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .btn[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎓 Quiz Assessment</h1>
+      <div id="app"><div class="loading">Loading quiz...</div></div>
+    </div>
+
+    <script>
+      // Copied behavior from quiz-demo.html: uses API to load quiz and submit
+      // Use same-origin API so browser requests go to partner domain (works over HTTPS)
+      const API_URL = window.location.origin + "/api";
+      // Prefer student id from URL query param (student=...), fallback to default for local testing
+      const urlParamsInit = new URLSearchParams(window.location.search);
+      const STUDENT_ID =
+        urlParamsInit.get("student") || "690302badd7c9774cfd2a6a7";
+      // Enrollment / registration id coming from EduWallet: prefer param 'reg' or 'enrollmentId'
+      const ENROLLMENT_ID =
+        urlParamsInit.get("reg") || urlParamsInit.get("enrollmentId") || null;
+      let COURSE_ID =
+        urlParamsInit.get("courseId") || "quiz_react_advanced_2024";
+      let quizData = null;
+      let currentQuestionIndex = 0;
+      let answers = {};
+      let startTime = null;
+      let timerInterval = null;
+
+      // Sync enrollment from EduWallet if enrollmentId is provided
+      (async () => {
+        console.log("🔄 [DEBUG] Quiz page - Enrollment sync IIFE started");
+        console.log(
+          "🔄 [DEBUG] URL params - student:",
+          STUDENT_ID,
+          "enrollment:",
+          ENROLLMENT_ID,
+          "course:",
+          COURSE_ID
+        );
+        if (ENROLLMENT_ID && STUDENT_ID) {
+          console.log(
+            "🔄 Syncing enrollment from EduWallet:",
+            ENROLLMENT_ID,
+            "for student:",
+            STUDENT_ID
+          );
+          try {
+            const syncResp = await fetch(`${API_URL}/enrollment/sync`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                enrollmentId: ENROLLMENT_ID,
+                studentId: STUDENT_ID,
+                courseId: COURSE_ID, // Add courseId from URL
+              }),
+            });
+            console.log(
+              "🔄 [DEBUG] Sync fetch response status:",
+              syncResp.status
+            );
+            const syncData = await syncResp.json();
+            console.log("✅ Enrollment sync result:", syncData);
+          } catch (syncError) {
+            console.warn("⚠️ Failed to sync enrollment:", syncError);
+          }
+        } else {
+          console.log(
+            "⚠️ Skipping enrollment sync - enrollmentId:",
+            ENROLLMENT_ID,
+            "studentId:",
+            STUDENT_ID
+          );
+        }
+      })();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("courseId")) {
+        COURSE_ID = urlParams.get("courseId");
+      }
+
+      async function init() {
+        try {
+          // First, check if this student already has a submitted result for this course
+          const existingQuery = `${API_URL}/quiz/${COURSE_ID}/result?student=${encodeURIComponent(
+            STUDENT_ID
+          )}${
+            ENROLLMENT_ID
+              ? `&enrollmentId=${encodeURIComponent(ENROLLMENT_ID)}`
+              : ""
+          }`;
+          const existing = await fetch(existingQuery);
+          const existingJson = await existing.json().catch(() => null);
+          if (existingJson && existingJson.success && existingJson.result) {
+            // If server returned an existing result, show it and stop (one attempt only)
+            quizData = existingJson.quiz || existingJson.result.quiz || null;
+            // ensure quizData exists so renderResults can map questions
+            if (!quizData) {
+              // fallback: fetch questions
+              const qres = await fetch(
+                `${API_URL}/quiz/${COURSE_ID}/questions`
+              );
+              const qjson = await qres.json();
+              quizData = qjson.quiz;
+            }
+            renderResults(existingJson.result);
+            return;
+          }
+
+          // If no existing result, record attempt start (server may use this to validate / rate-limit)
+          await fetch(`${API_URL}/learning/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: STUDENT_ID,
+              courseId: COURSE_ID,
+            }),
+          });
+
+          const response = await fetch(
+            `${API_URL}/quiz/${COURSE_ID}/questions`
+          );
+          const data = await response.json();
+          if (!data.success)
+            throw new Error(data.message || "Failed to load quiz");
+
+          quizData = data.quiz;
+          startTime = Date.now();
+          if (quizData.timeLimit) startTimer(quizData.timeLimit);
+          renderQuiz();
+        } catch (err) {
+          document.getElementById(
+            "app"
+          ).innerHTML = `<div class="error"><strong>Error:</strong> ${err.message}</div>`;
+        }
+      }
+
+      function startTimer(seconds) {
+        let remaining = seconds;
+        timerInterval = setInterval(() => {
+          remaining--;
+          const minutes = Math.floor(remaining / 60);
+          const secs = remaining % 60;
+          document.getElementById("timer").textContent = `${minutes}:${secs
+            .toString()
+            .padStart(2, "0")}`;
+          if (remaining <= 0) {
+            clearInterval(timerInterval);
+            submitQuiz();
+          }
+        }, 1000);
+      }
+
+      function renderQuiz() {
+        const progress =
+          ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+        let html = `<div class="course-info"><h2>Total Questions: ${
+          quizData.totalQuestions
+        }</h2><p>Passing Score: ${quizData.passingScore}%</p>${
+          quizData.timeLimit
+            ? `<p>Time Limit: ${Math.floor(
+                quizData.timeLimit / 60
+              )} minutes</p>`
+            : ""
+        }</div>`;
+        html += `<div class="quiz-header"><div>Question ${
+          currentQuestionIndex + 1
+        } of ${quizData.totalQuestions}</div>${
+          quizData.timeLimit ? '<div class="timer" id="timer">--:--</div>' : ""
+        }</div>`;
+        html += `<div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div>`;
+        const question = quizData.questions[currentQuestionIndex];
+        const qId = question.id || question._id || currentQuestionIndex + 1;
+        const options =
+          question.options && question.options.length
+            ? question.options
+            : ["Option A", "Option B", "Option C", "Option D"];
+        html += `<div class="question-card"><div class="question-text">${qId}. ${
+          question.question
+        }</div><div class="options">${options
+          .map((option, index) => {
+            const checked = answers[qId] === index ? "checked" : "";
+            return `
+              <label class="option ${answers[qId] === index ? "selected" : ""}">
+                <input type="radio" name="q-${qId}" ${checked} onchange="selectAnswer('${qId}', ${index})" />
+                <div class="option-label">${String.fromCharCode(
+                  65 + index
+                )}</div>
+                <div class="option-text">${option}</div>
+                <button type="button" class="select-btn" onclick="selectAnswer('${qId}', ${index})">Chọn</button>
+              </label>`;
+          })
+          .join("")}</div></div>`;
+        html += `<div style="display:flex;justify-content:space-between;"><button class="btn" onclick="previousQuestion()" ${
+          currentQuestionIndex === 0 ? "disabled" : ""
+        }>← Previous</button>${
+          currentQuestionIndex < quizData.totalQuestions - 1
+            ? `<button class="btn" onclick="nextQuestion()">Next →</button>`
+            : `<button class="btn" onclick="submitQuiz()">Submit Quiz</button>`
+        }</div>`;
+        document.getElementById("app").innerHTML = html;
+      }
+
+      function selectAnswer(questionId, answerIndex) {
+        answers[questionId] = answerIndex;
+        renderQuiz();
+      }
+      function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          renderQuiz();
+        }
+      }
+      function nextQuestion() {
+        if (currentQuestionIndex < quizData.totalQuestions - 1) {
+          currentQuestionIndex++;
+          renderQuiz();
+        }
+      }
+
+      async function submitQuiz() {
+        if (timerInterval) clearInterval(timerInterval);
+        try {
+          const submitBody = {
+            studentId: STUDENT_ID,
+            courseId: COURSE_ID,
+            answers,
+          };
+          if (ENROLLMENT_ID) submitBody.enrollmentId = ENROLLMENT_ID;
+
+          const response = await fetch(`${API_URL}/quiz/submit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(submitBody),
+          });
+          const result = await response.json();
+          if (!result.success) {
+            // if server indicates already submitted, display the existing result if present
+            if (result.alreadySubmitted && result.existingResult) {
+              renderResults(result.existingResult);
+              return;
+            }
+            throw new Error(result.message || "Submission failed");
+          }
+
+          // Render the received result and then notify learning/complete if passed
+          renderResults(result);
+          if (result.passed) {
+            // Notify backend to complete the learning and (server-side) push result to eduwallet
+            const completeBody = { studentId: STUDENT_ID, courseId: COURSE_ID };
+            if (ENROLLMENT_ID) completeBody.enrollmentId = ENROLLMENT_ID;
+            await fetch(`${API_URL}/learning/complete`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(completeBody),
+            });
+          }
+        } catch (err) {
+          document.getElementById(
+            "app"
+          ).innerHTML = `<div class="error"><strong>Error:</strong> ${err.message}</div>`;
+        }
+      }
+
+      function renderResults(result) {
+        // Top summary: big score, grade, and brief stats
+        let html = `<div class="results">`;
+        html += `<div class="result-summary">`;
+        html += `<div class="score-box"><div class="score-number">${result.score}%</div><div class="grade-pill">${result.grade}</div></div>`;
+        html += `<div class="summary-body">`;
+        html += `<div class="title">${
+          result.passed
+            ? "🎉 Congratulations! You passed!"
+            : "😔 Sorry, you did not pass."
+        }</div>`;
+        html += `<div class="meta">You got <strong>${result.correctAnswers}</strong> out of <strong>${result.totalQuestions}</strong> questions correct.</div>`;
+        html += `<div class="meta">Passing Score: ${result.passingScore}%</div>`;
+        html += `</div></div>`;
+
+        html += `<h2 style="margin-top:12px;margin-bottom:18px;">Detailed Results</h2>`;
+
+        result.results.forEach((item, index) => {
+          const q = quizData.questions[index] || {};
+          const options = q.options || [];
+          html += `<div class="question-card"><div class="question-text">${
+            index + 1
+          }. ${item.question}</div><div class="options">`;
+          options.forEach((option, optIndex) => {
+            let className = "option";
+            if (optIndex === item.correctAnswer) className += " correct";
+            else if (optIndex === item.userAnswer && !item.isCorrect)
+              className += " incorrect";
+            html += `<div class="${className}"><div class="option-label">${String.fromCharCode(
+              65 + optIndex
+            )}</div><div class="option-text">${option}</div></div>`;
+          });
+          html += `</div>`;
+          if (item.explanation) {
+            html += `<div class="explanation"><div class="explanation-title">💡 Explanation</div><div>${item.explanation}</div></div>`;
+          }
+          html += `</div>`;
+        });
+
+        html += `</div>`; // .results
+        // Removed Try Again button as requested
+        document.getElementById("app").innerHTML = html;
+      }
+
+      init();
+    </script>
+  </body>
+</html>

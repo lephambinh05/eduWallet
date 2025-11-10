@@ -8,7 +8,23 @@ const jwt = require("jsonwebtoken");
 const app = express();
 
 // Middleware
-app.use(cors());
+// Configure CORS explicitly so preflight (OPTIONS) responses include
+// the correct allowed methods and headers (PATCH is required by the UI).
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "X-Requested-With",
+    "Origin",
+  ],
+  credentials: true,
+};
+app.use(cors(corsOptions));
+// Ensure Express responds to preflight OPTIONS for all routes
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // Simple request logger to help debugging in development
@@ -30,16 +46,19 @@ const User = require("./src/models/User");
 require("./src/models/Institution");
 require("./src/models/Certificate");
 require("./src/models/LearnPass");
+require("./src/models/PartnerSource");
+require("./src/models/PartnerCourse");
 
 // Import routes
 const portfolioRoutes = require("./src/routes/portfolio");
-const walletRoutes = require("./routes/wallet");
+const walletRoutes = require("./src/routes/wallet");
 const adminRoutes = require("./src/routes/admin");
 const blockchainRoutes = require("./src/routes/blockchain");
 const partnerRoutes = require("./src/routes/partner");
 const marketplaceRoutes = require("./src/routes/marketplace");
 const enrollmentsRoutes = require("./src/routes/enrollments");
 const pointRoutes = require("./src/routes/point");
+const webhooksRoutes = require("./src/routes/webhooks");
 
 // Connect to MongoDB - require MONGODB_URI from environment
 if (!process.env.MONGODB_URI) {
@@ -81,6 +100,7 @@ app.use("/api/partner", partnerRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
 app.use("/api/point", pointRoutes);
+app.use("/api/webhooks", webhooksRoutes);
 
 // Print a list of registered routes to the console to aid debugging
 function listRoutes(app) {

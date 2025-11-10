@@ -6,7 +6,8 @@ class EmailService {
   constructor() {
     this.transporter = null;
     this.isConfigured = false;
-    this.init();
+    // store init promise so callers can await initialization to avoid race conditions
+    this.ready = this.init();
   }
 
   async init() {
@@ -281,6 +282,13 @@ class EmailService {
 
   // Core email sending function
   async sendEmail(to, subject, html, attachments = []) {
+    // Ensure initialization finished (avoid send attempts before verify completes)
+    try {
+      await this.ready;
+    } catch (e) {
+      // init failed earlier; proceed to return not configured
+    }
+
     if (!this.isConfigured) {
       console.log("Email service not configured, skipping email send");
       return { success: false, error: "Email service not configured" };

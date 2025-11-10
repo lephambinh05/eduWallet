@@ -71,6 +71,13 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// Public course entrypoint so EduWallet can link students directly
+// Example: https://partner1.mojistudio.vn/course/:courseId?student=USER_ID
+app.get("/course/:courseId", (req, res) => {
+  // Serve the SPA entry page (client-side JS will read courseId and student from URL)
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Partner Website 1 (Video) running on http://localhost:${PORT}`);

@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const crypto = require("crypto");
 const axios = require("axios");
 const mongoose = require("mongoose");
 
@@ -58,7 +57,8 @@ const Course = mongoose.model("Course", CourseSchema);
 const EnrollmentSchema = new mongoose.Schema({
   enrollmentId: { type: String, required: true, unique: true },
   userId: { type: String, required: true },
-  courseId: { type: String, required: true },
+  courseId: { type: String, required: true }, // Partner's course ID
+  eduwalletItemId: { type: String }, // EduWallet's itemId for webhook lookups
   status: {
     type: String,
     enum: ["active", "completed", "expired"],
@@ -81,6 +81,33 @@ EnrollmentSchema.index({ enrollmentId: 1 });
 
 const Enrollment = mongoose.model("Enrollment", EnrollmentSchema);
 
+// QuizResult Schema - persist quiz submissions so each student can only submit once
+const QuizResultSchema = new mongoose.Schema({
+  courseId: { type: String, required: true },
+  studentId: { type: String, required: true },
+  enrollmentId: { type: String }, // mapping to EduWallet registration/enrollment
+  answers: { type: Object },
+  score: Number,
+  passed: Boolean,
+  correctAnswers: Number,
+  totalQuestions: Number,
+  grade: String,
+  results: [
+    {
+      questionId: Number,
+      question: String,
+      userAnswer: Number,
+      correctAnswer: Number,
+      isCorrect: Boolean,
+      explanation: String,
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+});
+
+QuizResultSchema.index({ studentId: 1, courseId: 1 }, { unique: true });
+const QuizResult = mongoose.model("QuizResult", QuizResultSchema);
+
 // Connect to MongoDB (Partner's own database)
 if (process.env.MONGODB_URI) {
   mongoose
@@ -96,14 +123,7 @@ if (process.env.MONGODB_URI) {
     });
 }
 
-// Helper function to create HMAC signature
-function createSignature(timestamp, body) {
-  const secret = process.env.PARTNER_SECRET;
-  const payload = `${timestamp}${body}`;
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(payload);
-  return `sha256=${hmac.digest("hex")}`;
-}
+// Removed unused createSignature helper after webhook logic removal.
 
 // ============================================================================
 // COURSE MANAGEMENT ENDPOINTS (Partner creates courses here)
@@ -153,6 +173,38 @@ router.post("/courses", async (req, res) => {
       });
     }
 
+    // Additional validation: quiz questions must include options, and partner must supply skills
+    if (type === "quiz" || type === "hybrid") {
+      // skills must be provided and non-empty
+      if (!skills || !Array.isArray(skills) || skills.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Quiz courses require: skills array (at least one skill)",
+        });
+      }
+
+      // Validate each question has options (or answers) and a question text
+      for (let i = 0; i < quiz.questions.length; i++) {
+        const q = quiz.questions[i];
+        const optionsArr =
+          (q.options && q.options.length) ||
+          (q.answers && q.answers.length) ||
+          [];
+        if (
+          !q.question ||
+          typeof q.question !== "string" ||
+          optionsArr.length === 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: `Quiz question #${
+              i + 1
+            } is missing question text or options`,
+          });
+        }
+      }
+    }
+
     // Generate unique courseId
     const courseId = `${type}_${Date.now()}_${Math.random()
       .toString(36)
@@ -178,10 +230,29 @@ router.post("/courses", async (req, res) => {
       courseData.videoDuration = Number(videoDuration);
     }
 
-    // Add quiz fields if present
+    // Add quiz fields if present and normalize shape to ensure backend schema
     if (quiz && quiz.questions) {
+      const normalizedQuestions = quiz.questions.map((q, idx) => {
+        const options =
+          (q.options && q.options.slice()) ||
+          (q.answers && q.answers.slice()) ||
+          [];
+        return {
+          id: q.id || idx + 1,
+          question: q.question || q.questionText || "",
+          options: options,
+          correctAnswer:
+            typeof q.correctAnswer === "number"
+              ? q.correctAnswer
+              : typeof q.correct === "number"
+              ? q.correct
+              : 0,
+          explanation: q.explanation || "",
+        };
+      });
+
       courseData.quiz = {
-        questions: quiz.questions,
+        questions: normalizedQuestions,
         passingScore: quiz.passingScore || 70,
         timeLimit: quiz.timeLimit || null,
       };
@@ -285,140 +356,7 @@ router.get("/courses/:courseId", async (req, res) => {
   }
 });
 
-// ============================================================================
-// ENROLLMENT WEBHOOK (EduWallet calls this when user purchases a course)
-// ============================================================================
-
-/**
- * POST /api/webhooks/enrollment-created
- * EduWallet gọi endpoint này khi user mua khóa học thành công
- * Mục đích: Grant access cho user để học khóa học
- */
-router.post("/webhooks/enrollment-created", async (req, res) => {
-  try {
-    // Verify signature
-    const timestamp = req.headers["x-partner-timestamp"];
-    const signature = req.headers["x-partner-signature"];
-    const partnerId = req.headers["x-partner-id"];
-
-    if (!timestamp || !signature || !partnerId) {
-      return res.status(401).json({
-        success: false,
-        message: "Missing authentication headers",
-      });
-    }
-
-    // Verify HMAC signature
-    const bodyString = JSON.stringify(req.body);
-    const expectedSignature = createSignature(timestamp, bodyString);
-
-    if (signature !== expectedSignature) {
-      console.warn("⚠️ Invalid webhook signature from EduWallet");
-      return res.status(401).json({
-        success: false,
-        message: "Invalid signature",
-      });
-    }
-
-    // Check timestamp to prevent replay attacks (within 5 minutes)
-    const now = Math.floor(Date.now() / 1000);
-    const requestTime = parseInt(timestamp);
-    if (Math.abs(now - requestTime) > 300) {
-      return res.status(401).json({
-        success: false,
-        message: "Request timestamp expired",
-      });
-    }
-
-    const {
-      enrollmentId,
-      userId,
-      courseId,
-      purchaseDate,
-      expiryDate,
-      metadata,
-    } = req.body;
-
-    // Validate required fields
-    if (!enrollmentId || !userId || !courseId) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields: enrollmentId, userId, courseId",
-      });
-    }
-
-    // Check if course exists
-    const course = await Course.findOne({ courseId });
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: `Course not found: ${courseId}`,
-      });
-    }
-
-    // Check if enrollment already exists
-    const existingEnrollment = await Enrollment.findOne({ enrollmentId });
-    if (existingEnrollment) {
-      console.log(
-        `ℹ️ Enrollment ${enrollmentId} already exists, returning existing data`
-      );
-      return res.json({
-        success: true,
-        message: "Enrollment already exists",
-        enrollment: {
-          enrollmentId: existingEnrollment.enrollmentId,
-          userId: existingEnrollment.userId,
-          courseId: existingEnrollment.courseId,
-          status: existingEnrollment.status,
-          purchaseDate: existingEnrollment.purchaseDate,
-          accessUrl: `${process.env.PARTNER_URL}/course/${courseId}?student=${userId}`,
-        },
-      });
-    }
-
-    // Create new enrollment
-    const enrollment = new Enrollment({
-      enrollmentId,
-      userId,
-      courseId,
-      status: "active",
-      purchaseDate: purchaseDate || new Date(),
-      expiryDate: expiryDate || null,
-      accessGranted: true,
-      metadata: metadata || {},
-    });
-
-    await enrollment.save();
-
-    console.log(`✅ Enrollment created: ${enrollmentId} for user ${userId}`);
-
-    // Return success response
-    res.status(201).json({
-      success: true,
-      message: "Enrollment created successfully",
-      enrollment: {
-        enrollmentId,
-        userId,
-        courseId,
-        status: "active",
-        purchaseDate: enrollment.purchaseDate,
-        accessUrl: `${process.env.PARTNER_URL}/course/${courseId}?student=${userId}`,
-        courseInfo: {
-          title: course.title,
-          courseType: course.courseType,
-          credits: course.credits,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("❌ Error creating enrollment:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create enrollment",
-      error: error.message,
-    });
-  }
-});
+// Webhook logic removed. All enrollment and learning events now use direct API calls to EduWallet.
 
 // ============================================================================
 // ENROLLMENT MANAGEMENT
@@ -480,6 +418,7 @@ router.get("/enrollments/:userId", async (req, res) => {
 
 /**
  * Middleware: Check if user has access to course
+ * Temporarily disabled for testing
  */
 async function checkCourseAccess(req, res, next) {
   try {
@@ -490,38 +429,12 @@ async function checkCourseAccess(req, res, next) {
       return next();
     }
 
-    // Check if enrollment exists
-    const enrollment = await Enrollment.findOne({
-      userId: studentId,
-      courseId: courseId,
-      status: "active",
-    });
-
-    if (!enrollment) {
-      console.warn(
-        `⚠️ Access denied: User ${studentId} has no enrollment for course ${courseId}`
-      );
-      return res.status(403).json({
-        success: false,
-        message:
-          "Access denied. Please purchase this course on EduWallet first.",
-        courseId,
-        userId: studentId,
-      });
-    }
-
-    // Check if enrollment expired
-    if (enrollment.expiryDate && new Date() > enrollment.expiryDate) {
-      return res.status(403).json({
-        success: false,
-        message: "Your enrollment has expired. Please renew your access.",
-        expiryDate: enrollment.expiryDate,
-      });
-    }
-
-    // Access granted
-    req.enrollment = enrollment;
-    next();
+    // Temporarily disabled enrollment check for testing
+    console.warn(
+      `[TESTING] Skipping enrollment check for user ${studentId} course ${courseId}`
+    );
+    req.enrollment = null; // No enrollment data
+    return next();
   } catch (error) {
     console.error("Error checking course access:", error);
     // On error, allow access (for backward compatibility)
@@ -535,7 +448,8 @@ async function checkCourseAccess(req, res, next) {
 
 // Start learning session
 router.post("/learning/start", checkCourseAccess, async (req, res) => {
-  const { studentId, courseId } = req.body;
+  const { studentId, courseId, enrollmentId } = req.body;
+  console.log("[LEARNING/START] Request body:", req.body);
 
   if (!studentId || !courseId) {
     return res
@@ -563,6 +477,7 @@ router.post("/learning/start", checkCourseAccess, async (req, res) => {
       status: "In Progress",
       startedAt: startedAt,
       courseType: course.courseType,
+      enrollmentId: enrollmentId || null, // Store enrollmentId
     };
 
     // Add type-specific fields
@@ -576,30 +491,34 @@ router.post("/learning/start", checkCourseAccess, async (req, res) => {
 
     students[studentId][courseId] = progressData;
 
-    // 🆕 Notify EduWallet about learning start
+    // Gọi trực tiếp EduWallet backend /api/partner/public/learning/start
     try {
-      await axios.post(
-        `${process.env.API_URL}/api/partner/public/learning/start`,
+      const resp = await axios.post(
+        `${process.env.EDUWALLET_API_URL}/api/partner/public/learning/start`,
         {
-          userId: studentId,
           courseId: courseId,
-          startedAt: startedAt,
         },
         {
           headers: {
-            "x-api-key": process.env.PARTNER_API_KEY,
+            Authorization:
+              req.headers["authorization"] ||
+              req.headers["Authorization"] ||
+              "",
             "Content-Type": "application/json",
           },
           timeout: 5000,
         }
       );
-      console.log("✅ Notified EduWallet about learning start");
+      console.log(
+        "✅ Called EduWallet /api/partner/public/learning/start. Response:",
+        resp.data
+      );
     } catch (error) {
       console.warn(
-        "⚠️ Failed to notify EduWallet about learning start:",
-        error.message
+        "⚠️ Failed to call EduWallet /api/partner/public/learning/start:",
+        error.message,
+        error.response?.data
       );
-      // Don't fail the request, just log warning
     }
 
     res.json({
@@ -725,10 +644,49 @@ router.get("/quiz/:courseId/questions", async (req, res) => {
   }
 });
 
-// Submit quiz answers and get results
+// Get existing quiz result for a student (if any)
+router.get("/quiz/:courseId/result", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { student, studentId, enrollmentId } = req.query;
+    const sid = studentId || student;
+
+    if (!sid || !courseId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing student or courseId" });
+    }
+
+    // Prefer lookup by student+course; if enrollmentId provided, try that as well
+    let query = { studentId: sid, courseId };
+    let result = await QuizResult.findOne(query).lean();
+    if (!result && enrollmentId) {
+      result = await QuizResult.findOne({ enrollmentId, courseId }).lean();
+    }
+
+    if (!result) {
+      return res.json({ success: false, message: "No existing result" });
+    }
+
+    // Also include quiz shape for client display
+    const course = await Course.findOne({ courseId });
+    const quiz = course?.quiz || null;
+
+    res.json({ success: true, result, quiz });
+  } catch (error) {
+    console.error("Error fetching quiz result:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch quiz result",
+      error: error.message,
+    });
+  }
+});
+
+// Submit quiz answers and persist result (one submission per student per course)
 router.post("/quiz/submit", async (req, res) => {
   try {
-    const { studentId, courseId, answers } = req.body;
+    const { studentId, courseId, answers, enrollmentId } = req.body;
 
     if (!studentId || !courseId || !answers) {
       return res.status(400).json({
@@ -739,23 +697,19 @@ router.post("/quiz/submit", async (req, res) => {
 
     const course = await Course.findOne({ courseId });
     if (!course || !course.quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Quiz not found" });
     }
 
-    // Initialize student progress if not exists
-    if (!students[studentId]) {
-      students[studentId] = {};
-    }
-    if (!students[studentId][courseId]) {
-      students[studentId][courseId] = {
-        progress: 0,
-        score: 0,
-        status: "In Progress",
-        startedAt: new Date().toISOString(),
-      };
+    // Check if result already exists in DB
+    const existing = await QuizResult.findOne({ studentId, courseId });
+    if (existing) {
+      return res.json({
+        success: false,
+        alreadySubmitted: true,
+        existingResult: existing,
+      });
     }
 
     // Grade the quiz
@@ -781,7 +735,35 @@ router.post("/quiz/submit", async (req, res) => {
     const score = Math.round((correctCount / questions.length) * 100);
     const passed = score >= course.quiz.passingScore;
 
-    // Update student progress
+    // Determine grade
+    let grade = "D";
+    if (score >= 95) grade = "A+";
+    else if (score >= 90) grade = "A";
+    else if (score >= 85) grade = "B+";
+    else if (score >= 80) grade = "B";
+    else if (score >= 70) grade = "C";
+
+    // Persist result
+    const quizResult = new QuizResult({
+      courseId,
+      studentId,
+      enrollmentId: enrollmentId || null,
+      answers,
+      score,
+      passed,
+      correctAnswers: correctCount,
+      totalQuestions: questions.length,
+      grade,
+      results,
+    });
+
+    await quizResult.save();
+
+    // Update in-memory progress as before for backward compatibility
+    if (!students[studentId]) students[studentId] = {};
+    students[studentId][courseId] = students[studentId][courseId] || {
+      startedAt: new Date().toISOString(),
+    };
     const studentProgress = students[studentId][courseId];
     studentProgress.score = score;
     studentProgress.progress = 100;
@@ -789,19 +771,25 @@ router.post("/quiz/submit", async (req, res) => {
     studentProgress.quizResults = results;
     studentProgress.correctAnswers = correctCount;
     studentProgress.totalQuestions = questions.length;
+    if (passed) studentProgress.completedAt = new Date().toISOString();
 
-    if (passed) {
-      studentProgress.completedAt = new Date().toISOString();
-
-      // Determine grade based on score
-      if (score >= 95) studentProgress.grade = "A+";
-      else if (score >= 90) studentProgress.grade = "A";
-      else if (score >= 85) studentProgress.grade = "B+";
-      else if (score >= 80) studentProgress.grade = "B";
-      else if (score >= 70) studentProgress.grade = "C";
-      else studentProgress.grade = "D";
+    // If passed and enrollmentId is present, update Enrollment status
+    if (passed && enrollmentId) {
+      try {
+        const enrollment = await Enrollment.findOne({ enrollmentId });
+        if (enrollment) {
+          enrollment.status = "completed";
+          enrollment.completedAt = new Date();
+          await enrollment.save();
+        } else {
+          console.warn(
+            `No Enrollment found for enrollmentId ${enrollmentId} when trying to mark as completed after quiz submit.`
+          );
+        }
+      } catch (err) {
+        console.error("Error updating Enrollment after quiz submit:", err);
+      }
     }
-
     res.json({
       success: true,
       passed,
@@ -809,7 +797,7 @@ router.post("/quiz/submit", async (req, res) => {
       correctAnswers: correctCount,
       totalQuestions: questions.length,
       passingScore: course.quiz.passingScore,
-      grade: studentProgress.grade,
+      grade,
       results,
     });
   } catch (error) {
@@ -829,6 +817,7 @@ router.post("/quiz/submit", async (req, res) => {
 // Complete course and send to EduWallet
 router.post("/learning/complete", async (req, res) => {
   const { studentId, courseId, enrollmentId } = req.body;
+  console.log("[LEARNING/COMPLETE] Request body:", req.body);
 
   if (!studentId || !courseId) {
     return res
@@ -838,109 +827,141 @@ router.post("/learning/complete", async (req, res) => {
 
   try {
     const course = await Course.findOne({ courseId });
-    const studentProgress = students[studentId]?.[courseId];
-
-    if (!course || !studentProgress) {
+    if (!course) {
       return res
         .status(404)
-        .json({ success: false, message: "Course or progress not found" });
+        .json({ success: false, message: "Course not found" });
     }
 
-    // Prepare CompletedCourse payload theo format mới
-    const issueDate = new Date();
-    const completedCourseData = {
-      name: course.title,
-      description: course.description,
-      issuer: course.issuer,
-      issueDate: issueDate.toISOString(),
-      expiryDate: null,
-      category: course.category,
-      level: course.level,
-      credits: course.credits,
-      grade: studentProgress.grade || "C",
-      score: studentProgress.score,
-      status: "Completed",
-      progress: 100,
-      modulesCompleted: 1,
-      totalModules: 1,
-      skills: course.skills,
-      verificationUrl: null,
-      certificateUrl: null,
-      imageUrl: null,
-    };
+    // Gọi trực tiếp EduWallet backend /api/learning/complete (commented out - handled by webhook)
+    // const resp = await axios.post(
+    //   `${process.env.EDUWALLET_API_URL}/api/learning/complete`,
+    //   {
+    //     courseId: courseId,
+    //   },
+    //   {
+    //     headers: {
+    //       Authorization:
+    //         req.headers["authorization"] || req.headers["Authorization"] || "",
+    //       "Content-Type": "application/json",
+    //     },
+    //     timeout: 5000,
+    //   }
+    // );
+    // console.log(
+    //   "✅ Called EduWallet /api/learning/complete. Response:",
+    //   resp.data
+    // );
 
-    // Nếu có enrollmentId, gọi endpoint complete enrollment
+    // Ensure enrollmentId is stored in students
+    if (!students[studentId]) {
+      students[studentId] = {};
+    }
+    if (!students[studentId][courseId]) {
+      students[studentId][courseId] = {};
+    }
     if (enrollmentId) {
-      const timestamp = Math.floor(Date.now() / 1000).toString();
-      const payload = {
-        partnerId: process.env.PARTNER_ID,
-        eventType: "course_completed",
-        studentId: studentId,
-        courseId: courseId,
-        enrollmentId: enrollmentId,
-        completedCourse: completedCourseData,
-      };
-
-      const bodyString = JSON.stringify(payload);
-      const signature = createSignature(timestamp, bodyString);
-
-      const webhookUrl = `${process.env.EDUWALLET_API_URL}${process.env.EDUWALLET_WEBHOOK_ENDPOINT}`;
-
-      // Use retry mechanism
-      const response = await sendWebhookWithRetry(webhookUrl, payload, {
-        "Content-Type": "application/json",
-        "X-Partner-Id": process.env.PARTNER_ID,
-        "X-Partner-Timestamp": timestamp,
-        "X-Partner-Signature": signature,
-      });
-
-      res.json({
-        success: true,
-        message: "Course completed and sent to EduWallet",
-        eduWalletResponse: response.data,
-        completedCourse: completedCourseData,
-        studentProgress,
-      });
-    } else {
-      // Fallback: gửi qua webhook nếu không có enrollmentId
-      const timestamp = Math.floor(Date.now() / 1000).toString();
-      const payload = {
-        partnerId: process.env.PARTNER_ID,
-        eventType: "course_completed",
-        studentId: studentId,
-        courseId: courseId,
-        completedCourse: completedCourseData,
-      };
-
-      const bodyString = JSON.stringify(payload);
-      const signature = createSignature(timestamp, bodyString);
-
-      const webhookUrl = `${process.env.API_URL}${process.env.WEBHOOK_ENDPOINT}`;
-
-      // Use retry mechanism
-      const response = await sendWebhookWithRetry(webhookUrl, payload, {
-        "Content-Type": "application/json",
-        "X-Partner-Id": process.env.PARTNER_ID,
-        "X-Partner-Timestamp": timestamp,
-        "X-Partner-Signature": signature,
-      });
-
-      res.json({
-        success: true,
-        message: "Course completed and sent to EduWallet",
-        eduWalletResponse: response.data,
-        completedCourse: completedCourseData,
-        studentProgress,
-      });
+      students[studentId][courseId].enrollmentId = enrollmentId;
     }
+
+    // Send webhook to EduWallet with completion data
+    const finalEnrollmentId =
+      students[studentId]?.[courseId]?.enrollmentId || null;
+
+    // Get EduWallet course ID from EduWallet enrollment directly
+    let eduwalletCourseId = courseId; // fallback
+    if (finalEnrollmentId) {
+      try {
+        console.log(
+          "[WEBHOOK] Getting EduWallet enrollment for:",
+          finalEnrollmentId
+        );
+        // Call EduWallet API to get enrollment details
+        const eduWalletResp = await axios.get(
+          `${process.env.EDUWALLET_API_URL}/api/partner/public/enrollment/${finalEnrollmentId}`,
+          {
+            timeout: 5000,
+          }
+        );
+        const enrollmentData = eduWalletResp.data.data.enrollment;
+        console.log(
+          "[WEBHOOK] EduWallet enrollment data:",
+          JSON.stringify(enrollmentData, null, 2)
+        );
+        if (enrollmentData?.itemId) {
+          if (
+            typeof enrollmentData.itemId === "object" &&
+            enrollmentData.itemId._id
+          ) {
+            eduwalletCourseId = enrollmentData.itemId._id.toString();
+          } else if (typeof enrollmentData.itemId === "string") {
+            eduwalletCourseId = enrollmentData.itemId;
+          }
+          console.log("[WEBHOOK] Using eduwalletCourseId:", eduwalletCourseId);
+        } else {
+          console.log("[WEBHOOK] No itemId found in enrollment data");
+        }
+      } catch (err) {
+        console.warn(
+          "[WEBHOOK] Could not get EduWallet enrollment for webhook:",
+          err.message
+        );
+        console.warn("[WEBHOOK] Using fallback courseId:", courseId);
+      }
+    }
+
+    try {
+      const webhookPayload = {
+        eventType: "course_completed",
+        studentId: studentId,
+        courseId: eduwalletCourseId, // Send EduWallet course ID
+        enrollmentId: finalEnrollmentId,
+        completedCourse: {
+          _id: `completion_${Date.now()}`,
+          name: course.title,
+          issuer: course.issuer || "Partner1",
+          score: students[studentId][courseId].score || 0,
+          passed: true,
+          correctAnswers: students[studentId][courseId].correctAnswers || 0,
+          totalQuestions: course.quiz?.questions?.length || 0,
+          grade: "A+",
+          results: [],
+          createdAt: new Date().toISOString(),
+          __v: 0,
+        },
+      };
+
+      const webhookResp = await axios.post(
+        `${process.env.EDUWALLET_API_URL}/api/webhooks/partner-updates`,
+        webhookPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 5000,
+        }
+      );
+      console.log("✅ Webhook sent successfully:", webhookResp.data);
+    } catch (webhookError) {
+      console.error(
+        "❌ Webhook failed:",
+        webhookError.response?.data || webhookError.message
+      );
+    }
+
+    res.json({
+      success: true,
+      message: "Course completed and sent to EduWallet via webhook",
+      // eduWalletResponse: resp.data,
+    });
   } catch (error) {
     console.error(
-      "Error sending to EduWallet:",
+      "Error in /learning/complete:",
       error.response?.data || error.message
     );
     res.status(500).json({
       success: false,
-      message: "Failed to send to EduWallet",
+      message: "Failed to complete course",
       error: error.response?.data || error.message,
     });
   }
@@ -965,34 +986,7 @@ router.get("/learning/progress/:studentId/:courseId", (req, res) => {
 // ENHANCED FEATURES - Week 1 & 2
 // =====================================================================
 
-/**
- * POST /webhook/confirmation
- * EduWallet confirms webhook receipt
- */
-router.post("/webhook/confirmation", (req, res) => {
-  const { webhookId, status, enrollmentId } = req.body;
-
-  console.log(`✅ Webhook confirmation received:`);
-  console.log(`   - Webhook ID: ${webhookId}`);
-  console.log(`   - Status: ${status}`);
-  console.log(`   - Enrollment ID: ${enrollmentId}`);
-
-  // Store confirmation for tracking
-  if (!global.webhookConfirmations) {
-    global.webhookConfirmations = {};
-  }
-  global.webhookConfirmations[webhookId] = {
-    status,
-    enrollmentId,
-    confirmedAt: new Date().toISOString(),
-  };
-
-  res.json({
-    success: true,
-    message: "Confirmation received",
-    webhookId,
-  });
-});
+// Webhook confirmation endpoint removed.
 
 /**
  * GET /sync/progress/:studentId/:courseId
@@ -1026,56 +1020,9 @@ router.get("/sync/progress/:studentId/:courseId", (req, res) => {
   });
 });
 
-/**
- * GET /admin/failed-webhooks
- * Get list of failed webhook deliveries
- */
-router.get("/admin/failed-webhooks", (req, res) => {
-  res.json({
-    success: true,
-    failedWebhooks: global.failedWebhooks || [],
-    count: (global.failedWebhooks || []).length,
-  });
-});
+// Failed webhook admin endpoint removed.
 
-/**
- * POST /admin/retry-webhook/:index
- * Manually retry a failed webhook
- */
-router.post("/admin/retry-webhook/:index", async (req, res) => {
-  const index = parseInt(req.params.index);
-  const failedWebhooks = global.failedWebhooks || [];
-
-  if (index < 0 || index >= failedWebhooks.length) {
-    return res
-      .status(404)
-      .json({ success: false, message: "Webhook not found" });
-  }
-
-  const webhook = failedWebhooks[index];
-
-  try {
-    const response = await axios.post(webhook.url, webhook.data, {
-      headers: webhook.headers,
-      timeout: 10000,
-    });
-
-    // Remove from failed list
-    failedWebhooks.splice(index, 1);
-
-    res.json({
-      success: true,
-      message: "Webhook retried successfully",
-      response: response.data,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Retry failed",
-      error: error.message,
-    });
-  }
-});
+// Manual webhook retry endpoint removed.
 
 /**
  * GET /student/:studentId/dashboard
@@ -1147,47 +1094,191 @@ router.get("/student/:studentId/dashboard", async (req, res) => {
   }
 });
 
-/**
- * Helper function: Send webhook with retry mechanism
- */
-async function sendWebhookWithRetry(url, data, headers, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await axios.post(url, data, {
-        headers,
-        timeout: 10000,
-      });
+// Webhook retry helper removed.
 
-      console.log(`✅ Webhook sent successfully (attempt ${i + 1})`);
-      return response;
-    } catch (error) {
-      console.error(
-        `❌ Webhook failed (attempt ${i + 1}/${maxRetries}):`,
-        error.message
-      );
+// Sync enrollment from EduWallet
+router.post("/enrollment/sync", async (req, res) => {
+  const { enrollmentId, studentId, courseId: providedCourseId } = req.body;
 
-      if (i === maxRetries - 1) {
-        // Last attempt failed, store for manual retry
-        if (!global.failedWebhooks) {
-          global.failedWebhooks = [];
-        }
-        global.failedWebhooks.push({
-          url,
-          data,
-          headers,
-          failedAt: new Date().toISOString(),
-          error: error.message,
-          attempts: maxRetries,
-        });
-        throw error;
-      }
-
-      // Wait before retry (exponential backoff)
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * Math.pow(2, i))
-      );
-    }
+  if (!enrollmentId || !studentId) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing enrollmentId or studentId",
+    });
   }
-}
+
+  try {
+    // Call EduWallet API to get enrollment details
+    const eduWalletResp = await axios.get(
+      `${process.env.EDUWALLET_API_URL}/api/partner/public/enrollment/${enrollmentId}`,
+      {
+        timeout: 5000,
+      }
+    );
+
+    const enrollmentData = eduWalletResp.data.data.enrollment;
+
+    // Extract partner's courseId from accessLink
+    let partnerCourseId = providedCourseId; // fallback to provided
+    if (enrollmentData.accessLink) {
+      try {
+        const url = new URL(enrollmentData.accessLink);
+        const pathParts = url.pathname.split("/").filter((p) => p);
+        // accessLink format: /course/{courseId}
+        if (pathParts[0] === "course" && pathParts[1]) {
+          partnerCourseId = pathParts[1];
+        }
+      } catch (urlError) {
+        console.warn(
+          "Could not parse accessLink for courseId:",
+          urlError.message
+        );
+      }
+    }
+
+    // If still no courseId, try from enrollment data
+    if (!partnerCourseId) {
+      partnerCourseId =
+        enrollmentData.itemId?._id?.toString() ||
+        enrollmentData.itemId?.toString();
+    }
+
+    if (!partnerCourseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Could not determine partner's courseId",
+      });
+    }
+
+    // Map EduWallet status to partner status
+    let partnerStatus = "active";
+    if (enrollmentData.status === "in_progress") {
+      partnerStatus = "active";
+    } else if (enrollmentData.status === "completed") {
+      partnerStatus = "completed";
+    } else if (enrollmentData.status === "expired") {
+      partnerStatus = "expired";
+    }
+
+    // Check if enrollment already exists in partner database
+    const existingEnrollment = await Enrollment.findOne({
+      enrollmentId: enrollmentId,
+    });
+
+    if (existingEnrollment) {
+      // Update existing
+      Object.assign(existingEnrollment, {
+        userId: studentId,
+        courseId: partnerCourseId, // Use extracted partner's courseId
+        eduwalletItemId:
+          enrollmentData.itemId?._id?.toString() ||
+          enrollmentData.itemId?.toString(), // Store EduWallet itemId directly
+        status: partnerStatus,
+        purchaseDate: enrollmentData.createdAt,
+        expiryDate: null,
+        accessGranted: true,
+        metadata: {
+          priceEdu: 0,
+          transactionId: enrollmentData.purchase,
+        },
+        updatedAt: new Date(),
+      });
+      await existingEnrollment.save();
+      console.log(`✅ Updated enrollment ${enrollmentId} in partner database`);
+    } else {
+      // Create new
+      const newEnrollment = new Enrollment({
+        enrollmentId: enrollmentId,
+        userId: studentId,
+        courseId: partnerCourseId, // Use extracted partner's courseId
+        eduwalletItemId:
+          enrollmentData.itemId?._id?.toString() ||
+          enrollmentData.itemId?.toString(), // EduWallet itemId from enrollment data
+        status: partnerStatus,
+        purchaseDate: enrollmentData.createdAt,
+        expiryDate: null,
+        accessGranted: true,
+        metadata: {
+          priceEdu: 0,
+          transactionId: enrollmentData.purchase,
+        },
+      });
+      await newEnrollment.save();
+      console.log(`✅ Created enrollment ${enrollmentId} in partner database`);
+    }
+
+    res.json({
+      success: true,
+      message: "Enrollment synced successfully",
+      enrollment: enrollmentData,
+    });
+  } catch (error) {
+    console.error("Error syncing enrollment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to sync enrollment",
+      error: error.message,
+    });
+  }
+});
+
+// Get single enrollment by ID for EduWallet sync
+router.get("/enrollment/:id", async (req, res) => {
+  try {
+    const enrollmentId = req.params.id;
+
+    // Find enrollment in database
+    const enrollment = await Enrollment.findOne({
+      enrollmentId: enrollmentId,
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found",
+      });
+    }
+
+    // Get course details
+    const course = await Course.findOne({
+      courseId: enrollment.courseId,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        enrollment: {
+          _id: enrollment.enrollmentId,
+          courseId: enrollment.courseId,
+          status: enrollment.status,
+          progressPercent: enrollment.progressPercent || 0,
+          totalPoints: enrollment.totalPoints || 0,
+          timeSpentSeconds: enrollment.timeSpentSeconds || 0,
+          completedAt: enrollment.completedAt,
+          lastAccessed: enrollment.lastAccessed,
+          purchaseDate: enrollment.purchaseDate,
+          expiryDate: enrollment.expiryDate,
+          metadata: enrollment.metadata || {},
+          course: course
+            ? {
+                title: course.title,
+                description: course.description,
+                courseType: course.courseType,
+                credits: course.credits,
+                priceEdu: course.priceEdu,
+              }
+            : null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error getting enrollment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get enrollment",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

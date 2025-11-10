@@ -152,7 +152,7 @@ Progress data giờ bao gồm thêm:
 
 ## 🎨 Frontend Demo
 
-File: `public/quiz-demo.html`
+File: `public/quiz.html`
 
 Features:
 
@@ -167,7 +167,7 @@ Features:
 **Cách dùng:**
 
 ```
-http://localhost:3001/quiz-demo.html?courseId=quiz_react_advanced_2024
+http://localhost:3001/quiz.html?courseId=quiz_react_advanced_2024
 ```
 
 ## 🌱 Sample Data

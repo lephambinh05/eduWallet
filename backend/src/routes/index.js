@@ -11,6 +11,7 @@ const marketplaceRoutes = require("./marketplace");
 const blockchainRoutes = require("./blockchain");
 const adminRoutes = require("./admin");
 const pointRoutes = require("./point");
+const learningRoutes = require("./learning");
 
 // Health check endpoint
 router.get("/health", (req, res) => {
@@ -32,6 +33,7 @@ router.use("/marketplace", marketplaceRoutes);
 router.use("/blockchain", blockchainRoutes);
 router.use("/admin", adminRoutes);
 router.use("/point", pointRoutes);
+router.use("/learning", learningRoutes);
 
 // API documentation endpoint
 router.get("/docs", (req, res) => {

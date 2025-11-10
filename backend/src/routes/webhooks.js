@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const { asyncHandler } = require("../middleware/errorHandler");
 const Enrollment = require("../models/Enrollment");
 const CompletedCourse = require("../models/CompletedCourse");
@@ -10,58 +11,22 @@ const emailService = require("../services/emailService");
 
 const logger = require("../utils/logger");
 
+router.head(
+  "/partner-updates",
+  asyncHandler(async (req, res) => {
+    res.status(200).json({ message: "Webhook endpoint is available" });
+  })
+);
+
 router.post(
   "/partner-updates",
-  express.raw({ type: "application/json" }),
   asyncHandler(async (req, res) => {
     try {
       logger.info("[Webhook] Received /api/webhooks/partner-updates");
       logger.info(`[Webhook] Headers: ${JSON.stringify(req.headers)}`);
-      logger.info(`[Webhook] Raw body: ${req.body}`);
+      logger.info(`[Webhook] Body: ${JSON.stringify(req.body)}`);
 
-      // Temporarily disabled authentication for testing
-      // const signature = req.headers["x-partner-signature"];
-      // const timestamp = req.headers["x-partner-timestamp"];
-      // const partnerId = req.headers["x-partner-id"];
-
-      // if (!partnerId) {
-      //   logger.error("[Webhook] Missing partner id");
-      //   return res.status(400).json({ error: "Missing partner id" });
-      // }
-
-      // const partner = await Partner.findById(partnerId);
-      // if (!partner) {
-      //   logger.error(`[Webhook] Invalid partner id: ${partnerId}`);
-      //   return res.status(401).json({ error: "Invalid partner" });
-      // }
-
-      // const expectedSignature = crypto
-      //   .createHmac("sha256", partner.apiSecretKey || "")
-      //   .update((timestamp || "") + req.body)
-      //   .digest("hex");
-
-      // if (signature !== `sha256=${expectedSignature}`) {
-      //   logger.error(
-      //     `[Webhook] Invalid signature: received ${signature}, expected sha256=${expectedSignature}`
-      //   );
-      //   return res.status(401).json({ error: "Invalid signature" });
-      // }
-
-      // const now = Math.floor(Date.now() / 1000);
-      // if (Math.abs(now - parseInt(timestamp || "0", 10)) > 300) {
-      //   logger.error(
-      //     `[Webhook] Request too old: now=${now}, timestamp=${timestamp}`
-      //   );
-      //   return res.status(401).json({ error: "Request too old" });
-      // }
-
-      let data;
-      try {
-        data = JSON.parse(req.body);
-      } catch (e) {
-        logger.error(`[Webhook] Invalid JSON payload: ${e.message}`);
-        return res.status(400).json({ error: "Invalid JSON payload" });
-      }
+      const data = req.body;
 
       logger.info(`[Webhook] Payload eventType: ${data.eventType}`);
       switch (data.eventType) {
@@ -108,24 +73,43 @@ async function handleProgressUpdate(data) {
 
 async function handleCourseCompletion(data) {
   try {
-    // Tìm hoặc tạo user từ studentId
+    // Tìm user từ studentId
     let user = await User.findById(data.studentId);
 
-    // Nếu có enrollmentId, tìm enrollment và lấy user từ đó
+    // Tìm enrollment từ studentId và courseId (ưu tiên phương pháp này)
     let enrollment = null;
-    if (data.enrollmentId) {
-      enrollment = await Enrollment.findById(data.enrollmentId).populate(
-        "user"
-      );
-      if (enrollment) {
-        user = enrollment.user;
-      }
-    } else if (data.courseId && user) {
-      // Thử tìm enrollment từ studentId và courseId
+    if (data.courseId && user) {
       enrollment = await Enrollment.findOne({
         user: data.studentId,
         itemId: data.courseId,
       }).populate("user");
+      console.log(
+        `[Webhook] Searched enrollment by user: ${data.studentId}, itemId: ${
+          data.courseId
+        }, found: ${!!enrollment}`
+      );
+    }
+
+    // Nếu không tìm thấy bằng courseId, thử tìm bằng enrollmentId (nếu có)
+    if (!enrollment && data.enrollmentId) {
+      // Kiểm tra xem enrollmentId có phải là ObjectId hợp lệ không
+      if (mongoose.Types.ObjectId.isValid(data.enrollmentId)) {
+        enrollment = await Enrollment.findById(data.enrollmentId).populate(
+          "user"
+        );
+        if (enrollment) {
+          user = enrollment.user;
+        }
+        console.log(
+          `[Webhook] Searched enrollment by _id: ${
+            data.enrollmentId
+          }, found: ${!!enrollment}`
+        );
+      } else {
+        console.log(
+          `[Webhook] enrollmentId ${data.enrollmentId} is not a valid ObjectId`
+        );
+      }
     }
 
     if (!user) {
@@ -135,6 +119,9 @@ async function handleCourseCompletion(data) {
 
     // Cập nhật enrollment nếu có
     if (enrollment) {
+      console.log(
+        `[Webhook] Updating enrollment ${enrollment._id} status to completed`
+      );
       enrollment.status = "completed";
       enrollment.progressPercent = 100;
       enrollment.completedAt = new Date();
@@ -147,6 +134,13 @@ async function handleCourseCompletion(data) {
 
       enrollment.markModified("metadata");
       await enrollment.save();
+      console.log(
+        `[Webhook] Enrollment ${enrollment._id} updated successfully`
+      );
+    } else {
+      console.log(
+        `[Webhook] No enrollment found to update for studentId: ${data.studentId}, courseId: ${data.courseId}, enrollmentId: ${data.enrollmentId}`
+      );
     }
 
     // Tạo CompletedCourse record
@@ -156,6 +150,9 @@ async function handleCourseCompletion(data) {
         userId: user._id,
         enrollmentId: enrollment?._id || null,
       };
+
+      // Remove _id if present to avoid ObjectId validation errors
+      delete completedCourseData._id;
 
       // Kiểm tra xem đã có CompletedCourse này chưa
       const existingCourse = await CompletedCourse.findOne({

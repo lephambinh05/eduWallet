@@ -528,10 +528,6 @@ const PartnerCourses = () => {
           <EmptyState>
             <FaLink />
             <p>Chưa có nguồn API nào</p>
-            <Button $variant="primary" onClick={handleAddSource}>
-              <FaPlus />
-              Thêm Nguồn Đầu Tiên
-            </Button>
           </EmptyState>
         ) : (
           <SourceList>

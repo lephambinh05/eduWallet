@@ -401,8 +401,18 @@ const PartnerCourses = () => {
         partnerAPI.getMyCourses(),
       ]);
 
-      setSources(sourcesRes.data.sources || []);
-      setCourses(coursesRes.data.courses || []);
+      console.log("🔍 Sources Response:", sourcesRes);
+      console.log("� Full Response Data:", sourcesRes.data);
+      console.log("�📦 Sources Data:", sourcesRes.data?.data?.sources);
+      console.log("📝 Courses Data:", coursesRes.data?.data?.courses);
+
+      setSources(sourcesRes.data?.data?.sources || []);
+      setCourses(coursesRes.data?.data?.courses || []);
+
+      console.log(
+        "✅ State updated - Sources count:",
+        sourcesRes.data?.data?.sources?.length
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Không thể tải dữ liệu");
@@ -528,10 +538,6 @@ const PartnerCourses = () => {
           <EmptyState>
             <FaLink />
             <p>Chưa có nguồn API nào</p>
-            <Button $variant="primary" onClick={handleAddSource}>
-              <FaPlus />
-              Thêm Nguồn Đầu Tiên
-            </Button>
           </EmptyState>
         ) : (
           <SourceList>
@@ -671,12 +677,14 @@ const PartnerCourses = () => {
                     setFormData({ ...formData, domain: e.target.value })
                   }
                 />
-                <small style={{ 
-                  color: "rgba(255, 255, 255, 0.5)", 
-                  fontSize: "0.85rem",
-                  marginTop: "0.5rem",
-                  display: "block"
-                }}>
+                <small
+                  style={{
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontSize: "0.85rem",
+                    marginTop: "0.5rem",
+                    display: "block",
+                  }}
+                >
                   Chỉ cần nhập domain, hệ thống sẽ tự động tạo API endpoints
                 </small>
               </FormGroup>

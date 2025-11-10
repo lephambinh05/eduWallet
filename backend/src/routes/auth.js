@@ -1,13 +1,18 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const router = express.Router();
-const { validate, schemas } = require('../middleware/validation');
-const { asyncHandler, AppError } = require('../middleware/errorHandler');
-const { generateToken, generateRefreshToken, verifyRefreshToken, authenticateToken } = require('../middleware/auth');
-const User = require('../models/User');
-const logger = require('../utils/logger');
-const emailService = require('../services/emailService');
+const { validate, schemas } = require("../middleware/validation");
+const { asyncHandler, AppError } = require("../middleware/errorHandler");
+const {
+  generateToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  authenticateToken,
+} = require("../middleware/auth");
+const User = require("../models/User");
+const logger = require("../utils/logger");
+const emailService = require("../services/emailService");
 
 /**
  * @swagger
@@ -55,18 +60,31 @@ const emailService = require('../services/emailService');
  *       409:
  *         description: User already exists
  */
-router.post('/register',
+router.post(
+  "/register",
   validate(schemas.userRegistration),
   asyncHandler(async (req, res) => {
-    const { username, email, password, firstName, lastName, dateOfBirth, phone, role } = req.body;
+    const {
+      username,
+      email,
+      password,
+      firstName,
+      lastName,
+      dateOfBirth,
+      phone,
+      role,
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+      $or: [{ email }, { username }],
     });
 
     if (existingUser) {
-      throw new AppError('User with this email or username already exists', 409);
+      throw new AppError(
+        "User with this email or username already exists",
+        409
+      );
     }
 
     // Create user
@@ -78,7 +96,7 @@ router.post('/register',
       lastName,
       dateOfBirth,
       phone,
-      role: role || 'student'
+      role: role || "student",
     });
 
     // Generate tokens
@@ -88,30 +106,41 @@ router.post('/register',
     // Remove password from response
     user.password = undefined;
 
-    logger.logUserAction(user._id, 'user_registered', { email, role });
+    logger.logUserAction(user._id, "user_registered", { email, role });
 
-    // Send welcome email
+    // Send welcome email (log actual result)
     try {
-      await emailService.sendWelcomeEmail(email, {
+      const sendResult = await emailService.sendWelcomeEmail(email, {
         firstName,
         lastName,
         username,
-        email
+        email,
       });
-      console.log(`✅ Welcome email sent to ${email}`);
+
+      if (sendResult && sendResult.success) {
+        console.log(
+          `✅ Welcome email sent to ${email} (messageId=${sendResult.messageId})`
+        );
+      } else {
+        // sendResult may contain an error message when send failed or was skipped
+        console.warn(
+          `⚠️ Welcome email not sent to ${email}:`,
+          sendResult && sendResult.error ? sendResult.error : "unknown"
+        );
+      }
     } catch (emailError) {
-      console.error('❌ Failed to send welcome email:', emailError);
+      console.error("❌ Failed to send welcome email (exception):", emailError);
       // Don't fail registration if email fails
     }
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: "User registered successfully",
       data: {
         user,
         token,
-        refreshToken
-      }
+        refreshToken,
+      },
     });
   })
 );
@@ -142,20 +171,21 @@ router.post('/register',
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login',
+router.post(
+  "/login",
   validate(schemas.userLogin),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     // Find user and include password
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.matchPassword(password))) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError("Invalid email or password", 401);
     }
 
     if (!user.isActive) {
-      throw new AppError('Account is deactivated', 401);
+      throw new AppError("Account is deactivated", 401);
     }
 
     // Generate tokens
@@ -165,16 +195,16 @@ router.post('/login',
     // Remove password from response
     user.password = undefined;
 
-    logger.logUserAction(user._id, 'user_logged_in', { email });
+    logger.logUserAction(user._id, "user_logged_in", { email });
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       data: {
         user,
         token,
-        refreshToken
-      }
+        refreshToken,
+      },
     });
   })
 );
@@ -202,12 +232,13 @@ router.post('/login',
  *       401:
  *         description: Invalid refresh token
  */
-router.post('/refresh',
+router.post(
+  "/refresh",
   asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      throw new AppError('Refresh token required', 401);
+      throw new AppError("Refresh token required", 401);
     }
 
     try {
@@ -215,7 +246,7 @@ router.post('/refresh',
       const user = await User.findById(decoded.id);
 
       if (!user || !user.isActive) {
-        throw new AppError('User not found or inactive', 401);
+        throw new AppError("User not found or inactive", 401);
       }
 
       // Generate new tokens
@@ -224,14 +255,14 @@ router.post('/refresh',
 
       res.json({
         success: true,
-        message: 'Token refreshed successfully',
+        message: "Token refreshed successfully",
         data: {
           token: newToken,
-          refreshToken: newRefreshToken
-        }
+          refreshToken: newRefreshToken,
+        },
       });
     } catch (error) {
-      throw new AppError('Invalid refresh token', 401);
+      throw new AppError("Invalid refresh token", 401);
     }
   })
 );
@@ -248,14 +279,15 @@ router.post('/refresh',
  *       200:
  *         description: Logout successful
  */
-router.post('/logout',
+router.post(
+  "/logout",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    logger.logUserAction(req.user._id, 'user_logged_out', {});
+    logger.logUserAction(req.user._id, "user_logged_out", {});
 
     res.json({
       success: true,
-      message: 'Logout successful'
+      message: "Logout successful",
     });
   })
 );
@@ -274,15 +306,18 @@ router.post('/logout',
  *       401:
  *         description: Unauthorized
  */
-router.get('/me',
+router.get(
+  "/me",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id)
-      .populate('institutionId', 'name institutionId type');
+    const user = await User.findById(req.user._id).populate(
+      "institutionId",
+      "name institutionId type"
+    );
 
     res.json({
       success: true,
-      data: { user }
+      data: { user },
     });
   })
 );
@@ -310,31 +345,35 @@ router.get('/me',
  *       404:
  *         description: User not found
  */
-router.post('/forgot-password',
+router.post(
+  "/forgot-password",
   asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError("User not found", 404);
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     await user.save({ validateBeforeSave: false });
 
     // TODO: Send email with reset token
-    logger.logUserAction(user._id, 'password_reset_requested', { email });
+    logger.logUserAction(user._id, "password_reset_requested", { email });
 
     res.json({
       success: true,
-      message: 'Password reset email sent',
+      message: "Password reset email sent",
       // In development, return the token for testing
-      ...(process.env.NODE_ENV === 'development' && { resetToken })
+      ...(process.env.NODE_ENV === "development" && { resetToken }),
     });
   })
 );
@@ -365,20 +404,21 @@ router.post('/forgot-password',
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password',
+router.post(
+  "/reset-password",
   asyncHandler(async (req, res) => {
     const { token, password } = req.body;
 
     // Hash the token
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const user = await User.findOne({
       passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: Date.now() }
+      passwordResetExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      throw new AppError('Invalid or expired token', 400);
+      throw new AppError("Invalid or expired token", 400);
     }
 
     // Update password
@@ -388,11 +428,11 @@ router.post('/reset-password',
 
     await user.save();
 
-    logger.logUserAction(user._id, 'password_reset_completed', {});
+    logger.logUserAction(user._id, "password_reset_completed", {});
 
     res.json({
       success: true,
-      message: 'Password reset successfully'
+      message: "Password reset successfully",
     });
   })
 );

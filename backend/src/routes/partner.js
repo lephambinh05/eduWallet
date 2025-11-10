@@ -11,6 +11,7 @@ const Enrollment = require("../models/Enrollment");
 const emailService = require("../services/emailService");
 const Partner = require("../models/Partner");
 const User = require("../models/User");
+const PartnerSource = require("../models/PartnerSource");
 const crypto = require("crypto");
 const CompletedCourse = require("../models/CompletedCourse");
 
@@ -77,7 +78,17 @@ router.post(
   authenticateToken,
   authorize("partner"),
   asyncHandler(async (req, res) => {
-    const { title, description, link, priceEdu } = req.body;
+    const {
+      title,
+      description,
+      link,
+      priceEdu,
+      courseType,
+      videoId,
+      videoDuration,
+      quiz,
+      credits,
+    } = req.body;
 
     if (!title || !link || priceEdu === undefined) {
       return res.status(400).json({
@@ -86,14 +97,42 @@ router.post(
       });
     }
 
+    // Basic validation: if courseType demands fields, validate minimally
+    if (courseType === "video") {
+      if (!videoId || !videoDuration) {
+        return res.status(400).json({
+          success: false,
+          message: "Video courses require videoId and videoDuration",
+        });
+      }
+    }
+    if (
+      (courseType === "quiz" || courseType === "hybrid") &&
+      (!quiz || !quiz.questions || quiz.questions.length === 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Quiz courses require quiz.questions array",
+      });
+    }
+
     // create partner course associated with authenticated user
-    const course = await PartnerCourse.create({
+    const courseData = {
       owner: req.user._id,
       title,
       description: description || "",
       link,
       priceEdu: Number(priceEdu),
-    });
+    };
+
+    // attach optional content metadata if provided
+    if (courseType) courseData.courseType = courseType;
+    if (videoId) courseData.videoId = videoId;
+    if (videoDuration) courseData.videoDuration = Number(videoDuration);
+    if (quiz) courseData.quiz = quiz;
+    if (credits !== undefined) courseData.credits = Number(credits);
+
+    const course = await PartnerCourse.create(courseData);
 
     return res
       .status(201)
@@ -138,13 +177,29 @@ router.put(
       });
     }
 
-    const { title, description, link, priceEdu } = req.body;
+    const {
+      title,
+      description,
+      link,
+      priceEdu,
+      courseType,
+      videoId,
+      videoDuration,
+      quiz,
+      credits,
+    } = req.body;
 
     // Update fields if provided
     if (title !== undefined) course.title = title;
     if (description !== undefined) course.description = description;
     if (link !== undefined) course.link = link;
     if (priceEdu !== undefined) course.priceEdu = Number(priceEdu);
+    if (courseType !== undefined) course.courseType = courseType;
+    if (videoId !== undefined) course.videoId = videoId;
+    if (videoDuration !== undefined)
+      course.videoDuration = Number(videoDuration);
+    if (quiz !== undefined) course.quiz = quiz;
+    if (credits !== undefined) course.credits = Number(credits);
 
     await course.save();
 
@@ -419,35 +474,160 @@ router.post(
 
     // create Enrollment for buyer
     // Build accessLink so it points to the partner-provided link when available,
-    // and always append the student=<buyerId> query param.
+    // and always append the student=<buyerId> query param. Prefer the domain
+    // of the PartnerSource that the course was synced from.
     const studentId = req.user._id.toString();
     let accessLink = null;
 
-    if (course.link) {
-      // If partner stored an absolute or relative link on the course, append student param
+    // If the course was synced from a PartnerSource, generate a partner-style
+    // access link. Prefer the partner's configured course `link` (slug/path)
+    // when available because the partner SPA expects links like
+    //   https://partner.example.com/<slug>?student=...
+    // If `link` is not present, fall back to the partnerCourseId approach.
+    if (course.sourceId) {
       try {
-        // Try treating as absolute URL
-        const url = new URL(course.link);
+        const source = await PartnerSource.findById(course.sourceId).lean();
+        if (source && source.domain) {
+          const protocol = source.domain.startsWith("localhost")
+            ? "http"
+            : "https";
+
+          // Prefer partner's provided slug/path (course.link) when present
+          if (course.link) {
+            let base = String(course.link || "").trim();
+
+            try {
+              // If course.link is an absolute URL, preserve its origin/path
+              const parsed = new URL(base);
+              // ensure student param appended
+              parsed.searchParams.set("student", studentId);
+              accessLink = parsed.toString();
+            } catch (e) {
+              // Not absolute - treat as path or slug
+              if (!base.startsWith("/")) base = `/${base}`;
+              accessLink = `${protocol}://${
+                source.domain
+              }${base}?student=${encodeURIComponent(studentId)}`;
+            }
+          } else {
+            // Fallback: use partnerCourseId (keeps previous behaviour)
+            const partnerCourseId =
+              course.partnerCourseId || course._id.toString();
+            accessLink = `${protocol}://${
+              source.domain
+            }/course/${encodeURIComponent(
+              partnerCourseId
+            )}?student=${encodeURIComponent(studentId)}`;
+          }
+        }
+      } catch (err) {
+        console.error("Error building partner-style access link:", err);
+      }
+    }
+
+    // Use stored url (sync sets `url`) or fallback to `link`
+    const stored = course.url || course.link || "";
+
+    if (stored && !accessLink) {
+      // Try absolute URL first
+      try {
+        const parsed = new URL(stored);
+
+        // If this course was synced from a PartnerSource, prefer that source's domain
+        // (so links always point to partner domain). If source not present, keep parsed origin.
+        let finalOrigin = parsed.origin;
+        try {
+          if (course.sourceId) {
+            const source = await PartnerSource.findById(course.sourceId).lean();
+            if (source && source.domain) {
+              const protocol = source.domain.startsWith("localhost")
+                ? "http"
+                : "https";
+              finalOrigin = `${protocol}://${source.domain}`;
+            }
+          }
+        } catch (err) {
+          console.error(
+            "Error resolving partner source for absolute url:",
+            err
+          );
+        }
+
+        // Rebuild URL using finalOrigin but preserve pathname/search/hash
+        const url = new URL(
+          parsed.pathname + parsed.search + parsed.hash,
+          finalOrigin
+        );
         url.searchParams.set("student", studentId);
         accessLink = url.toString();
       } catch (err) {
-        // Not an absolute URL (could be relative or a plain string). Handle manually.
-        const parts = String(course.link).split("?");
-        const base = parts[0];
+        // Not an absolute URL. Could be a domain-without-protocol, a path, or a slug.
+        const parts = String(stored).split("?");
+        let base = parts[0] || "";
         const qs = parts[1] || "";
         const params = qs
           ? qs.split("&").filter((p) => p && !p.startsWith("student="))
           : [];
         params.push(`student=${encodeURIComponent(studentId)}`);
+
+        try {
+          // If base looks like a domain-with-path but lacks protocol, prefix https://
+          if (!base.match(/^https?:\/\//)) {
+            const domainLike = /^[^/]+\.[^/]+/.test(base);
+            if (domainLike) {
+              base = `https://${base}`;
+            } else {
+              // Use PartnerSource domain if available
+              if (course.sourceId) {
+                const source = await PartnerSource.findById(
+                  course.sourceId
+                ).lean();
+                if (source && source.domain) {
+                  const protocol = source.domain.startsWith("localhost")
+                    ? "http"
+                    : "https";
+                  const partnerBase = `${protocol}://${source.domain}`;
+                  if (!base.startsWith("/")) base = `/${base}`;
+                  base = `${partnerBase}${base}`;
+                }
+              }
+            }
+          }
+        } catch (resolveErr) {
+          console.error(
+            "Error resolving partner domain for stored link:",
+            resolveErr
+          );
+        }
+
         accessLink = params.length ? `${base}?${params.join("&")}` : base;
       }
-    } else {
-      // Fallback: point to partner course page on frontend (if FRONTEND_URL is set)
-      const frontendBase = process.env.FRONTEND_URL || "";
-      if (frontendBase) {
-        accessLink = `${frontendBase}/partner/courses/${course._id}?student=${studentId}`;
-      } else {
-        accessLink = `/partner/courses/${course._id}?student=${studentId}`;
+    } else if (!accessLink) {
+      // No stored URL; fallback to partner domain page if source available, otherwise frontend
+      if (course.sourceId) {
+        try {
+          const source = await PartnerSource.findById(course.sourceId).lean();
+          if (source && source.domain) {
+            const protocol = source.domain.startsWith("localhost")
+              ? "http"
+              : "https";
+            accessLink = `${protocol}://${source.domain}/courses/${course._id}?student=${studentId}`;
+          }
+        } catch (err) {
+          console.error(
+            "Error resolving partner source for fallback link:",
+            err
+          );
+        }
+      }
+
+      if (!accessLink) {
+        const frontendBase = process.env.FRONTEND_URL || "";
+        if (frontendBase) {
+          accessLink = `${frontendBase}/partner/courses/${course._id}?student=${studentId}`;
+        } else {
+          accessLink = `/partner/courses/${course._id}?student=${studentId}`;
+        }
       }
     }
 
@@ -466,7 +646,43 @@ router.post(
       metadata: {},
     });
 
-    // Send email notifications
+    // Append enrollment id as reg=<enrollmentId> to the accessLink so partner can
+    // correlate the incoming learner to the enrollment record. Do this after
+    // creating the enrollment so we can use the real _id.
+    try {
+      let finalAccessLink = accessLink || "";
+      try {
+        // If it's a valid absolute URL, use URL API to set query param
+        const urlObj = new URL(finalAccessLink);
+        urlObj.searchParams.set("reg", enrollment._id.toString());
+        finalAccessLink = urlObj.toString();
+      } catch (e) {
+        // Not an absolute URL; fallback to simple append
+        if (finalAccessLink.includes("?")) {
+          finalAccessLink = `${finalAccessLink}&reg=${encodeURIComponent(
+            enrollment._id.toString()
+          )}`;
+        } else {
+          finalAccessLink = `${finalAccessLink}?reg=${encodeURIComponent(
+            enrollment._id.toString()
+          )}`;
+        }
+      }
+
+      // Persist the updated accessLink back to the enrollment record
+      enrollment.accessLink = finalAccessLink;
+      await enrollment.save();
+
+      // keep local variable in sync for emails/response
+      accessLink = finalAccessLink;
+    } catch (err) {
+      console.error("Error appending reg to accessLink:", err);
+      // proceed without reg param if something goes wrong
+    }
+
+    // Debug log removed in production: accessLink is intentionally not logged here
+
+    // Send email notifications (use updated accessLink)
     try {
       // Email to buyer
       await emailService.sendCoursePurchaseNotification(
@@ -1662,7 +1878,6 @@ router.get(
 // =======================
 // PARTNER SOURCES API
 // =======================
-const PartnerSource = require("../models/PartnerSource");
 const axios = require("axios");
 
 // GET /api/partner/sources - Get all partner sources
@@ -1671,9 +1886,11 @@ router.get(
   authenticateToken,
   authorize("partner"),
   asyncHandler(async (req, res) => {
-    const sources = await PartnerSource.find({ partner: req.user.userId }).sort(
-      { createdAt: -1 }
-    );
+    console.log("🔍 GET /api/partner/sources - User ID:", req.user._id);
+    const sources = await PartnerSource.find({ partner: req.user._id }).sort({
+      createdAt: -1,
+    });
+    console.log("📦 Found sources:", sources.length, sources);
 
     res.json({
       success: true,
@@ -1701,7 +1918,7 @@ router.post(
     const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
     const source = await PartnerSource.create({
-      partner: req.user.userId,
+      partner: req.user._id,
       name,
       domain: cleanDomain,
     });
@@ -1724,7 +1941,7 @@ router.patch(
 
     const source = await PartnerSource.findOne({
       _id: req.params.id,
-      partner: req.user.userId,
+      partner: req.user._id,
     });
 
     if (!source) {
@@ -1759,7 +1976,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     const source = await PartnerSource.findOneAndDelete({
       _id: req.params.id,
-      partner: req.user.userId,
+      partner: req.user._id,
     });
 
     if (!source) {
@@ -1784,7 +2001,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const source = await PartnerSource.findOne({
       _id: req.params.id,
-      partner: req.user.userId,
+      partner: req.user._id,
     });
 
     if (!source) {
@@ -1821,16 +2038,25 @@ router.post(
       });
 
       let courses = [];
+      // Support multiple response shapes from partner APIs:
+      // - raw array: [ ... ]
+      // - { courses: [ ... ] }
+      // - { data: [ ... ] }
+      // - { data: { courses: [ ... ] } }
       if (Array.isArray(response.data)) {
         courses = response.data;
-      } else if (
-        response.data.courses &&
-        Array.isArray(response.data.courses)
-      ) {
+      } else if (response.data && Array.isArray(response.data.courses)) {
         courses = response.data.courses;
+      } else if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data.courses)
+      ) {
+        courses = response.data.data.courses;
       } else if (response.data.data && Array.isArray(response.data.data)) {
         courses = response.data.data;
       } else {
+        console.error("Invalid partner API response format:", response.data);
         throw new Error("Invalid API response format");
       }
 
@@ -1840,7 +2066,10 @@ router.post(
       for (const courseData of courses) {
         try {
           const coursePayload = {
-            partner: req.user.userId,
+            // Ensure the document has an owner so partner APIs that filter
+            // by owner (the admin UI) will return the synced courses.
+            owner: req.user._id,
+            partner: req.user._id,
             partnerCourseId:
               courseData.id || courseData._id || courseData.courseId,
             title: courseData.title || courseData.name,
@@ -1859,10 +2088,11 @@ router.post(
 
           await PartnerCourse.findOneAndUpdate(
             {
-              partner: req.user.userId,
+              partner: req.user._id,
               partnerCourseId: coursePayload.partnerCourseId,
             },
-            coursePayload,
+            // Use coursePayload as the update and ensure owner is set on upsert
+            { $set: coursePayload, $setOnInsert: { createdAt: new Date() } },
             { upsert: true, new: true }
           );
 
@@ -1895,6 +2125,49 @@ router.post(
 
       throw error;
     }
+  })
+);
+
+// Public endpoint to get enrollment details for partners
+router.get(
+  "/public/enrollment/:id",
+  asyncHandler(async (req, res) => {
+    const enrollmentId = req.params.id;
+
+    const enrollment = await Enrollment.findById(enrollmentId)
+      .populate("user", "username email firstName lastName")
+      .populate("itemId", "title link")
+      .populate("seller", "username email firstName lastName");
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found",
+      });
+    }
+
+    // Add original itemId to response if populated itemId is null
+    const responseEnrollment = enrollment.toObject();
+    if (!responseEnrollment.itemId && enrollment.itemId) {
+      responseEnrollment.itemId = enrollment.itemId;
+    }
+
+    // Check if the item is a partner course (has partner source)
+    const partnerSource = await PartnerSource.findOne({
+      courses: enrollment.itemId,
+    });
+
+    if (!partnerSource) {
+      return res.status(403).json({
+        success: false,
+        message: "Not a partner course",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { enrollment: responseEnrollment },
+    });
   })
 );
 

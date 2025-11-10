@@ -1,0 +1,58 @@
+name: Deploy partner1 demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "partner-demos/website-1-video/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create deploy archive
+        run: |
+          TS=$(date +%Y%m%d%H%M%S)
+          ARCH=partner1_deploy_${TS}.tar.gz
+          tar -czf $ARCH partner-demos/website-1-video/public partner-demos/website-1-video/routes/api.js
+          echo "ARCH=$ARCH" >> $GITHUB_ENV
+
+      - name: Upload archive to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          source: ${{ env.ARCH }}
+          target: /tmp/
+
+      - name: Run remote deploy commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            ARCH=${{ env.ARCH }}
+            TS=$(date +%Y%m%d%H%M%S)
+            TARGET=${{ secrets.DEPLOY_TARGET_DIR }}
+            BACKUP_DIR="$TARGET/backups"
+            mkdir -p "$BACKUP_DIR"
+            cp -a "$TARGET/public" "$BACKUP_DIR/public.$TS"
+            cp -a "$TARGET/routes/api.js" "$BACKUP_DIR/api.js.$TS" || true
+            mkdir -p /tmp/partner1_deploy_$TS
+            tar -xzf /tmp/$ARCH -C /tmp/partner1_deploy_$TS
+            rsync -a --delete /tmp/partner1_deploy_$TS/partner-demos/website-1-video/public/ "$TARGET/public/"
+            rsync -a --delete /tmp/partner1_deploy_$TS/partner-demos/website-1-video/routes/api.js "$TARGET/routes/api.js"
+            chown -R www:www "$TARGET/public" || true
+            chmod -R 644 "$TARGET/public" || true
+            chmod 644 "$TARGET/routes/api.js" || true
+            rm -rf /tmp/partner1_deploy_$TS
+            rm -f /tmp/$ARCH
+            pm2 restart partner1-video || pm2 reload all || true

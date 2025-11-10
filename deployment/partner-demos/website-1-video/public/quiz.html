@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz - Partner Learning Platform</title>
+    <style>
+      /* styles compatible with production demo; shortened here */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎓 Quiz Assessment</h1>
+      <div id="app"><div class="loading">Loading quiz...</div></div>
+    </div>
+    <script>
+    <script>
+      // Copied behavior from quiz-demo.html: uses API to load quiz and submit
+      // Use same-origin API so browser requests go to partner domain (works over HTTPS)
+      const API_URL = window.location.origin + "/api";
+      const STUDENT_ID = "690302badd7c9774cfd2a6a7";
+              renderQuiz(); // This line is unchanged, but we need to show context
+      let quizData = null;
+      let currentQuestionIndex = 0;
+      let answers = {};
+      let startTime = null;
+      let timerInterval = null;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("courseId")) {
+        COURSE_ID = urlParams.get("courseId");
+      }
+
+      async function init() {
+        try {
+          await fetch(`${API_URL}/learning/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: STUDENT_ID,
+              courseId: COURSE_ID,
+            }),
+          });
+
+          const response = await fetch(
+            `${API_URL}/quiz/${COURSE_ID}/questions`
+          );
+          const data = await response.json();
+          if (!data.success) throw new Error(data.message || "Failed to load quiz");
+
+          quizData = data.quiz;
+          startTime = Date.now();
+          if (quizData.timeLimit) startTimer(quizData.timeLimit);
+          renderQuiz();
+        } catch (err) {
+          document.getElementById(
+            "app"
+          ).innerHTML = `<div class="error"><strong>Error:</strong> ${err.message}</div>`;
+        }
+      }
+
+      init();
+    </script>
+        try {
+          await fetch(`${API_URL}/learning/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              studentId: STUDENT_ID,
+              courseId: COURSE_ID,
+            }),
+          });
+          const resp = await fetch(`${API_URL}/quiz/${COURSE_ID}/questions`);
+          const data = await resp.json();
+          if (!data.success) throw new Error(data.message || "Failed");
+          const quiz = data.quiz;
+          document.getElementById("app").innerText =
+            "Quiz ready. (Use built UI in production)";
+        } catch (e) {
+          document.getElementById(
+            "app"
+          ).innerHTML = `<div class="error"><strong>Error:</strong> ${e.message}</div>`;
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>

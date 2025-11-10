@@ -25,9 +25,9 @@
 
 ### Giải pháp
 
-✅ **Chỉ cần nhập domain** của website đối tác  
-✅ **Hệ thống tự động** tạo API endpoints  
-✅ **Một click sync** để kéo toàn bộ khóa học  
+✅ **Chỉ cần nhập domain** của website đối tác
+✅ **Hệ thống tự động** tạo API endpoints
+✅ **Một click sync** để kéo toàn bộ khóa học
 ✅ **Quản lý tập trung** tất cả khóa học từ nhiều nguồn
 
 ---
@@ -58,6 +58,7 @@
 ```
 
 **Chức năng:**
+
 - ➕ Thêm nguồn API mới
 - ✏️ Chỉnh sửa thông tin nguồn
 - 🗑️ Xóa nguồn không dùng
@@ -80,6 +81,7 @@ Show result: "Đã đồng bộ 50 khóa học thành công"
 ```
 
 **Tự động xử lý:**
+
 - ✅ Tạo khóa học mới nếu chưa tồn tại
 - ✅ Cập nhật khóa học đã có (theo partnerCourseId)
 - ✅ Parse nhiều format JSON response
@@ -103,6 +105,7 @@ Show result: "Đã đồng bộ 50 khóa học thành công"
 ```
 
 **Chức năng:**
+
 - 👁️ Xem chi tiết khóa học
 - ✅ Xuất bản/Ẩn khóa học
 - 📊 Hiển thị trạng thái
@@ -188,6 +191,7 @@ domain: "partner.com"
 ```
 
 **Benefits:**
+
 - Đơn giản: 1 field thay vì 3 fields
 - Flexible: Dễ đổi protocol (http ↔ https)
 - Consistent: Chuẩn hóa API structure
@@ -196,6 +200,7 @@ domain: "partner.com"
 ### Data Flow
 
 #### 1. Thêm Source
+
 ```
 Frontend                Backend              Database
    │                       │                    │
@@ -208,6 +213,7 @@ Frontend                Backend              Database
 ```
 
 #### 2. Sync Courses
+
 ```
 Frontend                Backend              Partner API      Database
    │                       │                      │             │
@@ -226,6 +232,7 @@ Frontend                Backend              Partner API      Database
 ### Database Schema
 
 #### PartnerSource Model
+
 ```javascript
 {
   _id: ObjectId,
@@ -233,13 +240,13 @@ Frontend                Backend              Partner API      Database
   name: "Website Partner 1",
   domain: "partner.com",          // ← Main field
   isActive: true,
-  
+
   // Sync tracking
   lastSyncAt: Date,
   lastSyncStatus: "success|failed|pending",
   lastSyncError: String,
   syncedCoursesCount: 50,
-  
+
   // Virtual methods
   coursesApiUrl: "https://partner.com/api/courses",
   getApiEndpoints() { ... }
@@ -247,12 +254,13 @@ Frontend                Backend              Partner API      Database
 ```
 
 #### PartnerCourse Model
+
 ```javascript
 {
   _id: ObjectId,
   partner: ObjectId,              // Ref to User
   partnerCourseId: "course-123",  // Unique ID from partner
-  
+
   // Course info
   title: "Khóa học A",
   description: "...",
@@ -263,10 +271,10 @@ Frontend                Backend              Partner API      Database
   category: "programming",
   url: "https://partner.com/courses/123",
   thumbnail: "https://...",
-  
+
   // Status
   published: true,
-  
+
   // Tracking
   sourceId: ObjectId,             // Ref to PartnerSource
   createdAt: Date,
@@ -285,28 +293,28 @@ Frontend                Backend              Partner API      Database
 ```javascript
 partnerAPI: {
   // Partner Sources
-  getPartnerSources: () => 
+  getPartnerSources: () =>
     GET /api/partner/sources
-    
-  createPartnerSource: (data) => 
+
+  createPartnerSource: (data) =>
     POST /api/partner/sources
     Body: { name, domain }
-    
-  updatePartnerSource: (id, data) => 
+
+  updatePartnerSource: (id, data) =>
     PATCH /api/partner/sources/:id
     Body: { name?, domain?, isActive? }
-    
-  deletePartnerSource: (id) => 
+
+  deletePartnerSource: (id) =>
     DELETE /api/partner/sources/:id
-    
-  syncCoursesFromSource: (id) => 
+
+  syncCoursesFromSource: (id) =>
     POST /api/partner/sources/:id/sync
-    
+
   // Courses
-  getMyCourses: () => 
+  getMyCourses: () =>
     GET /api/partner/courses
-    
-  toggleCoursePublish: (id, publish) => 
+
+  toggleCoursePublish: (id, publish) =>
     PATCH /api/partner/courses/:id/publish
     Body: { publish: true/false }
 }
@@ -315,9 +323,11 @@ partnerAPI: {
 ### Backend Endpoints
 
 #### 1. GET /api/partner/sources
+
 **Auth:** Required (Partner role)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -337,9 +347,11 @@ partnerAPI: {
 ```
 
 #### 2. POST /api/partner/sources
+
 **Auth:** Required (Partner role)
 
 **Request:**
+
 ```json
 {
   "name": "Website Partner 1",
@@ -348,6 +360,7 @@ partnerAPI: {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -366,9 +379,11 @@ partnerAPI: {
 ```
 
 #### 3. POST /api/partner/sources/:id/sync
+
 **Auth:** Required (Partner role)
 
 **Process:**
+
 1. Validate source exists and active
 2. Build API URL: `https://{domain}/api/courses`
 3. Fetch courses from partner API
@@ -377,6 +392,7 @@ partnerAPI: {
 6. Update sync statistics
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -389,6 +405,7 @@ partnerAPI: {
 ```
 
 **Error Response:**
+
 ```json
 {
   "success": false,
@@ -404,6 +421,7 @@ Partner website cần expose endpoint trả về danh sách khóa học:
 **Endpoint:** `GET https://{domain}/api/courses`
 
 **Response Format (Option 1 - Array):**
+
 ```json
 [
   {
@@ -423,25 +441,33 @@ Partner website cần expose endpoint trả về danh sách khóa học:
 ```
 
 **Response Format (Option 2 - Wrapped):**
+
 ```json
 {
-  "courses": [ /* array of courses */ ]
+  "courses": [
+    /* array of courses */
+  ]
 }
 ```
 
 **Response Format (Option 3 - Data wrapper):**
+
 ```json
 {
-  "data": [ /* array of courses */ ]
+  "data": [
+    /* array of courses */
+  ]
 }
 ```
 
 **Required Fields:**
+
 - `id` hoặc `_id` hoặc `courseId`
 - `title` hoặc `name`
 - `url` hoặc `link`
 
 **Optional Fields:**
+
 - `description`, `price`, `currency`
 - `duration`, `level`, `category`
 - `thumbnail` hoặc `image`
@@ -454,18 +480,21 @@ Partner website cần expose endpoint trả về danh sách khóa học:
 ### Frontend Deployment
 
 1. **Build production:**
+
 ```bash
 cd f:\eduWallet
 npm run build
 ```
 
 2. **Deploy files:**
+
 ```bash
 # Copy to VPS
 scp -r build/* user@vps:/var/www/eduwallet/
 ```
 
 3. **Verify:**
+
 ```
 https://eduwallet.mojistudio.vn/partner/courses
 ```
@@ -473,6 +502,7 @@ https://eduwallet.mojistudio.vn/partner/courses
 ### Backend Deployment
 
 1. **Copy files to VPS:**
+
 ```bash
 # Models
 scp backend/src/models/PartnerSource.js user@vps:/www/wwwroot/api-eduwallet.mojistudio.vn/src/models/
@@ -485,6 +515,7 @@ scp backend/src/models/PartnerCourse.js user@vps:/www/wwwroot/api-eduwallet.moji
 ```
 
 2. **Restart backend:**
+
 ```bash
 ssh user@vps
 pm2 restart apieduwallet
@@ -492,6 +523,7 @@ pm2 logs apieduwallet --lines 50
 ```
 
 3. **Verify:**
+
 ```bash
 curl -H "Authorization: Bearer <token>" \
   https://api-eduwallet.mojistudio.vn/api/partner/sources
@@ -508,11 +540,13 @@ Không cần thêm biến môi trường mới! Tính năng hoạt động với
 ### Vấn đề 1: Không tạo được source
 
 **Triệu chứng:**
+
 ```
 Error: "Tên và Domain là bắt buộc"
 ```
 
 **Giải pháp:**
+
 - Kiểm tra cả 2 field đã điền đầy đủ
 - Domain không được chứa `http://` hay `https://`
 - Domain hợp lệ: `partner.com`, không phải `partner`
@@ -520,6 +554,7 @@ Error: "Tên và Domain là bắt buộc"
 ### Vấn đề 2: Sync thất bại
 
 **Triệu chứng:**
+
 ```
 Error: "Cannot connect to partner API"
 ```
@@ -527,22 +562,26 @@ Error: "Cannot connect to partner API"
 **Giải pháp:**
 
 1. **Check domain:**
+
 ```bash
 ping partner.com
 ```
 
 2. **Check API endpoint:**
+
 ```bash
 curl https://partner.com/api/courses
 ```
 
 3. **Check API response format:**
+
 ```bash
 curl https://partner.com/api/courses | jq
 # Phải trả về array hoặc {courses: [...]} hoặc {data: [...]}
 ```
 
 4. **Check logs:**
+
 ```bash
 # Frontend
 Browser Console → Network tab
@@ -554,14 +593,17 @@ pm2 logs apieduwallet
 ### Vấn đề 3: Khóa học bị duplicate
 
 **Triệu chứng:**
+
 - Mỗi lần sync tạo courses mới thay vì update
 
 **Giải pháp:**
+
 - Partner API phải trả về `id` field unique cho mỗi course
 - System sẽ dùng `partnerCourseId` để tìm và update
 - Nếu không có ID, mỗi lần sync sẽ tạo mới
 
 **Fix:**
+
 ```javascript
 // Partner API response
 {
@@ -573,23 +615,28 @@ pm2 logs apieduwallet
 ### Vấn đề 4: Khóa học không hiển thị
 
 **Check list:**
+
 1. ✓ Course đã được sync? (Check syncedCoursesCount)
 2. ✓ Course có `published: true`?
 3. ✓ Refresh trang đã chưa?
 4. ✓ Check database:
+
 ```javascript
-db.partner_courses.find({ partner: ObjectId("...") })
+db.partner_courses.find({ partner: ObjectId("...") });
 ```
 
 ### Vấn đề 5: Localhost không sync được
 
 **Triệu chứng:**
+
 ```
 Error: "ECONNREFUSED"
 ```
 
 **Giải pháp:**
+
 - Ensure partner demo running:
+
 ```bash
 cd partner-demos/website-1-video
 npm start
@@ -618,7 +665,7 @@ npm start
 // Scenario
 Partner A có 3 websites:
 - Main:    partner.com
-- Blog:    blog.partner.com  
+- Blog:    blog.partner.com
 - Academy: academy.partner.com
 
 // Solution
@@ -640,7 +687,7 @@ Tạo 3 sources:
 domain: "localhost:3001"
 → http://localhost:3001/api/courses
 
-// Staging  
+// Staging
 domain: "staging.partner.com"
 → https://staging.partner.com/api/courses
 
@@ -672,6 +719,7 @@ domain: "partner.com"
 ## 🛠️ Technical Stack
 
 ### Frontend
+
 - **React** 18.x
 - **Styled Components** - CSS-in-JS
 - **Framer Motion** - Animations
@@ -680,6 +728,7 @@ domain: "partner.com"
 - **React Hot Toast** - Notifications
 
 ### Backend
+
 - **Node.js** + **Express.js**
 - **MongoDB** + **Mongoose** - Database
 - **Axios** - HTTP client (for fetching partner APIs)
@@ -696,12 +745,14 @@ Proprietary - EduWallet Platform © 2024-2025
 
 ## 👥 Support
 
-**Issues?** 
+**Issues?**
+
 - Check [Troubleshooting](#troubleshooting)
 - Review [API Documentation](#api-documentation)
 - Contact: lephambinh05@gmail.com
 
 **Feature Requests?**
+
 - Create issue in repository
 - Email with detailed requirements
 
@@ -710,6 +761,7 @@ Proprietary - EduWallet Platform © 2024-2025
 ## 🔄 Version History
 
 ### v1.0.0 (2025-01-06)
+
 - ✅ Initial release
 - ✅ Domain-based source management
 - ✅ Auto-sync functionality
@@ -717,6 +769,7 @@ Proprietary - EduWallet Platform © 2024-2025
 - ✅ Error handling & logging
 
 ### Upcoming Features
+
 - [ ] Scheduled auto-sync (cron jobs)
 - [ ] Webhook support (partner notify EduWallet)
 - [ ] Sync history log
@@ -726,5 +779,5 @@ Proprietary - EduWallet Platform © 2024-2025
 
 ---
 
-**Last Updated:** January 6, 2025  
+**Last Updated:** January 6, 2025
 **Maintained by:** EduWallet Development Team

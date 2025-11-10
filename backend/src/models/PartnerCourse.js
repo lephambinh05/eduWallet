@@ -25,6 +25,31 @@ const partnerCourseSchema = new mongoose.Schema(
     // For backward compatibility
     url: { type: String },
     priceEdu: { type: Number, required: true },
+    // Content metadata (optional) to match partner demo shape
+    courseType: {
+      type: String,
+      enum: ["video", "quiz", "hybrid"],
+      default: "video",
+    },
+    // Video specific
+    videoId: { type: String },
+    videoDuration: { type: Number },
+    // Quiz specific
+    quiz: {
+      questions: [
+        {
+          id: Number,
+          question: String,
+          options: [String],
+          correctAnswer: Number,
+          explanation: String,
+        },
+      ],
+      passingScore: { type: Number, default: 70 },
+      timeLimit: Number,
+    },
+    // Optional metadata used by partner demo
+    credits: { type: Number, default: 0 },
     // For new sync feature
     price: { type: Number },
     currency: { type: String, default: "PZO" },

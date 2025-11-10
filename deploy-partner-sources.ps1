@@ -1,0 +1,92 @@
+# ========================================
+# Deploy Partner Sources API to VPS
+# PowerShell Script for Windows
+# ========================================
+
+Write-Host "🚀 Starting deployment..." -ForegroundColor Cyan
+
+# VPS Configuration - UPDATE THESE!
+$VPS_HOST = "root@your-vps-ip"  # ← Thay bằng IP VPS của bạn
+$VPS_PATH = "/www/wwwroot/api-eduwallet.mojistudio.vn"
+$LOCAL_BACKEND = ".\backend"
+
+# Step 1: Backup
+Write-Host "`n📦 Step 1: Creating backup on VPS..." -ForegroundColor Yellow
+$backupCmd = "cd $VPS_PATH && cp -r src src.backup.`$(date +%Y%m%d_%H%M%S)"
+ssh $VPS_HOST $backupCmd
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Backup created" -ForegroundColor Green
+}
+else {
+    Write-Host "❌ Backup failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Step 2: Upload PartnerSource model
+Write-Host "`n📤 Step 2: Uploading PartnerSource model..." -ForegroundColor Yellow
+scp "$LOCAL_BACKEND\src\models\PartnerSource.js" "${VPS_HOST}:${VPS_PATH}/src/models/"
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ PartnerSource.js uploaded" -ForegroundColor Green
+}
+else {
+    Write-Host "❌ Upload failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Step 3: Upload updated PartnerCourse model
+Write-Host "`n📤 Step 3: Uploading updated PartnerCourse model..." -ForegroundColor Yellow
+scp "$LOCAL_BACKEND\src\models\PartnerCourse.js" "${VPS_HOST}:${VPS_PATH}/src/models/"
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ PartnerCourse.js uploaded" -ForegroundColor Green
+}
+else {
+    Write-Host "❌ Upload failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Step 4: Upload updated partner routes
+Write-Host "`n📤 Step 4: Uploading updated partner routes..." -ForegroundColor Yellow
+scp "$LOCAL_BACKEND\src\routes\partner.js" "${VPS_HOST}:${VPS_PATH}/src/routes/"
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ partner.js uploaded" -ForegroundColor Green
+}
+else {
+    Write-Host "❌ Upload failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Step 5: Restart PM2
+Write-Host "`n🔄 Step 5: Restarting PM2 process..." -ForegroundColor Yellow
+ssh $VPS_HOST "cd $VPS_PATH && pm2 restart apieduwallet"
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ PM2 restarted" -ForegroundColor Green
+}
+else {
+    Write-Host "❌ Restart failed!" -ForegroundColor Red
+    exit 1
+}
+
+# Step 6: Check PM2 status
+Write-Host "`n📋 Step 6: Checking PM2 status..." -ForegroundColor Yellow
+ssh $VPS_HOST "pm2 list"
+
+# Step 7: Check logs
+Write-Host "`n📝 Step 7: Checking logs..." -ForegroundColor Yellow
+ssh $VPS_HOST "pm2 logs apieduwallet --lines 20 --nostream"
+
+# Success
+Write-Host "`n✅ Deployment completed!" -ForegroundColor Green
+Write-Host ""
+Write-Host "🧪 Test API:" -ForegroundColor Yellow
+Write-Host "curl -H 'Authorization: Bearer <TOKEN>' https://api-eduwallet.mojistudio.vn/api/partner/sources"
+Write-Host ""
+Write-Host "📊 Monitor logs:" -ForegroundColor Yellow
+Write-Host "ssh $VPS_HOST 'pm2 logs apieduwallet'"
+Write-Host ""
+Write-Host "🌐 Frontend URL:" -ForegroundColor Yellow
+Write-Host "https://eduwallet.mojistudio.vn/partner/courses"

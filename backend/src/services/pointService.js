@@ -1,5 +1,29 @@
-const { ethers } = require('ethers');
-const { blockchainService } = require('./blockchainService');
+const { ethers } = require("ethers");
+const { blockchainService } = require("./blockchainService");
+
+// Compatibility: ethers v5 exposed providers under `ethers.providers`,
+// while ethers v6 exposes providers at the top-level (e.g. `ethers.JsonRpcProvider`).
+// Detect an available JsonRpcProvider implementation and use it. If none is
+// available the service will skip initialization (degraded mode) to avoid
+// crashing the whole app.
+function resolveJsonRpcProvider() {
+  if (ethers && ethers.providers && ethers.providers.JsonRpcProvider) {
+    return ethers.providers.JsonRpcProvider;
+  }
+  if (ethers && ethers.JsonRpcProvider) {
+    return ethers.JsonRpcProvider;
+  }
+  try {
+    // Fallback to @ethersproject/providers if present (used by some v5 installs)
+    // but it's optional; handle failure gracefully below.
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    const { JsonRpcProvider } = require("@ethersproject/providers");
+    if (JsonRpcProvider) return JsonRpcProvider;
+  } catch (err) {
+    // ignore
+  }
+  return null;
+}
 
 class PointService {
   constructor() {
@@ -12,8 +36,36 @@ class PointService {
 
   async initializeContracts() {
     try {
+      // Validate required runtime environment variables early so we fail fast
+      // with a clear message instead of attempting to construct contracts
+      // with null/undefined addresses which leads to cryptic errors.
+      const requiredEnv = [
+        "RPC_URL",
+        "PRIVATE_KEY",
+        "PZO_TOKEN_ADDRESS",
+        "POINT_TOKEN_ADDRESS",
+      ];
+      const missing = requiredEnv.filter((k) => !process.env[k]);
+      if (missing.length > 0) {
+        console.error(
+          "❌ Point Service missing required environment variables:",
+          missing.join(", ")
+        );
+        return;
+      }
+
+      // Resolve a JsonRpcProvider implementation compatible with installed ethers
+      const JsonRpcProvider = resolveJsonRpcProvider();
+      if (!JsonRpcProvider) {
+        console.warn(
+          "JsonRpcProvider not available — skipping PointService initialization (degraded mode)"
+        );
+        return;
+      }
+
       // Initialize provider and signer
-      this.provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+      this.provider = new JsonRpcProvider(process.env.RPC_URL);
+      // ethers.Wallet exists on both v5 and v6 under the top-level export
       this.signer = new ethers.Wallet(process.env.PRIVATE_KEY, this.provider);
 
       // Initialize PZO Token contract
@@ -24,7 +76,7 @@ class PointService {
         "function approve(address spender, uint256 amount) returns (bool)",
         "function allowance(address owner, address spender) view returns (uint256)",
         "function mint(address to, uint256 amount)",
-        "function burn(uint256 amount)"
+        "function burn(uint256 amount)",
       ];
 
       this.pzoToken = new ethers.Contract(
@@ -42,7 +94,7 @@ class PointService {
         "function calculatePointsFromPZO(uint256 pzoAmount) pure returns (uint256)",
         "function calculatePZOFromPoints(uint256 pointAmount) pure returns (uint256)",
         "event PointsExchanged(address indexed user, uint256 pzoAmount, uint256 pointAmount)",
-        "event PointsWithdrawn(address indexed user, uint256 pointAmount, uint256 pzoAmount)"
+        "event PointsWithdrawn(address indexed user, uint256 pointAmount, uint256 pzoAmount)",
       ];
 
       this.pointToken = new ethers.Contract(
@@ -51,9 +103,9 @@ class PointService {
         this.signer
       );
 
-      console.log('✅ Point Service initialized successfully');
+      console.log("✅ Point Service initialized successfully");
     } catch (error) {
-      console.error('❌ Point Service initialization failed:', error);
+      console.error("❌ Point Service initialization failed:", error);
     }
   }
 
@@ -64,13 +116,13 @@ class PointService {
       return {
         success: true,
         balance: ethers.utils.formatEther(balance),
-        balanceWei: balance.toString()
+        balanceWei: balance.toString(),
       };
     } catch (error) {
-      console.error('Error getting PZO balance:', error);
+      console.error("Error getting PZO balance:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -82,13 +134,13 @@ class PointService {
       return {
         success: true,
         balance: ethers.utils.formatEther(balance),
-        balanceWei: balance.toString()
+        balanceWei: balance.toString(),
       };
     } catch (error) {
-      console.error('Error getting Point balance:', error);
+      console.error("Error getting Point balance:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -102,14 +154,14 @@ class PointService {
         data: {
           rate: exchangeInfo.rate.toString(),
           pzoDecimals: exchangeInfo.pzoDecimals.toString(),
-          pointDecimals: exchangeInfo.pointDecimals.toString()
-        }
+          pointDecimals: exchangeInfo.pointDecimals.toString(),
+        },
       };
     } catch (error) {
-      console.error('Error getting exchange info:', error);
+      console.error("Error getting exchange info:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -122,13 +174,13 @@ class PointService {
       return {
         success: true,
         points: ethers.utils.formatEther(points),
-        pointsWei: points.toString()
+        pointsWei: points.toString(),
       };
     } catch (error) {
-      console.error('Error calculating points:', error);
+      console.error("Error calculating points:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -141,13 +193,13 @@ class PointService {
       return {
         success: true,
         pzo: ethers.utils.formatEther(pzo),
-        pzoWei: pzo.toString()
+        pzoWei: pzo.toString(),
       };
     } catch (error) {
-      console.error('Error calculating PZO:', error);
+      console.error("Error calculating PZO:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -156,19 +208,22 @@ class PointService {
   async checkPZOApproval(userAddress, pzoAmount) {
     try {
       const pzoAmountWei = ethers.utils.parseEther(pzoAmount.toString());
-      const allowance = await this.pzoToken.allowance(userAddress, process.env.POINT_TOKEN_ADDRESS);
-      
+      const allowance = await this.pzoToken.allowance(
+        userAddress,
+        process.env.POINT_TOKEN_ADDRESS
+      );
+
       return {
         success: true,
         approved: allowance.gte(pzoAmountWei),
         allowance: ethers.utils.formatEther(allowance),
-        required: ethers.utils.formatEther(pzoAmountWei)
+        required: ethers.utils.formatEther(pzoAmountWei),
       };
     } catch (error) {
-      console.error('Error checking PZO approval:', error);
+      console.error("Error checking PZO approval:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -181,15 +236,15 @@ class PointService {
         data: {
           pzoToken: process.env.PZO_TOKEN_ADDRESS,
           pointToken: process.env.POINT_TOKEN_ADDRESS,
-          network: 'pioneZero',
-          chainId: '5080'
-        }
+          network: "pioneZero",
+          chainId: "5080",
+        },
       };
     } catch (error) {
-      console.error('Error getting contract addresses:', error);
+      console.error("Error getting contract addresses:", error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -197,4 +252,3 @@ class PointService {
 
 const pointService = new PointService();
 module.exports = { pointService };
-
