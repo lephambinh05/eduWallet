@@ -657,7 +657,7 @@
                 style="margin-left: 10px"
                 onclick="addRandomQuiz()"
               >
-                Thêm quiz random về Việt Nam
+                Thêm quiz random về Lập Trình Web
               </button>
             </div>
           </div>
@@ -736,34 +736,41 @@
         renderQuizList();
       }
       function addRandomQuiz() {
-        const vietnamQuestions = [
+        const webDevQuestions = [
           {
-            question: "Thủ đô của Việt Nam là gì?",
-            answers: ["Hà Nội", "TP.HCM", "Đà Nẵng", "Huế"],
+            question: "Thẻ HTML nào dùng để tạo tiêu đề chính của trang web?",
+            answers: ["<h1>", "<p>", "<div>", "<span>"],
             correct: 0,
           },
           {
-            question: "Sông lớn nhất Việt Nam?",
-            answers: ["Sông Hồng", "Sông Mekong", "Sông Đà", "Sông Đồng Nai"],
+            question:
+              "Thuộc tính CSS nào dùng để thay đổi màu nền của element?",
+            answers: [
+              "background-color",
+              "color",
+              "border-color",
+              "font-color",
+            ],
+            correct: 0,
+          },
+          {
+            question:
+              "Trong JavaScript, phương thức nào dùng để thêm element vào cuối mảng?",
+            answers: ["push()", "pop()", "splice()", "shift()"],
+            correct: 2,
+          },
+          {
+            question: "HTTP status code nào đại diện cho 'Not Found'?",
+            answers: ["200", "404", "500", "301"],
             correct: 1,
           },
           {
-            question: "Việt Nam nằm ở châu lục nào?",
-            answers: ["Châu Á", "Châu Âu", "Châu Phi", "Châu Mỹ"],
-            correct: 0,
-          },
-          {
-            question: "Biển lớn nhất Việt Nam?",
-            answers: ["Biển Đông", "Biển Đỏ", "Biển Đen", "Biển Baltic"],
-            correct: 0,
-          },
-          {
-            question: "Quốc hoa của Việt Nam?",
-            answers: ["Hoa Sen", "Hoa Hồng", "Hoa Mai", "Hoa Đào"],
-            correct: 0,
+            question: "Trong SQL, câu lệnh nào dùng để lấy dữ liệu từ bảng?",
+            answers: ["INSERT", "UPDATE", "DELETE", "SELECT"],
+            correct: 3,
           },
         ];
-        quiz = quiz.concat(vietnamQuestions);
+        quiz = quiz.concat(webDevQuestions);
         renderQuizList();
       }
       // Gọi lại khi mở modal

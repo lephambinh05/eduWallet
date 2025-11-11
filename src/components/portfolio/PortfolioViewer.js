@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import portfolioNFTService from "../../services/portfolioNFTService";
 import ipfsService from "../../services/ipfsService";
+import { useWallet } from "../../context/WalletContext";
 import toast from "react-hot-toast";
 
 const Container = styled.div`
@@ -381,11 +382,33 @@ const PortfolioViewer = () => {
   const [statusType, setStatusType] = useState("info");
   const [searchType, setSearchType] = useState("tokenId"); // tokenId, owner, ipfsHash
 
+  const { provider, signer, isConnected } = useWallet();
+
+  // Initialize portfolio NFT service when wallet is connected
+  useEffect(() => {
+    const initializeService = async () => {
+      if (provider && signer && isConnected) {
+        try {
+          await portfolioNFTService.initialize(provider, signer);
+        } catch (error) {
+          console.error("Failed to initialize portfolio NFT service:", error);
+        }
+      }
+    };
+
+    initializeService();
+  }, [provider, signer, isConnected]);
+
   const handleSearch = async (e) => {
     e.preventDefault();
 
     if (!searchInput.trim()) {
       toast.error("Please enter a search term");
+      return;
+    }
+
+    if (!isConnected || !provider || !signer) {
+      toast.error("Please connect your wallet first");
       return;
     }
 

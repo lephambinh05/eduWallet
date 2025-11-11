@@ -318,6 +318,7 @@ export const partnerAPI = {
     api.patch(`/api/partner/courses/${id}/publish`, { publish }),
   toggleCoursePublish: (id, publish) =>
     api.patch(`/api/partner/courses/${id}/publish`, { publish }),
+  deleteCourse: (id) => api.delete(`/api/partner/courses/${id}`),
 
   // Partner Sources (API URLs của web đối tác)
   getPartnerSources: () => api.get("/api/partner/sources"),

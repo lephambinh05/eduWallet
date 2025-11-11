@@ -99,6 +99,16 @@ class PortfolioNFTService {
         institution: options.institution || user.institution || "Unknown",
       };
 
+      // Remove sensitive purchase information from enrollments before uploading to IPFS
+      if (portfolioForIPFS.enrollments) {
+        portfolioForIPFS.enrollments = portfolioForIPFS.enrollments.map(
+          (enrollment) => {
+            const { purchase, ...enrollmentWithoutPurchase } = enrollment;
+            return enrollmentWithoutPurchase;
+          }
+        );
+      }
+
       // Upload portfolio data to IPFS
       logger.log("📤 Uploading portfolio data to IPFS...");
       const ipfsHash = await ipfsService.uploadPortfolioData(portfolioForIPFS);

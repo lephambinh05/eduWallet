@@ -59,6 +59,7 @@ const marketplaceRoutes = require("./src/routes/marketplace");
 const enrollmentsRoutes = require("./src/routes/enrollments");
 const pointRoutes = require("./src/routes/point");
 const webhooksRoutes = require("./src/routes/webhooks");
+const publicRoutes = require("./src/routes/public");
 
 // Connect to MongoDB - require MONGODB_URI from environment
 if (!process.env.MONGODB_URI) {
@@ -101,6 +102,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
 app.use("/api/point", pointRoutes);
 app.use("/api/webhooks", webhooksRoutes);
+app.use("/api/public", publicRoutes);
 
 // Print a list of registered routes to the console to aid debugging
 function listRoutes(app) {

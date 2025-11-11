@@ -10,11 +10,14 @@ async function checkEnrollment() {
       "Enrollment",
       new mongoose.Schema({}, { strict: false })
     );
-    const enrollment = await Enrollment.findById("6910ef500ab3432f2b0b9d60");
+    const enrollment = await Enrollment.findById("69118ef1da25553501101749");
 
     console.log("EduWallet enrollment status:", enrollment?.status);
     console.log("Completed at:", enrollment?.completedAt);
     console.log("Progress percent:", enrollment?.progressPercent);
+    console.log("User ID:", enrollment?.user);
+    console.log("Item ID:", enrollment?.itemId);
+    console.log("Access link:", enrollment?.accessLink);
 
     process.exit(0);
   } catch (error) {

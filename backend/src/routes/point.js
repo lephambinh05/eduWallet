@@ -324,6 +324,13 @@ router.post("/deposit-public", async (req, res) => {
   try {
     const { txHash, pzoAmount, walletAddress } = req.body;
 
+    console.log("🔍 Deposit request received:", {
+      txHash,
+      pzoAmount,
+      walletAddress,
+      timestamp: new Date().toISOString(),
+    });
+
     // Validation
     if (!txHash || !pzoAmount || !walletAddress) {
       return res.status(400).json({
@@ -359,25 +366,75 @@ router.post("/deposit-public", async (req, res) => {
     }
 
     // Find user by wallet address (check in Wallet collection)
-    const Wallet = require("../../models/Wallet");
-    const wallet = await Wallet.findOne({
-      address: walletAddress.toLowerCase(),
-    });
+    console.log("🔍 Looking up user by wallet address:", walletAddress);
+    let user = await User.findByWalletAddress(walletAddress);
 
-    if (!wallet || !wallet.user_id) {
-      return res.status(404).json({
-        success: false,
-        error: "Wallet not found or not linked to user",
-      });
-    }
-
-    const user = await User.findById(wallet.user_id);
+    // If not found, try case-insensitive search
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: "User not found",
+      console.log("🔄 Trying case-insensitive search for wallet address");
+      user = await User.findOne({
+        walletAddress: new RegExp(`^${walletAddress}$`, "i"),
       });
     }
+
+    // If still not found, try to find users with connected wallets and provide helpful error
+    if (!user) {
+      const usersWithWallets = await User.find(
+        { walletAddress: { $exists: true, $ne: null } },
+        { email: 1, walletAddress: 1, username: 1 }
+      );
+
+      if (usersWithWallets.length === 0) {
+        console.log("❌ No users have connected wallets");
+        return res.status(404).json({
+          success: false,
+          error:
+            "Không có tài khoản nào đã kết nối ví. Vui lòng kết nối ví trước.",
+        });
+      }
+
+      console.log(
+        "ℹ️ Available wallet connections:",
+        usersWithWallets.map((u) => ({
+          email: u.email,
+          wallet: u.walletAddress,
+        }))
+      );
+
+      // Check if the requested wallet address is similar to any existing one
+      const similarWallets = usersWithWallets.filter(
+        (u) =>
+          u.walletAddress
+            .toLowerCase()
+            .includes(walletAddress.toLowerCase().slice(-10)) ||
+          walletAddress
+            .toLowerCase()
+            .includes(u.walletAddress.toLowerCase().slice(-10))
+      );
+
+      if (similarWallets.length > 0) {
+        console.log(
+          "💡 Found similar wallets:",
+          similarWallets.map((u) => u.walletAddress)
+        );
+        return res.status(404).json({
+          success: false,
+          error: `Ví ${walletAddress} chưa được kết nối. Có thể bạn cần kết nối lại ví hoặc đang sử dụng ví khác.`,
+        });
+      }
+
+      return res.status(404).json({
+        success: false,
+        error:
+          "Ví chưa được kết nối với tài khoản. Vui lòng nhấp vào 'Kết nối ví' trong sidebar trước khi nạp điểm.",
+      });
+    }
+
+    console.log("✅ User found:", {
+      id: user._id,
+      email: user.email,
+      walletAddress: user.walletAddress,
+    });
 
     // Get admin wallet settings to calculate EDU amount
     const AdminWallet = require("../models/AdminWallet");

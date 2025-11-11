@@ -4,14 +4,16 @@ const mongoose = require("/www/wwwroot/partner1.mojistudio.vn/node_modules/mongo
 async function sendCompletionWebhook(enrollmentId) {
   try {
     await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/partner_eduWallet"
+      process.env.MONGODB_URI || "mongodb://localhost:27017/eduwallet"
     );
 
     const Enrollment = mongoose.model(
       "Enrollment",
       new mongoose.Schema({}, { strict: false })
     );
-    const enrollment = await Enrollment.findOne({ enrollmentId: enrollmentId });
+    console.log("Finding enrollment by id:", enrollmentId);
+    const enrollment = await Enrollment.findById(enrollmentId);
+    console.log("Enrollment found:", !!enrollment);
 
     if (!enrollment) {
       console.error("Enrollment not found:", enrollmentId);
@@ -23,15 +25,17 @@ async function sendCompletionWebhook(enrollmentId) {
       courseId: enrollment.courseId,
       userId: enrollment.userId,
       status: enrollment.status,
+      itemId: enrollment.itemId,
+      user: enrollment.user,
     });
 
     // Create webhook payload - need to send EduWallet course ID
-    // For this enrollment, EduWallet course ID is 6910f0ddabdd391840128690
+    // For this enrollment, EduWallet course ID is enrollment.itemId
     const webhookPayload = {
       eventType: "course_completed",
-      studentId: enrollment.userId,
-      courseId: "6910f0ddabdd391840128690", // EduWallet course ID from enrollment.itemId
-      enrollmentId: enrollment.enrollmentId,
+      studentId: enrollment.user.toString(),
+      courseId: enrollment.itemId.toString(), // EduWallet course ID from enrollment.itemId
+      enrollmentId: enrollment._id.toString(),
       completedCourse: {
         _id: `completion_${Date.now()}`,
         name: "Completed Course",

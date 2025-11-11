@@ -359,23 +359,13 @@ router.post("/deposit-public", async (req, res) => {
     }
 
     // Find user by wallet address (check in Wallet collection)
-    const Wallet = require("../../models/Wallet");
-    const wallet = await Wallet.findOne({
-      address: walletAddress.toLowerCase(),
-    });
+    const user = await User.findByWalletAddress(walletAddress);
 
-    if (!wallet || !wallet.user_id) {
-      return res.status(404).json({
-        success: false,
-        error: "Wallet not found or not linked to user",
-      });
-    }
-
-    const user = await User.findById(wallet.user_id);
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: "User not found",
+        error:
+          "Ví chưa được kết nối với tài khoản. Vui lòng nhấp vào 'Kết nối ví' trong sidebar trước khi nạp điểm.",
       });
     }
 

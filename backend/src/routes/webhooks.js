@@ -76,9 +76,31 @@ async function handleCourseCompletion(data) {
     // Tìm user từ studentId
     let user = await User.findById(data.studentId);
 
-    // Tìm enrollment từ studentId và courseId (ưu tiên phương pháp này)
+    // Tìm enrollment từ enrollmentId trước (ưu tiên)
     let enrollment = null;
-    if (data.courseId && user) {
+    if (
+      data.enrollmentId &&
+      mongoose.Types.ObjectId.isValid(data.enrollmentId)
+    ) {
+      enrollment = await Enrollment.findById(data.enrollmentId).populate(
+        "user"
+      );
+      if (enrollment) {
+        user = enrollment.user;
+      }
+      console.log(
+        `[Webhook] Searched enrollment by _id: ${
+          data.enrollmentId
+        }, found: ${!!enrollment}`
+      );
+    }
+
+    // Nếu không tìm thấy bằng enrollmentId, thử tìm bằng user và courseId
+    if (
+      !enrollment &&
+      data.courseId &&
+      mongoose.Types.ObjectId.isValid(data.courseId)
+    ) {
       enrollment = await Enrollment.findOne({
         user: data.studentId,
         itemId: data.courseId,
@@ -88,28 +110,13 @@ async function handleCourseCompletion(data) {
           data.courseId
         }, found: ${!!enrollment}`
       );
-    }
-
-    // Nếu không tìm thấy bằng courseId, thử tìm bằng enrollmentId (nếu có)
-    if (!enrollment && data.enrollmentId) {
-      // Kiểm tra xem enrollmentId có phải là ObjectId hợp lệ không
-      if (mongoose.Types.ObjectId.isValid(data.enrollmentId)) {
-        enrollment = await Enrollment.findById(data.enrollmentId).populate(
-          "user"
-        );
-        if (enrollment) {
-          user = enrollment.user;
-        }
-        console.log(
-          `[Webhook] Searched enrollment by _id: ${
-            data.enrollmentId
-          }, found: ${!!enrollment}`
-        );
-      } else {
-        console.log(
-          `[Webhook] enrollmentId ${data.enrollmentId} is not a valid ObjectId`
-        );
+      if (enrollment) {
+        user = enrollment.user;
       }
+    } else if (!enrollment) {
+      console.log(
+        `[Webhook] Skipping search by itemId because courseId ${data.courseId} is not a valid ObjectId`
+      );
     }
 
     if (!user) {

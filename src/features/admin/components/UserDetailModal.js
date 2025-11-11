@@ -1,82 +1,120 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FaTimes, FaSave, FaUser, FaEnvelope, FaPhone, FaCalendar, 
-  FaUserShield, FaBan, FaCheck, FaHistory, FaEdit, FaCoins,
-  FaWallet, FaPlus, FaMinus, FaExchangeAlt
-} from 'react-icons/fa';
-import toast from 'react-hot-toast';
-import AdminService from '../services/adminService';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaTimes,
+  FaSave,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaCalendar,
+  FaUserShield,
+  FaBan,
+  FaCheck,
+  FaHistory,
+  FaEdit,
+  FaCoins,
+  FaWallet,
+  FaPlus,
+  FaMinus,
+  FaExchangeAlt,
+} from "react-icons/fa";
+import toast from "react-hot-toast";
+import AdminService from "../services/adminService";
 
 const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState("details");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState([]);
-  const [eduTokenBalance, setEduTokenBalance] = useState('0');
+  const [eduTokenBalance, setEduTokenBalance] = useState("0");
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
-  const [tokenAction, setTokenAction] = useState('add'); // 'add' or 'subtract'
-  const [tokenAmount, setTokenAmount] = useState('');
-  const [tokenReason, setTokenReason] = useState('');
+  const [tokenAction, setTokenAction] = useState("add"); // 'add' or 'subtract'
+  const [tokenAmount, setTokenAmount] = useState("");
+  const [tokenReason, setTokenReason] = useState("");
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-    dateOfBirth: '',
-    role: 'student',
-    isActive: true
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    dateOfBirth: "",
+    role: "student",
+    isActive: true,
+    academicInfo: {
+      gpa: "",
+      totalCredits: "",
+      completedCredits: "",
+      semester: "",
+      academicYear: "",
+      major: "",
+      institution: "",
+      courses: [],
+    },
   });
 
   useEffect(() => {
     if (user && isOpen) {
       setFormData({
-        username: user.username || '',
-        email: user.email || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        phone: user.phone || '',
-        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
-        role: user.role || 'student',
-        isActive: user.isActive !== undefined ? user.isActive : true
+        username: user.username || "",
+        email: user.email || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phone: user.phone || "",
+        dateOfBirth: user.dateOfBirth
+          ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+          : "",
+        role: user.role || "student",
+        isActive: user.isActive !== undefined ? user.isActive : true,
+        academicInfo: {
+          gpa: user.academicInfo?.gpa || "",
+          totalCredits: user.academicInfo?.totalCredits || "",
+          completedCredits: user.academicInfo?.completedCredits || "",
+          semester: user.academicInfo?.semester || "",
+          academicYear: user.academicInfo?.academicYear || "",
+          major: user.academicInfo?.major || "",
+          institution: user.academicInfo?.institution || "",
+          courses: user.academicInfo?.courses || [],
+        },
       });
       setIsEditing(false);
-      setActiveTab('details');
-      
+      setActiveTab("details");
+
       // Fetch EDU token balance for all users
       fetchEduTokenBalance();
-      
+
       // Fetch activities if on activities tab
-      if (activeTab === 'activities') {
+      if (activeTab === "activities") {
         fetchUserActivities();
       }
     }
   }, [user, isOpen]);
 
   useEffect(() => {
-    if (activeTab === 'activities' && user) {
+    if (activeTab === "activities" && user) {
       fetchUserActivities();
     }
   }, [activeTab]);
 
   const fetchUserActivities = async () => {
     if (!user?._id) return;
-    
+
     try {
-      const response = await AdminService.getUserActivities(user._id, { page: 1, limit: 20 });
+      const response = await AdminService.getUserActivities(user._id, {
+        page: 1,
+        limit: 20,
+      });
       setActivities(response.data?.activities || []);
     } catch (error) {
-      console.error('Error fetching activities:', error);
-      toast.error('Failed to load user activities');
+      console.error("Error fetching activities:", error);
+      toast.error("Failed to load user activities");
     }
   };
 
   const fetchEduTokenBalance = async () => {
     if (!user?._id) {
-      setEduTokenBalance('No user found');
+      setEduTokenBalance("No user found");
       return;
     }
 
@@ -84,15 +122,15 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
     try {
       // Call admin service to get EDU token balance from database
       const response = await AdminService.getUserById(user._id);
-      
+
       if (response.success) {
-        setEduTokenBalance(response.data.user.eduTokenBalance || '0');
+        setEduTokenBalance(response.data.user.eduTokenBalance || "0");
       } else {
-        setEduTokenBalance('Error loading');
+        setEduTokenBalance("Error loading");
       }
     } catch (error) {
-      console.error('Error fetching EDU token balance:', error);
-      setEduTokenBalance('0');
+      console.error("Error fetching EDU token balance:", error);
+      setEduTokenBalance("0");
     } finally {
       setLoadingBalance(false);
     }
@@ -100,12 +138,12 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
 
   const handleTokenManagement = async () => {
     if (!tokenAmount || parseFloat(tokenAmount) <= 0) {
-      toast.error('Please enter a valid amount');
+      toast.error("Please enter a valid amount");
       return;
     }
 
     if (!tokenReason.trim()) {
-      toast.error('Please provide a reason');
+      toast.error("Please provide a reason");
       return;
     }
 
@@ -114,21 +152,25 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
       const response = await AdminService.updateUserEduTokens(user._id, {
         action: tokenAction, // 'add' or 'subtract'
         amount: parseFloat(tokenAmount),
-        reason: tokenReason
+        reason: tokenReason,
       });
 
       if (response.success) {
-        toast.success(`Successfully ${tokenAction === 'add' ? 'added' : 'deducted'} ${tokenAmount} EDU tokens`);
+        toast.success(
+          `Successfully ${
+            tokenAction === "add" ? "added" : "deducted"
+          } ${tokenAmount} EDU tokens`
+        );
         setShowTokenModal(false);
-        setTokenAmount('');
-        setTokenReason('');
-        
+        setTokenAmount("");
+        setTokenReason("");
+
         // Fetch updated user data
         const updatedUserResponse = await AdminService.getUserById(user._id);
         if (updatedUserResponse.success) {
           const updatedUser = updatedUserResponse.data.user;
-          setEduTokenBalance(updatedUser.eduTokenBalance || '0');
-          
+          setEduTokenBalance(updatedUser.eduTokenBalance || "0");
+
           // Update parent component with full user data
           if (onUserUpdated) {
             onUserUpdated(updatedUser);
@@ -141,11 +183,13 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
           }
         }
       } else {
-        toast.error(response.message || 'Failed to manage tokens');
+        toast.error(response.message || "Failed to manage tokens");
       }
     } catch (error) {
-      console.error('Error managing tokens:', error);
-      toast.error(error.response?.data?.message || 'Failed to manage EDU tokens');
+      console.error("Error managing tokens:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to manage EDU tokens"
+      );
     } finally {
       setLoading(false);
     }
@@ -153,31 +197,94 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const finalValue = type === "checkbox" ? checked : value;
+
+    setFormData((prev) => {
+      // Handle nested fields like 'academicInfo.gpa'
+      if (name.includes(".")) {
+        const [parent, child] = name.split(".");
+        return {
+          ...prev,
+          [parent]: {
+            ...prev[parent],
+            [child]: finalValue,
+          },
+        };
+      }
+      // Handle regular flat fields
+      return {
+        ...prev,
+        [name]: finalValue,
+      };
+    });
   };
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const response = await AdminService.updateUser(user._id, formData);
-      toast.success('User updated successfully!');
+      toast.success("User updated successfully!");
       setIsEditing(false);
       if (onUserUpdated) {
         onUserUpdated(response.data.user);
       }
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error(error.response?.data?.message || 'Failed to update user');
+      console.error("Error updating user:", error);
+      toast.error(error.response?.data?.message || "Failed to update user");
     } finally {
       setLoading(false);
     }
   };
 
+  const fillSampleData = () => {
+    setFormData((prev) => ({
+      ...prev,
+      academicInfo: {
+        gpa: "3.8",
+        totalCredits: "120",
+        completedCredits: "95",
+        semester: "Fall",
+        academicYear: "2024-2025",
+        major: "Computer Science",
+        institution: "EduWallet University",
+        courses: [
+          {
+            courseCode: "CS101",
+            courseName: "Introduction to Programming",
+            credits: 3,
+            grade: "A",
+            gpa: 4.0,
+            semester: "Spring 2024",
+            instructor: "Dr. Smith",
+          },
+          {
+            courseCode: "CS201",
+            courseName: "Data Structures",
+            credits: 4,
+            grade: "A-",
+            gpa: 3.7,
+            semester: "Fall 2024",
+            instructor: "Prof. Johnson",
+          },
+          {
+            courseCode: "MATH101",
+            courseName: "Calculus I",
+            credits: 4,
+            grade: "B+",
+            gpa: 3.3,
+            semester: "Spring 2024",
+            instructor: "Dr. Davis",
+          },
+        ],
+      },
+    }));
+    toast.success("Sample academic data filled!");
+  };
+
   const handleRoleChange = async (newRole) => {
-    if (!window.confirm(`Are you sure you want to change role to ${newRole}?`)) {
+    if (
+      !window.confirm(`Are you sure you want to change role to ${newRole}?`)
+    ) {
       return;
     }
 
@@ -189,8 +296,8 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
         onUserUpdated({ ...user, role: newRole });
       }
     } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error(error.response?.data?.message || 'Failed to update role');
+      console.error("Error updating role:", error);
+      toast.error(error.response?.data?.message || "Failed to update role");
     } finally {
       setLoading(false);
     }
@@ -198,65 +305,67 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
 
   const handleStatusToggle = async () => {
     const newStatus = !formData.isActive;
-    const reason = newStatus ? null : window.prompt('Reason for deactivation:');
-    
+    const reason = newStatus ? null : window.prompt("Reason for deactivation:");
+
     if (!newStatus && !reason) return;
 
     setLoading(true);
     try {
       await AdminService.updateUserStatus(user._id, newStatus, reason);
-      toast.success(`User ${newStatus ? 'activated' : 'deactivated'} successfully`);
-      setFormData(prev => ({ ...prev, isActive: newStatus }));
+      toast.success(
+        `User ${newStatus ? "activated" : "deactivated"} successfully`
+      );
+      setFormData((prev) => ({ ...prev, isActive: newStatus }));
       if (onUserUpdated) {
         onUserUpdated({ ...user, isActive: newStatus });
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error(error.response?.data?.message || 'Failed to update status');
+      console.error("Error updating status:", error);
+      toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
   };
 
   const handleBlock = async () => {
-    const reason = window.prompt('Reason for blocking:');
+    const reason = window.prompt("Reason for blocking:");
     if (!reason) return;
 
     setLoading(true);
     try {
       await AdminService.blockUser(user._id, reason);
-      toast.success('User blocked successfully');
+      toast.success("User blocked successfully");
       if (onUserUpdated) {
         onUserUpdated({ ...user, isBlocked: true, isActive: false });
       }
     } catch (error) {
-      console.error('Error blocking user:', error);
-      toast.error(error.response?.data?.message || 'Failed to block user');
+      console.error("Error blocking user:", error);
+      toast.error(error.response?.data?.message || "Failed to block user");
     } finally {
       setLoading(false);
     }
   };
 
   const handleUnblock = async () => {
-    if (!window.confirm('Are you sure you want to unblock this user?')) return;
+    if (!window.confirm("Are you sure you want to unblock this user?")) return;
 
     setLoading(true);
     try {
       await AdminService.unblockUser(user._id);
-      toast.success('User unblocked successfully');
+      toast.success("User unblocked successfully");
       if (onUserUpdated) {
         onUserUpdated({ ...user, isBlocked: false, isActive: true });
       }
     } catch (error) {
-      console.error('Error unblocking user:', error);
-      toast.error(error.response?.data?.message || 'Failed to unblock user');
+      console.error("Error unblocking user:", error);
+      toast.error(error.response?.data?.message || "Failed to unblock user");
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleString();
   };
 
@@ -264,19 +373,21 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
     if (user?.isBlocked) {
       return <StatusBadge $status="blocked">Blocked</StatusBadge>;
     }
-    return user?.isActive ? 
-      <StatusBadge $status="active">Active</StatusBadge> : 
-      <StatusBadge $status="inactive">Inactive</StatusBadge>;
+    return user?.isActive ? (
+      <StatusBadge $status="active">Active</StatusBadge>
+    ) : (
+      <StatusBadge $status="inactive">Inactive</StatusBadge>
+    );
   };
 
   const getRoleBadge = (role) => {
     const colors = {
-      super_admin: '#e74c3c',
-      admin: '#e67e22',
-      institution: '#3498db',
-      student: '#2ecc71'
+      super_admin: "#e74c3c",
+      admin: "#e67e22",
+      institution: "#3498db",
+      student: "#2ecc71",
     };
-    return <RoleBadge $color={colors[role] || '#95a5a6'}>{role}</RoleBadge>;
+    return <RoleBadge $color={colors[role] || "#95a5a6"}>{role}</RoleBadge>;
   };
 
   if (!isOpen || !user) return null;
@@ -297,9 +408,17 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
         >
           <ModalHeader>
             <HeaderLeft>
-              <Avatar src={user.avatar || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`} alt={user.username} />
+              <Avatar
+                src={
+                  user.avatar ||
+                  `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`
+                }
+                alt={user.username}
+              />
               <HeaderInfo>
-                <UserName>{user.firstName} {user.lastName}</UserName>
+                <UserName>
+                  {user.firstName} {user.lastName}
+                </UserName>
                 <UserMeta>
                   @{user.username} • {getRoleBadge(user.role)}
                 </UserMeta>
@@ -314,49 +433,87 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
           </ModalHeader>
 
           <TabContainer>
-            <Tab $active={activeTab === 'details'} onClick={() => setActiveTab('details')}>
+            <Tab
+              $active={activeTab === "details"}
+              onClick={() => setActiveTab("details")}
+            >
               <FaUser /> Details
             </Tab>
-            <Tab $active={activeTab === 'wallet'} onClick={() => setActiveTab('wallet')}>
+            <Tab
+              $active={activeTab === "wallet"}
+              onClick={() => setActiveTab("wallet")}
+            >
               <FaWallet /> EDU Wallet
             </Tab>
-            <Tab $active={activeTab === 'activities'} onClick={() => setActiveTab('activities')}>
+            <Tab
+              $active={activeTab === "activities"}
+              onClick={() => setActiveTab("activities")}
+            >
               <FaHistory /> Activities
             </Tab>
           </TabContainer>
 
           <ModalBody>
-            {activeTab === 'details' && (
+            {activeTab === "details" && (
               <DetailsTab key="details-tab">
                 <ActionButtons>
                   {!isEditing ? (
                     <>
-                      <ActionButton $variant="primary" onClick={() => setIsEditing(true)}>
+                      <ActionButton
+                        $variant="primary"
+                        onClick={() => setIsEditing(true)}
+                      >
                         <FaEdit /> Edit
                       </ActionButton>
-                      <ActionButton 
-                        $variant={formData.isActive ? 'warning' : 'success'} 
+                      <ActionButton
+                        $variant={formData.isActive ? "warning" : "success"}
                         onClick={handleStatusToggle}
                         disabled={loading}
                       >
-                        {formData.isActive ? <><FaBan /> Deactivate</> : <><FaCheck /> Activate</>}
+                        {formData.isActive ? (
+                          <>
+                            <FaBan /> Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <FaCheck /> Activate
+                          </>
+                        )}
                       </ActionButton>
                       {user.isBlocked ? (
-                        <ActionButton $variant="success" onClick={handleUnblock} disabled={loading}>
+                        <ActionButton
+                          $variant="success"
+                          onClick={handleUnblock}
+                          disabled={loading}
+                        >
                           <FaCheck /> Unblock
                         </ActionButton>
                       ) : (
-                        <ActionButton $variant="danger" onClick={handleBlock} disabled={loading}>
+                        <ActionButton
+                          $variant="danger"
+                          onClick={handleBlock}
+                          disabled={loading}
+                        >
                           <FaBan /> Block
                         </ActionButton>
                       )}
                     </>
                   ) : (
                     <>
-                      <ActionButton $variant="success" onClick={handleSave} disabled={loading}>
-                        <FaSave /> {loading ? 'Saving...' : 'Save Changes'}
+                      <ActionButton
+                        $variant="success"
+                        onClick={handleSave}
+                        disabled={loading}
+                      >
+                        <FaSave /> {loading ? "Saving..." : "Save Changes"}
                       </ActionButton>
-                      <ActionButton $variant="secondary" onClick={() => setIsEditing(false)}>
+                      <ActionButton $variant="info" onClick={fillSampleData}>
+                        <FaPlus /> Fill Sample Data
+                      </ActionButton>
+                      <ActionButton
+                        $variant="secondary"
+                        onClick={() => setIsEditing(false)}
+                      >
                         <FaTimes /> Cancel
                       </ActionButton>
                     </>
@@ -392,7 +549,9 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                       ) : (
                         <InfoText>
                           {user.email}
-                          {user.isEmailVerified && <VerifiedBadge>✓ Verified</VerifiedBadge>}
+                          {user.isEmailVerified && (
+                            <VerifiedBadge>✓ Verified</VerifiedBadge>
+                          )}
                         </InfoText>
                       )}
                     </FormGroup>
@@ -435,7 +594,7 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                           onChange={handleInputChange}
                         />
                       ) : (
-                        <InfoText>{user.phone || 'N/A'}</InfoText>
+                        <InfoText>{user.phone || "N/A"}</InfoText>
                       )}
                     </FormGroup>
 
@@ -449,7 +608,136 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                           onChange={handleInputChange}
                         />
                       ) : (
-                        <InfoText>{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'N/A'}</InfoText>
+                        <InfoText>
+                          {user.dateOfBirth
+                            ? new Date(user.dateOfBirth).toLocaleDateString()
+                            : "N/A"}
+                        </InfoText>
+                      )}
+                    </FormGroup>
+                  </FormGrid>
+                </FormSection>
+
+                <FormSection>
+                  <SectionTitle>Academic Information</SectionTitle>
+                  <FormGrid>
+                    <FormGroup>
+                      <Label>GPA</Label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="4.0"
+                          name="academicInfo.gpa"
+                          value={formData.academicInfo.gpa}
+                          onChange={handleInputChange}
+                          placeholder="e.g. 3.8"
+                        />
+                      ) : (
+                        <InfoText>{user.academicInfo?.gpa || "N/A"}</InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Total Credits</Label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          name="academicInfo.totalCredits"
+                          value={formData.academicInfo.totalCredits}
+                          onChange={handleInputChange}
+                          placeholder="e.g. 120"
+                        />
+                      ) : (
+                        <InfoText>
+                          {user.academicInfo?.totalCredits || "N/A"}
+                        </InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Completed Credits</Label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          name="academicInfo.completedCredits"
+                          value={formData.academicInfo.completedCredits}
+                          onChange={handleInputChange}
+                          placeholder="e.g. 95"
+                        />
+                      ) : (
+                        <InfoText>
+                          {user.academicInfo?.completedCredits || "N/A"}
+                        </InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Semester</Label>
+                      {isEditing ? (
+                        <Input
+                          type="text"
+                          name="academicInfo.semester"
+                          value={formData.academicInfo.semester}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Fall"
+                        />
+                      ) : (
+                        <InfoText>
+                          {user.academicInfo?.semester || "N/A"}
+                        </InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Academic Year</Label>
+                      {isEditing ? (
+                        <Input
+                          type="text"
+                          name="academicInfo.academicYear"
+                          value={formData.academicInfo.academicYear}
+                          onChange={handleInputChange}
+                          placeholder="e.g. 2024-2025"
+                        />
+                      ) : (
+                        <InfoText>
+                          {user.academicInfo?.academicYear || "N/A"}
+                        </InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Major</Label>
+                      {isEditing ? (
+                        <Input
+                          type="text"
+                          name="academicInfo.major"
+                          value={formData.academicInfo.major}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Computer Science"
+                        />
+                      ) : (
+                        <InfoText>{user.academicInfo?.major || "N/A"}</InfoText>
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Institution</Label>
+                      {isEditing ? (
+                        <Input
+                          type="text"
+                          name="academicInfo.institution"
+                          value={formData.academicInfo.institution}
+                          onChange={handleInputChange}
+                          placeholder="e.g. EduWallet University"
+                        />
+                      ) : (
+                        <InfoText>
+                          {user.academicInfo?.institution || "N/A"}
+                        </InfoText>
                       )}
                     </FormGroup>
                   </FormGrid>
@@ -458,17 +746,19 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                 <FormSection>
                   <SectionTitle>Role & Permissions</SectionTitle>
                   <RoleSelector>
-                    {['student', 'institution', 'admin', 'super_admin'].map((role) => (
-                      <RoleOption
-                        key={role}
-                        $selected={formData.role === role}
-                        onClick={() => !isEditing && handleRoleChange(role)}
-                        disabled={isEditing}
-                      >
-                        <FaUserShield />
-                        {role.replace('_', ' ')}
-                      </RoleOption>
-                    ))}
+                    {["student", "institution", "admin", "super_admin"].map(
+                      (role) => (
+                        <RoleOption
+                          key={role}
+                          $selected={formData.role === role}
+                          onClick={() => !isEditing && handleRoleChange(role)}
+                          disabled={isEditing}
+                        >
+                          <FaUserShield />
+                          {role.replace("_", " ")}
+                        </RoleOption>
+                      )
+                    )}
                   </RoleSelector>
                 </FormSection>
 
@@ -477,15 +767,17 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                   <StatusGrid>
                     <StatusItem>
                       <StatusLabel>Active</StatusLabel>
-                      <StatusValue>{user.isActive ? 'Yes' : 'No'}</StatusValue>
+                      <StatusValue>{user.isActive ? "Yes" : "No"}</StatusValue>
                     </StatusItem>
                     <StatusItem>
                       <StatusLabel>Blocked</StatusLabel>
-                      <StatusValue>{user.isBlocked ? 'Yes' : 'No'}</StatusValue>
+                      <StatusValue>{user.isBlocked ? "Yes" : "No"}</StatusValue>
                     </StatusItem>
                     <StatusItem>
                       <StatusLabel>Email Verified</StatusLabel>
-                      <StatusValue>{user.isEmailVerified ? 'Yes' : 'No'}</StatusValue>
+                      <StatusValue>
+                        {user.isEmailVerified ? "Yes" : "No"}
+                      </StatusValue>
                     </StatusItem>
                     <StatusItem>
                       <StatusLabel>Created At</StatusLabel>
@@ -506,13 +798,16 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
               </DetailsTab>
             )}
 
-            {activeTab === 'wallet' && (
+            {activeTab === "wallet" && (
               <WalletTab key="wallet-tab">
                 <WalletHeader>
                   <WalletTitle>
                     <FaCoins /> EDU Token Balance
                   </WalletTitle>
-                  <RefreshButton onClick={fetchEduTokenBalance} disabled={loadingBalance}>
+                  <RefreshButton
+                    onClick={fetchEduTokenBalance}
+                    disabled={loadingBalance}
+                  >
                     <FaExchangeAlt /> Refresh
                   </RefreshButton>
                 </WalletHeader>
@@ -539,19 +834,19 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                 </BalanceCard>
 
                 <TokenActions>
-                  <TokenActionButton 
-                    $variant="success" 
+                  <TokenActionButton
+                    $variant="success"
                     onClick={() => {
-                      setTokenAction('add');
+                      setTokenAction("add");
                       setShowTokenModal(true);
                     }}
                   >
                     <FaPlus /> Add Tokens
                   </TokenActionButton>
-                  <TokenActionButton 
-                    $variant="danger" 
+                  <TokenActionButton
+                    $variant="danger"
                     onClick={() => {
-                      setTokenAction('subtract');
+                      setTokenAction("subtract");
                       setShowTokenModal(true);
                     }}
                   >
@@ -562,26 +857,34 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                 <TokenInfo>
                   <InfoTitle>Token Management</InfoTitle>
                   <InfoDescription>
-                    • Add tokens to reward user achievements<br/>
-                    • Deduct tokens for penalties or corrections<br/>
-                    • All transactions are recorded in database<br/>
-                    • Changes are reflected immediately
+                    • Add tokens to reward user achievements
+                    <br />
+                    • Deduct tokens for penalties or corrections
+                    <br />
+                    • All transactions are recorded in database
+                    <br />• Changes are reflected immediately
                   </InfoDescription>
                 </TokenInfo>
               </WalletTab>
             )}
 
-            {activeTab === 'activities' && (
+            {activeTab === "activities" && (
               <ActivitiesTab key="activities-tab">
                 {activities.length > 0 ? (
                   <ActivityList>
                     {activities.map((activity, index) => (
                       <ActivityItem key={index}>
-                        <ActivityIcon>{getActivityIcon(activity.action)}</ActivityIcon>
+                        <ActivityIcon>
+                          {getActivityIcon(activity.action)}
+                        </ActivityIcon>
                         <ActivityContent>
                           <ActivityAction>{activity.action}</ActivityAction>
-                          <ActivityDetails>{activity.details || 'No details'}</ActivityDetails>
-                          <ActivityTime>{formatDate(activity.timestamp)}</ActivityTime>
+                          <ActivityDetails>
+                            {activity.details || "No details"}
+                          </ActivityDetails>
+                          <ActivityTime>
+                            {formatDate(activity.timestamp)}
+                          </ActivityTime>
                         </ActivityContent>
                       </ActivityItem>
                     ))}
@@ -615,8 +918,10 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
             >
               <TokenModalHeader $variant={tokenAction}>
                 <h2>
-                  {tokenAction === 'add' ? <FaPlus /> : <FaMinus />}
-                  {tokenAction === 'add' ? ' Add EDU Tokens' : ' Deduct EDU Tokens'}
+                  {tokenAction === "add" ? <FaPlus /> : <FaMinus />}
+                  {tokenAction === "add"
+                    ? " Add EDU Tokens"
+                    : " Deduct EDU Tokens"}
                 </h2>
                 <CloseButton onClick={() => setShowTokenModal(false)}>
                   <FaTimes />
@@ -652,34 +957,48 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
                     <strong>{eduTokenBalance} EDU</strong>
                   </SummaryRow>
                   <SummaryRow>
-                    <span>{tokenAction === 'add' ? 'Adding:' : 'Deducting:'}</span>
+                    <span>
+                      {tokenAction === "add" ? "Adding:" : "Deducting:"}
+                    </span>
                     <strong $variant={tokenAction}>
-                      {tokenAction === 'add' ? '+' : '-'}{tokenAmount || '0'} EDU
+                      {tokenAction === "add" ? "+" : "-"}
+                      {tokenAmount || "0"} EDU
                     </strong>
                   </SummaryRow>
                   <Divider />
                   <SummaryRow $total>
                     <span>New Balance:</span>
                     <strong>
-                      {tokenAction === 'add' 
-                        ? (parseFloat(eduTokenBalance || 0) + parseFloat(tokenAmount || 0)).toFixed(2)
-                        : (parseFloat(eduTokenBalance || 0) - parseFloat(tokenAmount || 0)).toFixed(2)
-                      } EDU
+                      {tokenAction === "add"
+                        ? (
+                            parseFloat(eduTokenBalance || 0) +
+                            parseFloat(tokenAmount || 0)
+                          ).toFixed(2)
+                        : (
+                            parseFloat(eduTokenBalance || 0) -
+                            parseFloat(tokenAmount || 0)
+                          ).toFixed(2)}{" "}
+                      EDU
                     </strong>
                   </SummaryRow>
                 </TransactionSummary>
               </TokenModalBody>
 
               <TokenModalFooter>
-                <ActionButton $variant="secondary" onClick={() => setShowTokenModal(false)}>
+                <ActionButton
+                  $variant="secondary"
+                  onClick={() => setShowTokenModal(false)}
+                >
                   Cancel
                 </ActionButton>
-                <ActionButton 
-                  $variant={tokenAction === 'add' ? 'success' : 'danger'}
+                <ActionButton
+                  $variant={tokenAction === "add" ? "success" : "danger"}
                   onClick={handleTokenManagement}
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : `${tokenAction === 'add' ? 'Add' : 'Deduct'} Tokens`}
+                  {loading
+                    ? "Processing..."
+                    : `${tokenAction === "add" ? "Add" : "Deduct"} Tokens`}
                 </ActionButton>
               </TokenModalFooter>
             </TokenModal>
@@ -692,15 +1011,15 @@ const UserDetailModal = ({ user, isOpen, onClose, onUserUpdated }) => {
 
 const getActivityIcon = (action) => {
   const icons = {
-    login: '🔐',
-    logout: '🚪',
-    update: '✏️',
-    create: '➕',
-    delete: '🗑️',
-    block: '🚫',
-    unblock: '✅'
+    login: "🔐",
+    logout: "🚪",
+    update: "✏️",
+    create: "➕",
+    delete: "🗑️",
+    block: "🚫",
+    unblock: "✅",
   };
-  return icons[action] || '📝';
+  return icons[action] || "📝";
 };
 
 // Styled Components
@@ -805,12 +1124,16 @@ const StatusBadge = styled.span`
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  background: ${props => {
+  background: ${(props) => {
     switch (props.$status) {
-      case 'active': return '#2ecc71';
-      case 'inactive': return '#95a5a6';
-      case 'blocked': return '#e74c3c';
-      default: return '#95a5a6';
+      case "active":
+        return "#2ecc71";
+      case "inactive":
+        return "#95a5a6";
+      case "blocked":
+        return "#e74c3c";
+      default:
+        return "#95a5a6";
     }
   }};
   color: white;
@@ -821,7 +1144,7 @@ const RoleBadge = styled.span`
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
-  background: ${props => props.$color};
+  background: ${(props) => props.$color};
   color: white;
   text-transform: uppercase;
 `;
@@ -836,8 +1159,8 @@ const Tab = styled.button`
   flex: 1;
   padding: 16px;
   border: none;
-  background: ${props => props.$active ? 'white' : 'transparent'};
-  color: ${props => props.$active ? '#667eea' : '#666'};
+  background: ${(props) => (props.$active ? "white" : "transparent")};
+  color: ${(props) => (props.$active ? "#667eea" : "#666")};
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -846,7 +1169,8 @@ const Tab = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-bottom: 3px solid ${props => props.$active ? '#667eea' : 'transparent'};
+  border-bottom: 3px solid
+    ${(props) => (props.$active ? "#667eea" : "transparent")};
 
   &:hover {
     background: white;
@@ -961,8 +1285,13 @@ const LoadingSpinner = styled.div`
   animation: pulse 1.5s ease-in-out infinite;
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 `;
 
@@ -984,11 +1313,14 @@ const TokenActionButton = styled.button`
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: ${props => {
+  background: ${(props) => {
     switch (props.$variant) {
-      case 'success': return '#2ecc71';
-      case 'danger': return '#e74c3c';
-      default: return '#3498db';
+      case "success":
+        return "#2ecc71";
+      case "danger":
+        return "#e74c3c";
+      default:
+        return "#3498db";
     }
   }};
   color: white;
@@ -1064,18 +1396,24 @@ const ActionButton = styled.button`
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  
-  background: ${props => {
+
+  background: ${(props) => {
     switch (props.$variant) {
-      case 'primary': return '#667eea';
-      case 'success': return '#2ecc71';
-      case 'warning': return '#f39c12';
-      case 'danger': return '#e74c3c';
-      case 'secondary': return '#95a5a6';
-      default: return '#667eea';
+      case "primary":
+        return "#667eea";
+      case "success":
+        return "#2ecc71";
+      case "warning":
+        return "#f39c12";
+      case "danger":
+        return "#e74c3c";
+      case "secondary":
+        return "#95a5a6";
+      default:
+        return "#667eea";
     }
   }};
-  
+
   color: white;
 
   &:hover:not(:disabled) {
@@ -1164,8 +1502,9 @@ const RoleSelector = styled.div`
 
 const RoleOption = styled.button`
   padding: 16px;
-  border: 2px solid ${props => props.$selected ? '#667eea' : '#e0e0e0'};
-  background: ${props => props.$selected ? 'rgba(102, 126, 234, 0.1)' : 'white'};
+  border: 2px solid ${(props) => (props.$selected ? "#667eea" : "#e0e0e0")};
+  background: ${(props) =>
+    props.$selected ? "rgba(102, 126, 234, 0.1)" : "white"};
   border-radius: 12px;
   cursor: pointer;
   display: flex;
@@ -1174,7 +1513,7 @@ const RoleOption = styled.button`
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: ${props => props.$selected ? '#667eea' : '#666'};
+  color: ${(props) => (props.$selected ? "#667eea" : "#666")};
   transition: all 0.3s ease;
   text-transform: capitalize;
 
@@ -1281,7 +1620,7 @@ const EmptyState = styled.div`
   justify-content: center;
   padding: 60px 20px;
   color: #999;
-  
+
   svg {
     margin-bottom: 16px;
     opacity: 0.5;
@@ -1305,10 +1644,10 @@ const TokenModal = styled(motion.div)`
 
 const TokenModalHeader = styled.div`
   padding: 24px;
-  background: ${props => props.$variant === 'add' 
-    ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)'
-    : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'
-  };
+  background: ${(props) =>
+    props.$variant === "add"
+      ? "linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)"
+      : "linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)"};
   color: white;
 
   h2 {
@@ -1353,15 +1692,15 @@ const SummaryRow = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  font-size: ${props => props.$total ? '18px' : '14px'};
-  font-weight: ${props => props.$total ? '700' : '500'};
-  color: ${props => props.$total ? '#2c3e50' : '#666'};
+  font-size: ${(props) => (props.$total ? "18px" : "14px")};
+  font-weight: ${(props) => (props.$total ? "700" : "500")};
+  color: ${(props) => (props.$total ? "#2c3e50" : "#666")};
 
   strong {
-    color: ${props => {
-      if (props.$variant === 'add') return '#2ecc71';
-      if (props.$variant === 'subtract') return '#e74c3c';
-      return '#2c3e50';
+    color: ${(props) => {
+      if (props.$variant === "add") return "#2ecc71";
+      if (props.$variant === "subtract") return "#e74c3c";
+      return "#2c3e50";
     }};
   }
 `;

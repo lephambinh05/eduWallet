@@ -211,6 +211,38 @@ router.put(
   })
 );
 
+// Delete a course (partner only)
+router.delete(
+  "/courses/:id",
+  authenticateToken,
+  authorize("partner"),
+  asyncHandler(async (req, res) => {
+    const course = await PartnerCourse.findById(req.params.id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify ownership
+    if (!course.owner.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this course",
+      });
+    }
+
+    await PartnerCourse.findByIdAndDelete(req.params.id);
+
+    return res.json({
+      success: true,
+      message: "Course deleted successfully",
+    });
+  })
+);
+
 // Get sales (purchases) for authenticated partner (seller)
 router.get(
   "/sales",
@@ -460,6 +492,26 @@ router.post(
     const price = Number(course.priceEdu) || 0;
     const quantity = 1;
     const total = price * quantity;
+
+    // Check if user has sufficient eduToken balance
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const currentBalance = Number(user.eduTokenBalance) || 0;
+    if (currentBalance < total) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient eduToken balance. Required: ${total}, Available: ${currentBalance}`,
+      });
+    }
+
+    // Deduct balance from user
+    user.eduTokenBalance = currentBalance - total;
+    await user.save();
 
     // create Purchase record (itemId references the course id)
     const purchase = await Purchase.create({
@@ -2074,7 +2126,8 @@ router.post(
               courseData.id || courseData._id || courseData.courseId,
             title: courseData.title || courseData.name,
             description: courseData.description || "",
-            price: parseFloat(courseData.price) || 0,
+            price: parseFloat(courseData.price || courseData.priceEdu) || 0,
+            priceEdu: parseFloat(courseData.price || courseData.priceEdu) || 0,
             currency: courseData.currency || "PZO",
             duration: courseData.duration || 0,
             level: courseData.level || "beginner",

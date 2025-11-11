@@ -35,11 +35,19 @@ router.post(
   "/save",
   authenticateToken,
   asyncHandler(async (req, res) => {
+    console.log("🔍 Wallet save request:", {
+      body: req.body,
+      user: req.user ? { id: req.user._id, email: req.user.email } : null,
+    });
+
     const { address, chainId, network } = req.body;
 
     if (!address) {
+      console.log("❌ Missing wallet address");
       throw new AppError("Wallet address is required", 400);
     }
+
+    console.log("🔍 Checking wallet conflict for address:", address);
 
     // Check if wallet is already connected to another user
     const existingUser = await User.findOne({ walletAddress: address });
@@ -47,29 +55,36 @@ router.post(
       existingUser &&
       existingUser._id.toString() !== req.user._id.toString()
     ) {
+      console.log("❌ Wallet conflict detected:", {
+        existingUser: existingUser._id,
+        currentUser: req.user._id,
+      });
       throw new AppError(
         "Wallet address is already connected to another account",
         400
       );
     }
 
+    console.log("✅ No wallet conflict, proceeding with save");
+
     // Update user with wallet info
     const user = await User.findByIdAndUpdate(
       req.user._id,
       {
         walletAddress: address,
-        walletInfo: {
-          address,
-          chainId,
-          network,
-          connected: true,
-          connectedAt: new Date(),
+        $set: {
+          "walletInfo.chainId": chainId,
+          "walletInfo.networkName": network,
+          "walletInfo.isConnected": true,
+          "walletInfo.connectedAt": new Date(),
         },
       },
-      { new: true, runValidators: true }
+      { new: true }
     ).select(
       "-password -twoFactorSecret -passwordResetToken -emailVerificationToken"
     );
+
+    console.log("✅ Wallet saved successfully for user:", req.user._id);
 
     res.json({
       success: true,
@@ -197,8 +212,8 @@ router.post(
         belongsToCurrentUser,
         wallet: {
           address: user.walletAddress,
-          connected: user.walletInfo?.connected || true,
-          network: user.walletInfo?.network,
+          connected: user.walletInfo?.isConnected || true,
+          network: user.walletInfo?.networkName,
           chainId: user.walletInfo?.chainId,
           connectedAt: user.walletInfo?.connectedAt,
         },
@@ -231,8 +246,8 @@ router.get(
     if (user.walletAddress) {
       wallets.push({
         address: user.walletAddress,
-        connected: user.walletInfo?.connected || true,
-        network: user.walletInfo?.network,
+        connected: user.walletInfo?.isConnected || true,
+        network: user.walletInfo?.networkName,
         chainId: user.walletInfo?.chainId,
         connectedAt: user.walletInfo?.connectedAt,
       });

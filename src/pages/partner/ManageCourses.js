@@ -501,6 +501,21 @@ const PartnerCourses = () => {
     }
   };
 
+  const handleDeleteCourse = async (courseId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa khóa học này?")) {
+      return;
+    }
+
+    try {
+      await partnerAPI.deleteCourse(courseId);
+      toast.success("Đã xóa khóa học thành công");
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      toast.error("Không thể xóa khóa học");
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -627,6 +642,13 @@ const PartnerCourses = () => {
                       title="Xem chi tiết"
                     >
                       <FaEye />
+                    </IconButton>
+                    <IconButton
+                      $variant="danger"
+                      onClick={() => handleDeleteCourse(course._id)}
+                      title="Xóa khóa học"
+                    >
+                      <FaTrash />
                     </IconButton>
                   </SourceActions>
                 </CourseFooter>

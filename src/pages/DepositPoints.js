@@ -135,13 +135,8 @@ const DepositPoints = () => {
 
   const loadBalances = React.useCallback(async () => {
     try {
-      console.log("🔍 Loading EDU balance from backend...");
-
       // Load EDU token balance from backend (database) instead of blockchain
       const profileResponse = await authAPI.getProfile();
-
-      console.log("📦 Profile response:", profileResponse);
-      console.log("✅ Profile data:", profileResponse.data);
 
       if (profileResponse.data.success) {
         // API returns { success: true, data: { user } }
@@ -149,25 +144,16 @@ const DepositPoints = () => {
           profileResponse.data.data.user || profileResponse.data.data;
         const eduBalance = userData.eduTokenBalance || 0;
 
-        console.log("👤 User data FULL:", JSON.stringify(userData, null, 2));
-        console.log(
-          "💰 EDU Balance from userData.eduTokenBalance:",
-          userData.eduTokenBalance
-        );
-        console.log("💰 Final EDU Balance:", eduBalance);
-
         setPointBalance(parseFloat(eduBalance).toFixed(2));
 
         if (eduBalance > 0) {
           toast.success(`Đã tải số dư: ${eduBalance} EDU`);
         }
       } else {
-        console.error("❌ Profile response not successful");
         toast.error("Không thể tải số dư từ server");
       }
     } catch (error) {
       console.error("❌ Error loading balances:", error);
-      console.error("Error response:", error.response);
       toast.error("Lỗi khi tải số dư! Vui lòng đăng nhập lại.");
     }
   }, []);
@@ -176,26 +162,10 @@ const DepositPoints = () => {
   React.useEffect(() => {
     if (isConnected && account) {
       loadBalances();
-      // Try to load admin settings (wallet + conversion settings)
+      // Try to load admin settings from public API
       (async () => {
         try {
-          // Try public endpoint first (non-auth)
-          let resp = null;
-          try {
-            resp = await adminAPI.getPublicAdminWallet();
-          } catch (err) {
-            // ignore and try protected endpoint next
-          }
-
-          if (!resp) {
-            // try protected admin endpoint (if client has admin token while testing)
-            try {
-              resp = await adminAPI.getAdminWallet();
-            } catch (err) {
-              resp = null;
-            }
-          }
-
+          const resp = await adminAPI.getPublicAdminWallet();
           const data = resp?.data?.data || null;
           if (data) {
             setAdminSettings({
@@ -206,28 +176,19 @@ const DepositPoints = () => {
             });
             return;
           }
-
-          // Fallback to env only for address
-          const envAddr = process.env.REACT_APP_ADMIN_WALLET || null;
-          if (envAddr) {
-            setAdminSettings({
-              address: envAddr,
-              eduPrice: null,
-              minConvertPZO: null,
-              maxConvertPZO: null,
-            });
-          }
         } catch (e) {
-          // defensive fallback
-          const envAddr = process.env.REACT_APP_ADMIN_WALLET || null;
-          if (envAddr) {
-            setAdminSettings({
-              address: envAddr,
-              eduPrice: null,
-              minConvertPZO: null,
-              maxConvertPZO: null,
-            });
-          }
+          // ignore
+        }
+
+        // Fallback to env
+        const envAddr = process.env.REACT_APP_ADMIN_WALLET || null;
+        if (envAddr) {
+          setAdminSettings({
+            address: envAddr,
+            eduPrice: null,
+            minConvertPZO: null,
+            maxConvertPZO: null,
+          });
         }
       })();
     }
@@ -243,6 +204,27 @@ const DepositPoints = () => {
     setIsProcessing(true);
 
     try {
+      // Check if wallet is connected to user account
+      const profileResponse = await authAPI.getProfile();
+      if (!profileResponse.data.success) {
+        toast.error("Không thể xác minh tài khoản. Vui lòng đăng nhập lại.");
+        setIsProcessing(false);
+        return;
+      }
+
+      const userData =
+        profileResponse.data.data.user || profileResponse.data.data;
+      if (
+        !userData.walletAddress ||
+        userData.walletAddress.toLowerCase() !== account.toLowerCase()
+      ) {
+        toast.error(
+          "Ví hiện tại chưa được kết nối với tài khoản. Vui lòng nhấp vào 'Kết nối ví' trong sidebar."
+        );
+        setIsProcessing(false);
+        return;
+      }
+
       // Ensure PZO network if chainId is present
       if (chainId && chainId !== 5080) {
         toast.error(

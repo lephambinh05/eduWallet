@@ -773,7 +773,7 @@ router.post("/quiz/submit", async (req, res) => {
     studentProgress.totalQuestions = questions.length;
     if (passed) studentProgress.completedAt = new Date().toISOString();
 
-    // If passed and enrollmentId is present, update Enrollment status
+    // If passed and enrollmentId is present, update Enrollment status and send webhook
     if (passed && enrollmentId) {
       try {
         const enrollment = await Enrollment.findOne({ enrollmentId });
@@ -781,6 +781,91 @@ router.post("/quiz/submit", async (req, res) => {
           enrollment.status = "completed";
           enrollment.completedAt = new Date();
           await enrollment.save();
+
+          // Send webhook to EduWallet
+          console.log(
+            "[WEBHOOK] Sending completion webhook for enrollment:",
+            enrollmentId
+          );
+          const finalEnrollmentId = enrollmentId;
+
+          // Get EduWallet course ID from EduWallet enrollment directly
+          let eduwalletCourseId = courseId; // fallback
+          try {
+            console.log(
+              "[WEBHOOK] Getting EduWallet enrollment for:",
+              finalEnrollmentId
+            );
+            // Call EduWallet API to get enrollment details
+            const eduWalletResp = await axios.get(
+              `${process.env.EDUWALLET_API_URL}/api/partner/public/enrollment/${finalEnrollmentId}`,
+              { timeout: 5000 }
+            );
+            const enrollmentData = eduWalletResp.data.data.enrollment;
+            console.log(
+              "[WEBHOOK] EduWallet enrollment data:",
+              JSON.stringify(enrollmentData, null, 2)
+            );
+            if (enrollmentData?.itemId) {
+              if (
+                typeof enrollmentData.itemId === "object" &&
+                enrollmentData.itemId._id
+              ) {
+                eduwalletCourseId = enrollmentData.itemId._id.toString();
+              } else if (typeof enrollmentData.itemId === "string") {
+                eduwalletCourseId = enrollmentData.itemId;
+              }
+              console.log(
+                "[WEBHOOK] Using eduwalletCourseId:",
+                eduwalletCourseId
+              );
+            } else {
+              console.log("[WEBHOOK] No itemId found in enrollment data");
+            }
+          } catch (err) {
+            console.warn(
+              "[WEBHOOK] Could not get EduWallet enrollment for webhook:",
+              err.message
+            );
+            console.warn("[WEBHOOK] Using fallback courseId:", courseId);
+          }
+
+          try {
+            const webhookPayload = {
+              eventType: "course_completed",
+              studentId: studentId,
+              courseId: eduwalletCourseId,
+              enrollmentId: finalEnrollmentId,
+              completedCourse: {
+                _id: `completion_${Date.now()}`,
+                name: course.title,
+                issuer: course.issuer || "Partner1",
+                score: score,
+                passed: true,
+                correctAnswers: correctCount,
+                totalQuestions: questions.length,
+                grade: grade,
+                results: [],
+                createdAt: new Date().toISOString(),
+                __v: 0,
+              },
+            };
+
+            const webhookResp = await axios.post(
+              `${process.env.EDUWALLET_API_URL}/api/webhooks/partner-updates`,
+              webhookPayload,
+              {
+                headers: { "Content-Type": "application/json" },
+                timeout: 5000,
+              }
+            );
+            console.log("✅ Webhook sent successfully:", webhookResp.data);
+          } catch (webhookError) {
+            console.error(
+              "❌ Webhook failed:",
+              webhookError.response?.data || webhookError.message
+            );
+          }
         } else {
           console.warn(
             `No Enrollment found for enrollmentId ${enrollmentId} when trying to mark as completed after quiz submit.`

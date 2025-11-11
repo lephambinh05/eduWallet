@@ -9,6 +9,7 @@ const SimpleBadge = require("../models/SimpleBadge");
 const LearnPass = require("../models/LearnPass");
 const PortfolioChange = require("../models/PortfolioChange");
 const CompletedCourse = require("../models/CompletedCourse");
+const Enrollment = require("../models/Enrollment");
 
 // Create a portfolio change record (audit log)
 router.post("/changes", async (req, res) => {
@@ -87,6 +88,13 @@ router.get("/:userId", async (req, res) => {
 
     // Get Courses
     const courses = await Course.find({ userId }).catch(() => []);
+
+    // Get Enrollments (partner course enrollments)
+    const enrollments = await Enrollment.find({ user: userId })
+      .populate("itemId", "title description price")
+      .populate("seller", "name username email")
+      .populate("purchase", "amount status")
+      .catch(() => []);
 
     // Get Completed Courses (from partner courses)
     const completedCourses = await CompletedCourse.find({ userId })
@@ -176,6 +184,7 @@ router.get("/:userId", async (req, res) => {
           academicInfo: user.academicInfo,
         },
         courses,
+        enrollments, // Include partner course enrollments
         completedCourses, // Include completed courses from partner purchases
         certificates,
         badges,
@@ -213,6 +222,19 @@ router.get("/email/:email", async (req, res) => {
 
     // Get Courses
     const courses = await Course.find({ userId }).catch(() => []);
+
+    // Get Enrollments (partner course enrollments)
+    const enrollments = await Enrollment.find({ user: userId })
+      .populate("itemId", "title description price")
+      .populate("seller", "name username email")
+      .populate("purchase", "amount status")
+      .catch(() => []);
+
+    // Get Completed Courses (from partner courses)
+    const completedCourses = await CompletedCourse.find({ userId })
+      .populate("courseId", "title description price")
+      .populate("seller", "name username email")
+      .catch(() => []);
 
     // Get Certificates (try SimpleCertificate first, fallback to Certificate)
     let certificates = [];
@@ -255,27 +277,31 @@ router.get("/email/:email", async (req, res) => {
     }
 
     // Calculate statistics
+    const totalCoursesCount = courses.length + completedCourses.length;
+
     const statistics = {
-      totalCourses: courses.length,
+      totalCourses: totalCoursesCount,
+      completedCourses: completedCourses.length,
+      inProgressCourses: courses.length,
       totalCertificates: certificates.length,
       totalBadges: badges.length,
       gpa: user.academicInfo?.gpa || 0,
       totalCredits: user.academicInfo?.totalCredits || 0,
       completedCredits: user.academicInfo?.completedCredits || 0,
       averageScore:
-        courses.length > 0
+        totalCoursesCount > 0
           ? Math.round(
-              courses.reduce((sum, course) => sum + (course.score || 0), 0) /
-                courses.length
+              (courses.reduce((sum, course) => sum + (course.score || 0), 0) +
+                completedCourses.reduce(
+                  (sum, cc) => sum + (cc.score || 0),
+                  0
+                )) /
+                totalCoursesCount
             )
           : 0,
       completionRate:
-        courses.length > 0
-          ? Math.round(
-              (courses.filter((c) => c.status === "Completed").length /
-                courses.length) *
-                100
-            )
+        totalCoursesCount > 0
+          ? Math.round((completedCourses.length / totalCoursesCount) * 100)
           : 0,
     };
 
@@ -291,6 +317,8 @@ router.get("/email/:email", async (req, res) => {
           academicInfo: user.academicInfo,
         },
         courses,
+        enrollments, // Include partner course enrollments
+        completedCourses, // Include completed courses from partner purchases
         certificates,
         badges,
         statistics,

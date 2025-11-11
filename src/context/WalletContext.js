@@ -81,11 +81,19 @@ export const WalletProvider = ({ children }) => {
       // Note: Cannot reset selectedAddress as it's read-only
       // MetaMask will show popup if user hasn't connected before
 
-      // Force MetaMask to show account selection popup
-      await window.ethereum.request({
-        method: "wallet_requestPermissions",
-        params: [{ eth_accounts: {} }],
-      });
+      try {
+        // Force MetaMask to show account selection popup
+        await window.ethereum.request({
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }],
+        });
+      } catch (permissionError) {
+        // If user rejects permissions, throw specific error
+        if (permissionError.code === 4001) {
+          throw new Error("Người dùng đã từ chối cấp quyền truy cập ví");
+        }
+        throw permissionError;
+      }
 
       // Now request accounts after permissions are granted
       const accounts = await window.ethereum.request({
