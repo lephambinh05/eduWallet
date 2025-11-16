@@ -97,6 +97,48 @@ const Placeholder = styled.div`
   color: rgba(255, 255, 255, 0.6);
 `;
 
+const StatusSelect = styled.select`
+  background: ${(props) =>
+    props.status === "success"
+      ? "rgba(34, 197, 94, 0.1)"
+      : props.status === "pending"
+      ? "rgba(234, 179, 8, 0.1)"
+      : "rgba(239, 68, 68, 0.1)"};
+  color: ${(props) =>
+    props.status === "success"
+      ? "#22c55e"
+      : props.status === "pending"
+      ? "#eab308"
+      : "#ef4444"};
+  border: 1px solid
+    ${(props) =>
+      props.status === "success"
+        ? "rgba(34, 197, 94, 0.3)"
+        : props.status === "pending"
+        ? "rgba(234, 179, 8, 0.3)"
+        : "rgba(239, 68, 68, 0.3)"};
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.8;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background: #1a1a1a;
+    color: #fff;
+  }
+`;
+
 const AdminNFTPortfolio = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -156,6 +198,21 @@ const AdminNFTPortfolio = () => {
     setPreviewData(null);
   };
 
+  const handleStatusChange = async (nftId, newStatus) => {
+    try {
+      setLoading(true);
+      await AdminService.updateNFTStatus(nftId, newStatus);
+      // Reload data to reflect changes
+      await fetchData();
+      console.log(`✅ Status updated to ${newStatus} for NFT ${nftId}`);
+    } catch (err) {
+      console.error("Failed to update NFT status", err);
+      alert("Không thể cập nhật trạng thái. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -204,6 +261,7 @@ const AdminNFTPortfolio = () => {
               <tr>
                 <Th>IPFS</Th>
                 <Th>Token ID</Th>
+                <Th>Status</Th>
                 <Th>Xem nhanh</Th>
                 <Th>Metadata URI</Th>
                 <Th>Owner</Th>
@@ -236,6 +294,20 @@ const AdminNFTPortfolio = () => {
                       </MaskedText>
                     </Td>
                     <Td style={{ fontWeight: 600 }}>{item.tokenId || "-"}</Td>
+                    <Td>
+                      <StatusSelect
+                        value={item.status || "success"}
+                        onChange={(e) =>
+                          handleStatusChange(item._id, e.target.value)
+                        }
+                        disabled={loading}
+                        status={item.status || "success"}
+                      >
+                        <option value="pending">⏳ Pending</option>
+                        <option value="success">✅ Success</option>
+                        <option value="failed">❌ Failed</option>
+                      </StatusSelect>
+                    </Td>
                     <Td>
                       <QuickButton onClick={() => openPreview(item)}>
                         Xem nhanh

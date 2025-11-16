@@ -269,6 +269,13 @@ export const AdminService = {
     return response.data;
   },
 
+  updateNFTStatus: async (nftId, status) => {
+    const response = await adminAPI.patch(`/admin/nft-portfolio/${nftId}/status`, {
+      status,
+    });
+    return response.data;
+  },
+
   // ==================== Portfolio Change Logs ====================
   getPortfolioChanges: async (params) => {
     const response = await adminAPI.get("/admin/portfolio-changes", { params });

@@ -905,6 +905,63 @@ router.get(
   })
 );
 
+// Admin: Update NFT status
+router.patch(
+  "/nft-portfolio/:id/status",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  asyncHandler(async (req, res) => {
+    const BlockchainTransaction = require("../models/BlockchainTransaction");
+    const PortfolioChange = require("../models/PortfolioChange");
+    const { status } = req.body;
+
+    // Validate status
+    if (!["pending", "success", "failed"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Must be: pending, success, or failed",
+      });
+    }
+
+    const nft = await BlockchainTransaction.findById(req.params.id);
+    if (!nft) {
+      return res.status(404).json({ success: false, message: "NFT not found" });
+    }
+
+    const oldStatus = nft.status;
+    nft.status = status;
+    await nft.save();
+
+    // Log the status change
+    try {
+      await PortfolioChange.create({
+        userId: nft.userId || req.user._id,
+        tokenId: nft.tokenId,
+        changeType: "update",
+        diff: { oldStatus, newStatus: status },
+        meta: {
+          source: "admin_status_update",
+          updatedBy: req.user._id,
+          nftId: nft._id,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to log status change:", err);
+    }
+
+    res.json({
+      success: true,
+      message: "NFT status updated successfully",
+      data: {
+        _id: nft._id,
+        tokenId: nft.tokenId,
+        status: nft.status,
+        updatedAt: nft.updatedAt,
+      },
+    });
+  })
+);
+
 // ==================== Portfolio Change Logs (Admin) ====================
 router.get(
   "/portfolio-changes",
