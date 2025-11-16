@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWallet } from "../context/WalletContext";
 import {
   FaGraduationCap,
@@ -20,6 +20,10 @@ import {
   FaAngleRight,
   FaGem,
   FaCoins,
+  FaShoppingCart,
+  FaBookOpen,
+  FaChevronDown,
+  FaChevronRight,
 } from "react-icons/fa";
 import { getCurrentUser } from "../utils/userUtils";
 import { useAuth } from "../context/AuthContext";
@@ -362,6 +366,12 @@ const ActionButton = styled.button.attrs((props) => ({
   }
 `;
 
+const DropdownContainer = styled(motion.div)`
+  margin-left: ${(props) => (props.$isOpen ? 36 : 0)}px;
+  margin-top: 6px;
+  overflow: hidden;
+`;
+
 const MobileOverlay = styled(motion.div).attrs((props) => ({
   "data-is-open": props.$isOpen,
 }))`
@@ -512,8 +522,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       protected: true,
       // dropdown children: buy courses and manage my courses
       children: [
-        { path: "/courses", text: "Mua khóa học" },
-        { path: "/my-courses", text: "Quản lý khóa học" },
+        { path: "/courses", text: "Mua khóa học", icon: FaShoppingCart },
+        { path: "/my-courses", text: "Quản lý khóa học", icon: FaBookOpen },
       ],
     },
     {
@@ -587,30 +597,57 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
               <item.icon className="nav-icon" />
               <span className="nav-text">{item.text}</span>
+              {isOpen && (
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    fontSize: "0.8rem",
+                    opacity: 0.7,
+                  }}
+                >
+                  {isOpenGroup ? <FaChevronDown /> : <FaChevronRight />}
+                </span>
+              )}
             </NavGroupHeader>
 
             {/* render children as simple links (conditionally) */}
-            <div
-              style={{
-                marginLeft: isOpen ? 36 : 0,
-                marginTop: 6,
-                display: isOpenGroup ? "block" : "none",
-              }}
-            >
-              {item.children.map((c) => (
-                <NavItem key={c.path}>
-                  <NavLink
-                    to={c.path}
-                    $active={location.pathname === c.path}
-                    $isOpen={isOpen}
-                    title={c.text}
-                    style={{ paddingLeft: isOpen ? 18 : 0, fontSize: "0.9rem" }}
-                  >
-                    <span className="nav-text">{c.text}</span>
-                  </NavLink>
-                </NavItem>
-              ))}
-            </div>
+            <AnimatePresence>
+              {isOpenGroup && (
+                <DropdownContainer
+                  $isOpen={isOpen}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  {item.children.map((c) => (
+                    <NavItem key={c.path}>
+                      <NavLink
+                        to={c.path}
+                        $active={location.pathname === c.path}
+                        $isOpen={isOpen}
+                        title={c.text}
+                        style={{
+                          paddingLeft: isOpen ? 18 : 0,
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        {c.icon && (
+                          <c.icon
+                            className="nav-icon"
+                            style={{
+                              fontSize: "1rem",
+                              marginRight: isOpen ? "0.6rem" : "0",
+                            }}
+                          />
+                        )}
+                        <span className="nav-text">{c.text}</span>
+                      </NavLink>
+                    </NavItem>
+                  ))}
+                </DropdownContainer>
+              )}
+            </AnimatePresence>
           </NavItem>
         );
       }

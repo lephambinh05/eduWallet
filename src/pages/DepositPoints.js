@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useWallet } from "../context/WalletContext";
-import { FaCoins, FaSyncAlt } from "react-icons/fa";
+import { FaCoins, FaSyncAlt, FaTimes } from "react-icons/fa";
 import toast from "react-hot-toast";
 import pointService from "../services/pointService";
 import { blockchainAPI, adminAPI, authAPI } from "../config/api";
@@ -127,11 +127,131 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+// Modal Styles
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f5f5f5;
+    color: #333;
+  }
+`;
+
+const InputGroup = styled.div`
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+  }
+`;
+
+const ResultBox = styled.div`
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #dee2e6;
+
+  .label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .unit {
+      font-size: 1rem;
+      color: #667eea;
+      font-weight: 600;
+    }
+  }
+`;
+
+const ModalButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+`;
+
 const DepositPoints = () => {
   const { isConnected, account, chainId, currentNetwork } = useWallet();
   const [pointBalance, setPointBalance] = useState("0");
   const [isProcessing, setIsProcessing] = useState(false);
   const [adminSettings, setAdminSettings] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pzoAmount, setPzoAmount] = useState("");
 
   const loadBalances = React.useCallback(async () => {
     try {
@@ -387,13 +507,16 @@ const DepositPoints = () => {
   }
 
   const promptAndConvert = async () => {
-    const input = window.prompt("Nhập số PZO muốn chuyển (vd: 0.5):");
-    if (!input) return;
-    const amount = parseFloat(input);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = async () => {
+    const amount = parseFloat(pzoAmount);
     if (isNaN(amount) || amount <= 0) {
       toast.error("Số PZO không hợp lệ");
       return;
     }
+
     // If admin settings specify min/max, enforce them
     const min =
       adminSettings && adminSettings.minConvertPZO
@@ -412,26 +535,27 @@ const DepositPoints = () => {
       return;
     }
 
-    // Compute expected EDU based on admin-configured price (if available)
-    let expectedEdu = null;
+    setIsModalOpen(false);
+    setPzoAmount("");
+    await convertPZOToEDU(amount.toString());
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setPzoAmount("");
+  };
+
+  const calculateEDU = () => {
+    const amount = parseFloat(pzoAmount);
+    if (isNaN(amount) || amount <= 0) return 0;
+
     if (adminSettings && adminSettings.eduPrice) {
       const price = parseFloat(adminSettings.eduPrice);
       if (!isNaN(price) && price > 0) {
-        expectedEdu = amount / price;
+        return amount / price;
       }
     }
-
-    // Confirm with user showing the estimated EDU they will receive
-    const confirmMessage = expectedEdu
-      ? `Bạn sẽ nhận khoảng ${expectedEdu.toFixed(
-          4
-        )} EDU (ước tính) nếu chuyển ${amount} PZO. Xác nhận?`
-      : `Bạn sắp chuyển ${amount} PZO đến ví nền tảng. Xác nhận?`;
-
-    const ok = window.confirm(confirmMessage);
-    if (!ok) return;
-
-    await convertPZOToEDU(amount.toString());
+    return 0;
   };
 
   return (
@@ -506,6 +630,70 @@ const DepositPoints = () => {
           liên hệ quản trị.
         </InfoBox>
       </Card>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <ModalOverlay onClick={handleModalClose}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <h2>Nạp Point</h2>
+              <CloseButton onClick={handleModalClose}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+
+            <InputGroup>
+              <label htmlFor="pzoAmount">Số lượng PZO cần nạp</label>
+              <input
+                id="pzoAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ví dụ: 0.5"
+                value={pzoAmount}
+                onChange={(e) => setPzoAmount(e.target.value)}
+                autoFocus
+              />
+            </InputGroup>
+
+            {pzoAmount && parseFloat(pzoAmount) > 0 && (
+              <ResultBox>
+                <div className="label">Số EDU bạn sẽ nhận được:</div>
+                <div className="value">
+                  {calculateEDU().toFixed(4)}
+                  <span className="unit">EDU</span>
+                </div>
+              </ResultBox>
+            )}
+
+            <ModalButtons>
+              <Button
+                variant="secondary"
+                onClick={handleModalClose}
+                style={{ background: "#6b7280", marginRight: "1rem" }}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="success"
+                onClick={handleModalSubmit}
+                disabled={
+                  !pzoAmount || parseFloat(pzoAmount) <= 0 || isProcessing
+                }
+              >
+                {isProcessing ? (
+                  <>
+                    <LoadingSpinner />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Xác nhận nạp"
+                )}
+              </Button>
+            </ModalButtons>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };

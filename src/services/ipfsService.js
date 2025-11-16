@@ -217,7 +217,7 @@ class IPFSService {
    * @param {string} imageIpfsHash - IPFS hash of preview image
    * @returns {Object} NFT metadata
    */
-  generatePortfolioMetadata(portfolioData, imageIpfsHash) {
+  generatePortfolioMetadata(portfolioData, imageIpfsHash, dataIpfsHash) {
     const { user, courses, certificates, badges, statistics } = portfolioData;
     const userName =
       user.name ||
@@ -228,7 +228,7 @@ class IPFSService {
       name: `${userName} - Portfolio NFT`,
       description: `Complete academic portfolio of ${userName} including ${courses.length} courses, ${certificates.length} certificates, and ${badges.length} badges.`,
       image: `ipfs://${imageIpfsHash}`,
-      external_url: `ipfs://${portfolioData.ipfsHash}`,
+      external_url: dataIpfsHash ? `ipfs://${dataIpfsHash}` : undefined,
       attributes: [
         {
           trait_type: "Total Courses",

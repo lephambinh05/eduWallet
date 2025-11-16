@@ -117,7 +117,9 @@ class PortfolioNFTService {
       // Generate metadata
       const metadata = ipfsService.generatePortfolioMetadata(
         portfolioForIPFS,
-        options.imageIpfsHash || "QmDefaultImageHash"
+        options.imageIpfsHash ||
+          "bafybeicjcegcfs5mooiqaiqflnngsinkclkyaq4fi3hcrerqlhg72kv64y",
+        ipfsHash
       );
 
       // Upload metadata to IPFS
@@ -301,7 +303,8 @@ class PortfolioNFTService {
       // Generate new metadata
       const metadata = ipfsService.generatePortfolioMetadata(
         portfolioForIPFS,
-        options.imageIpfsHash || "QmDefaultImageHash"
+        options.imageIpfsHash ||
+          "bafybeicjcegcfs5mooiqaiqflnngsinkclkyaq4fi3hcrerqlhg72kv64y"
       );
 
       // Upload new metadata
